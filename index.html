@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" style="background:#0a0a0f">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/pinc-icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PINC — Private Intelligent Network Core</title>
+    <script>
+      window.onerror = function(msg, src, line, col, err) {
+        var el = document.getElementById('fatal-error');
+        if (el) { el.style.display='flex'; el.innerHTML='<div style="color:#ff4444;font-family:monospace;padding:2rem">[FATAL] ' + msg + '<br/>' + (err?.stack||'') + '</div>'; }
+        return false;
+      };
+    </script>
+  </head>
+  <body style="margin:0;background:#0a0a0f">
+    <div id="fatal-error" style="display:none;position:fixed;inset:0;background:#0a0a0f;z-index:9999;align-items:center;justify-content:center"></div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

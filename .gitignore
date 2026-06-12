@@ -1,0 +1,14 @@
+node_modules/
+dist/
+target/
+src-tauri/target/
+src-tauri/gen/
+*.apk
+*.AppImage
+*.deb
+*.AppImage.zsync
+bun.lock
+Cargo.lock
+.env
+*.log
+.DS_Store

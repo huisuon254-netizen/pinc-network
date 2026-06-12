@@ -1,0 +1,26 @@
+{
+  "name": "PINC Build Environment",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/rust:1": {},
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" }
+  },
+  "postCreateCommand": "curl -fsSL https://bun.sh/install | bash && export PATH=\"$HOME/.bun/bin:$PATH\" && cd src-tauri && cargo fetch && cd .. && bun install",
+  "postStartCommand": "export PATH=\"$HOME/.bun/bin:$PATH\"",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "tauri-apps.tauri-vscode"
+      ]
+    }
+  },
+  "forwardPorts": [1420],
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:${containerHome}/.bun/bin"
+  },
+  "runArgs": [
+    "--memory=8g",
+    "--cpus=4"
+  ]
+}
