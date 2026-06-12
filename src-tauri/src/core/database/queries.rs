@@ -1,4 +1,5 @@
 use rusqlite::params;
+use uuid::Uuid;
 use crate::core::{
     database::{connection::Database, errors::DatabaseError},
     identity::types::Identity,
@@ -9,7 +10,7 @@ use crate::core::{
     ai::types::AiAgent,
     distributed::types::StorageContract,
     payment::types::Transaction,
-    infrastructure::rift::{ServerListing, ServerStatus, HardwareSpecs},
+    infrastructure::rift::{ServerListing, ServerStatus, HardwareSpecs, RentalAgreement, RentalPeriod, RentalStatus, ServerMetrics},
 };
 
 // ─── IDENTITY ─────────────────────────────────────────────────────────────────
@@ -574,3 +575,177 @@ pub fn list_transactions(db: &Database) -> Result<Vec<Transaction>, DatabaseErro
     rows.map(|r| r.map_err(|e| DatabaseError::QueryFailed(e.to_string())))
         .collect()
 }
+
+// ─── RIFT (Server Rental) ──────────────────────────────────────────────────────
+
+pub fn insert_server_listing(db: &Database, listing: &ServerListing) -> Result<(), DatabaseError> {
+    let conn = db.conn.lock().map_err(|_| DatabaseError::LockFailed)?;
+    let specs_json = serde_json::to_string(&listing.hardware_specs).unwrap_or_else(|_| "{}".to_string());
+    conn.execute(
+        "INSERT INTO rift_listings (id, owner_id, tier, price_per_hour, hardware_specs, status, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![
+            listing.id, listing.owner_id, listing.tier, listing.price_per_hour,
+            specs_json, format!("{:?}", listing.status), listing.created_at
+        ],
+    ).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+    Ok(())
+}
+
+pub fn list_server_listings(db: &Database) -> Result<Vec<ServerListing>, DatabaseError> {
+    let conn = db.conn.lock().map_err(|_| DatabaseError::LockFailed)?;
+    let mut stmt = conn.prepare(
+        "SELECT id, owner_id, tier, price_per_hour, hardware_specs, status, created_at
+         FROM rift_listings ORDER BY created_at DESC"
+    ).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+    let rows = stmt.query_map([], |row| {
+        let status_str: String = row.get(5)?;
+        let specs_raw: String = row.get(4)?;
+        let specs: HardwareSpecs = serde_json::from_str(&specs_raw).unwrap_or(HardwareSpecs { cpu_cores: 0, ram_gb: 0, storage_gb: 0, network_speed_mbps: 0 });
+        Ok(ServerListing {
+            id: row.get(0)?,
+            owner_id: row.get(1)?,
+            tier: row.get(2)?,
+            price_per_hour: row.get(3)?,
+            hardware_specs: specs,
+            status: match status_str.as_str() {
+                "Rented" => ServerStatus::Rented,
+                "Maintenance" => ServerStatus::Maintenance,
+                "Offline" => ServerStatus::Offline,
+                _ => ServerStatus::Available,
+            },
+            created_at: row.get(6)?,
+            rental_start: None,
+            rental_duration_hours: None,
+            renter_id: None,
+            reputation_score: None,
+            total_earnings: 0.0,
+            metrics: ServerMetrics::default(),
+        })
+    }).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+    rows.map(|r| r.map_err(|e| DatabaseError::QueryFailed(e.to_string())))
+        .collect()
+}
+
+pub fn insert_rental(db: &Database, rental: &RentalAgreement) -> Result<(), DatabaseError> {
+    let conn = db.conn.lock().map_err(|_| DatabaseError::LockFailed)?;
+    conn.execute(
+        "INSERT INTO rift_rentals (id, server_id, renter_id, owner_id, period, start_time, end_time, total_cost, status, payment_transaction_id, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+        params![
+            rental.id, rental.server_id, rental.renter_id, rental.owner_id,
+            format!("{:?}", rental.period), rental.start_time, rental.end_time,
+            rental.total_cost, format!("{:?}", rental.status), rental.payment_transaction_id, rental.start_time
+        ],
+    ).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+    Ok(())
+}
+
+pub fn list_rentals(db: &Database) -> Result<Vec<RentalAgreement>, DatabaseError> {
+    let conn = db.conn.lock().map_err(|_| DatabaseError::LockFailed)?;
+    let mut stmt = conn.prepare(
+        "SELECT id, server_id, renter_id, owner_id, period, start_time, end_time, total_cost, status, payment_transaction_id, created_at
+         FROM rift_rentals ORDER BY created_at DESC"
+    ).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+    let rows = stmt.query_map([], |row| {
+        let period_str: String = row.get(4)?;
+        let status_str: String = row.get(8)?;
+        Ok(RentalAgreement {
+            id: row.get(0)?,
+            server_id: row.get(1)?,
+            renter_id: row.get(2)?,
+            owner_id: row.get(3)?,
+            period: match period_str.as_str() {
+                "Hourly" => RentalPeriod::Hourly,
+                "Daily" => RentalPeriod::Daily,
+                "Weekly" => RentalPeriod::Weekly,
+                "Monthly" => RentalPeriod::Monthly,
+                _ => RentalPeriod::Hourly,
+            },
+            start_time: row.get(5)?,
+            end_time: row.get(6)?,
+            total_cost: row.get(7)?,
+            status: match status_str.as_str() {
+                "Active" => RentalStatus::Active,
+                "Completed" => RentalStatus::Completed,
+                "Cancelled" => RentalStatus::Cancelled,
+                "Disputes" => RentalStatus::Disputes,
+                _ => RentalStatus::Active,
+            },
+            payment_transaction_id: row.get(9)?,
+        })
+    }).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+    rows.map(|r| r.map_err(|e| DatabaseError::QueryFailed(e.to_string())))
+        .collect()
+}
+
+pub fn insert_rental_payment(db: &Database, payment: &RiftPayment) -> Result<(), DatabaseError> {
+    let conn = db.conn.lock().map_err(|_| DatabaseError::LockFailed)?;
+    conn.execute(
+        "INSERT INTO rift_payments (id, rental_id, transaction_id, amount, currency, status, payment_type, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![
+            payment.id, payment.rental_id, payment.transaction_id, payment.amount,
+            payment.currency, format!("{:?}", payment.status), payment.payment_type, payment.created_at
+        ],
+    ).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+    Ok(())
+}
+
+pub fn insert_server_metric(db: &Database, metric: &ServerMetrics, listing_id: &str) -> Result<(), DatabaseError> {
+    let conn = db.conn.lock().map_err(|_| DatabaseError::LockFailed)?;
+    conn.execute(
+        "INSERT INTO rift_metrics (id, listing_id, uptime_percentage, cpu_usage, ram_usage, disk_usage, network_in_mbps, network_out_mbps, total_rentals, total_earnings, average_rating, last_updated)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+        params![
+            Uuid::new_v4().to_string(), listing_id,
+            metric.uptime_percentage, metric.cpu_usage, metric.ram_usage,
+            metric.disk_usage, metric.network_in_mbps, metric.network_out_mbps,
+            metric.total_rentals, metric.total_earnings, metric.average_rating, metric.last_updated
+        ],
+    ).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+    Ok(())
+}
+
+pub fn get_server_metric(db: &Database, listing_id: &str) -> Result<Option<ServerMetrics>, DatabaseError> {
+    let conn = db.conn.lock().map_err(|_| DatabaseError::LockFailed)?;
+    let mut stmt = conn.prepare(
+        "SELECT uptime_percentage, cpu_usage, ram_usage, disk_usage, network_in_mbps, network_out_mbps, total_rentals, total_earnings, average_rating, last_updated
+         FROM rift_metrics WHERE listing_id = ?1 ORDER BY last_updated DESC LIMIT 1"
+    ).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+    match stmt.query_row(params![listing_id], |row| {
+        Ok(ServerMetrics {
+            uptime_percentage: row.get(0)?,
+            cpu_usage: row.get(1)?,
+            ram_usage: row.get(2)?,
+            disk_usage: row.get(3)?,
+            network_in_mbps: row.get(4)?,
+            network_out_mbps: row.get(5)?,
+            total_rentals: row.get(6)?,
+            total_earnings: row.get(7)?,
+            average_rating: row.get(8)?,
+            last_updated: row.get(9)?,
+        })
+    }) {
+        Ok(metric) => Ok(Some(metric)),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(DatabaseError::QueryFailed(e.to_string())),
+    }
+}
+
+// ─── RIFT TYPES ──────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RiftPayment {
+    pub id: String,
+    pub rental_id: String,
+    pub transaction_id: String,
+    pub amount: f64,
+    pub currency: String,
+    pub status: RiftPaymentStatus,
+    pub payment_type: String,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum RiftPaymentStatus { Pending, Completed, Failed, Refunded }

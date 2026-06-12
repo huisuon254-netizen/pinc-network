@@ -197,3 +197,49 @@ CREATE TABLE IF NOT EXISTS rift_listings (
     status           TEXT NOT NULL DEFAULT 'Available',
     created_at       INTEGER NOT NULL
 );";
+
+pub const CREATE_RIFT_RENTALS: &str = "
+CREATE TABLE IF NOT EXISTS rift_rentals (
+    id                      TEXT PRIMARY KEY NOT NULL,
+    server_id              TEXT NOT NULL,
+    renter_id              TEXT NOT NULL,
+    owner_id               TEXT NOT NULL,
+    period                 TEXT NOT NULL,
+    start_time             INTEGER NOT NULL,
+    end_time               INTEGER NOT NULL,
+    total_cost             REAL NOT NULL,
+    status                 TEXT NOT NULL DEFAULT 'Active',
+    payment_transaction_id TEXT,
+    created_at             INTEGER NOT NULL,
+    FOREIGN KEY (server_id) REFERENCES rift_listings(id)
+);";
+
+pub const CREATE_RIFT_METRICS: &str = "
+CREATE TABLE IF NOT EXISTS rift_metrics (
+    id               TEXT PRIMARY KEY NOT NULL,
+    listing_id       TEXT NOT NULL,
+    uptime_percentage REAL NOT NULL DEFAULT 0.0,
+    cpu_usage        REAL NOT NULL DEFAULT 0.0,
+    ram_usage        REAL NOT NULL DEFAULT 0.0,
+    disk_usage       REAL NOT NULL DEFAULT 0.0,
+    network_in_mbps  REAL NOT NULL DEFAULT 0.0,
+    network_out_mbps REAL NOT NULL DEFAULT 0.0,
+    total_rentals    INTEGER NOT NULL DEFAULT 0,
+    total_earnings   REAL NOT NULL DEFAULT 0.0,
+    average_rating   REAL NOT NULL DEFAULT 0.0,
+    last_updated     INTEGER NOT NULL,
+    FOREIGN KEY (listing_id) REFERENCES rift_listings(id)
+);";
+
+pub const CREATE_RIFT_PAYMENTS: &str = "
+CREATE TABLE IF NOT EXISTS rift_payments (
+    id                 TEXT PRIMARY KEY NOT NULL,
+    rental_id          TEXT NOT NULL,
+    transaction_id     TEXT NOT NULL,
+    amount             REAL NOT NULL,
+    currency           TEXT NOT NULL DEFAULT 'PINC',
+    status             TEXT NOT NULL DEFAULT 'pending',
+    payment_type       TEXT NOT NULL,
+    created_at         INTEGER NOT NULL,
+    FOREIGN KEY (rental_id) REFERENCES rift_rentals(id)
+);";;

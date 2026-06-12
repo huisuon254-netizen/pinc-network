@@ -9,6 +9,7 @@ pub mod permissions;
 pub mod settings;
 pub mod telemetry;
 pub mod validation;
+pub mod net_share;
 
 // Phase 4
 pub mod distributed;

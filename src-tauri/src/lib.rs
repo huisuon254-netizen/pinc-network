@@ -61,6 +61,7 @@ pub fn run() {
                 relay: Arc::new(Mutex::new(core::network::relay::RelayManager::new(10_000.0))),
                 message_router: Arc::new(Mutex::new(core::messaging::router::MessageRouter::new())),
                 metrics: Arc::new(Mutex::new(core::telemetry::metrics::MetricsCollector::new())),
+                net_share: Arc::new(Mutex::new(core::net_share::NetShareEngine::new())),
             });
 
             Ok(())
@@ -123,6 +124,15 @@ pub fn run() {
             commands::cmd_get_storage_contracts,
             // Metrics
             commands::cmd_get_metrics,
+            // Net Sharing (Phase 16)
+            commands::cmd_generate_pairing_code,
+            commands::cmd_validate_pairing_code,
+            commands::cmd_generate_qr_png,
+            commands::cmd_connect_with_code,
+            commands::cmd_get_shared_connections,
+            commands::cmd_disconnect_shared,
+            commands::cmd_get_net_share_status,
+            commands::cmd_toggle_net_share,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PINC");

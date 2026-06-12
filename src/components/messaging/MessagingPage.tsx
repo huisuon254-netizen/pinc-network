@@ -2,45 +2,55 @@ import { useState, useRef, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { motion } from 'framer-motion';
 import { Send, Phone, Video, Lock, Search, Plus } from 'lucide-react';
+import { useAppStore } from '../../store/appStore';
 
 interface Message { id: string; conversation_id: string; sender_id: string; recipient_id: string; content: number[]; content_hash: string; msg_type: string; status: string; sent_at: number; }
-interface MockConv { id: string; name: string; nodeId: string; lastMsg: string; unread: number; online: boolean; }
-
-const MOCK_CONVS: MockConv[] = [
-  { id:'c1', name:'PINC-AA-0042', nodeId:'PINC-AA-0042', lastMsg:'Ready for the job?', unread:2, online:true },
-  { id:'c2', name:'PINC-BB-0017', nodeId:'PINC-BB-0017', lastMsg:'Payment confirmed', unread:0, online:false },
-  { id:'c3', name:'PINC-CC-0099', nodeId:'PINC-CC-0099', lastMsg:'File sent ✓', unread:0, online:true },
-];
+interface PeerConv { peerId: string; lastMsg: string; unread: number; online: boolean; lastTime: number; }
 
 export default function MessagingPage() {
-  const [activeConv, setActiveConv] = useState<string | null>('c1');
+  const [activeConv, setActiveConv] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversations, setConversations] = useState<PeerConv[]>([]);
   const msgEnd = useRef<HTMLDivElement>(null);
+  const peers = useAppStore(s => s.peers);
+  const identity = useAppStore(s => s.identity);
+  const myNodeId = identity?.node_id ?? '';
 
   useEffect(() => { msgEnd.current?.scrollIntoView({ behavior:'smooth' }); }, [messages]);
 
   useEffect(() => {
+    const convs: PeerConv[] = peers.map(p => ({
+      peerId: p.id,
+      lastMsg: '',
+      unread: 0,
+      online: p.online,
+      lastTime: 0,
+    }));
+    setConversations(convs);
+    if (convs.length > 0 && !activeConv) {
+      setActiveConv(convs[0].peerId);
+    }
+  }, [peers]);
+
+  useEffect(() => {
     if (!activeConv) return;
-    const conv = MOCK_CONVS.find(c => c.id === activeConv);
-    if (!conv) return;
-    invoke<Message[]>('cmd_get_messages', { peerId: conv.nodeId }).then(setMessages).catch(console.error);
+    invoke<Message[]>('cmd_get_messages', { peerId: activeConv }).then(setMessages).catch(console.error);
   }, [activeConv]);
 
   const sendMsg = () => {
     if (!input.trim() || !activeConv) return;
-    const conv = MOCK_CONVS.find(c => c.id === activeConv);
-    if (!conv) return;
-    const content = new TextEncoder().encode(input.trim());
-    invoke<Message>('cmd_send_message', { peerId: conv.nodeId, content: input.trim() }).then(msg => {
+    const content = input.trim();
+    invoke<Message>('cmd_send_message', { peerId: activeConv, content }).then(msg => {
       setMessages(prev => [...prev, msg]);
     }).catch(console.error);
     setInput('');
   };
 
+  const activeConvData = conversations.find(c => c.peerId === activeConv);
+
   return (
     <div style={{ display:'flex', height:'calc(100vh - 0px)', overflow:'hidden' }}>
-      {/* Sidebar */}
       <div style={{ width:'260px', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column' }}>
         <div style={{ padding:'1rem', borderBottom:'1px solid var(--border)' }}>
           <div style={{ fontSize:'0.65rem', color:'var(--text-muted)', letterSpacing:'0.2em', marginBottom:'0.5rem' }}>MESSAGES <span className="badge badge-purple" style={{ marginLeft:'8px' }}>PHASE 5</span></div>
@@ -50,19 +60,24 @@ export default function MessagingPage() {
           </div>
         </div>
         <div style={{ flex:1, overflow:'auto' }}>
-          {MOCK_CONVS.map(conv => (
-            <div key={conv.id} onClick={() => setActiveConv(conv.id)}
+          {conversations.length === 0 && (
+            <div style={{ padding:'2rem', textAlign:'center', color:'var(--text-muted)', fontSize:'0.72rem' }}>
+              No peers connected yet. Go to Network to connect peers.
+            </div>
+          )}
+          {conversations.map(conv => (
+            <div key={conv.peerId} onClick={() => setActiveConv(conv.peerId)}
               style={{ padding:'0.875rem 1rem', cursor:'pointer', borderBottom:'1px solid var(--border)',
-                background: activeConv === conv.id ? 'rgba(0,212,255,0.06)' : 'transparent',
-                borderLeft: activeConv === conv.id ? '2px solid var(--electric-blue)' : '2px solid transparent' }}>
+                background: activeConv === conv.peerId ? 'rgba(0,212,255,0.06)' : 'transparent',
+                borderLeft: activeConv === conv.peerId ? '2px solid var(--electric-blue)' : '2px solid transparent' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'3px' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
                   <div style={{ width:7, height:7, borderRadius:'50%', background: conv.online ? 'var(--neon-green)' : 'var(--text-muted)' }} />
-                  <span style={{ fontFamily:'monospace', fontSize:'0.72rem', color:'var(--neon-cyan)' }}>{conv.name}</span>
+                  <span style={{ fontFamily:'monospace', fontSize:'0.72rem', color:'var(--neon-cyan)' }}>{conv.peerId}</span>
                 </div>
                 {conv.unread > 0 && <span style={{ background:'var(--electric-blue)', color:'var(--bg-primary)', fontSize:'0.6rem', padding:'1px 5px', borderRadius:'9999px', fontWeight:700 }}>{conv.unread}</span>}
               </div>
-              <div style={{ fontSize:'0.65rem', color:'var(--text-muted)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{conv.lastMsg}</div>
+              <div style={{ fontSize:'0.65rem', color:'var(--text-muted)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{conv.lastMsg || 'No messages yet'}</div>
             </div>
           ))}
         </div>
@@ -71,16 +86,14 @@ export default function MessagingPage() {
         </div>
       </div>
 
-      {/* Chat */}
       {activeConv ? (
         <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
-          {/* Header */}
           <div style={{ padding:'0.875rem 1.25rem', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
             <div style={{ display:'flex', alignItems:'center', gap:'0.75rem' }}>
-              <div style={{ width:8, height:8, borderRadius:'50%', background:'var(--neon-green)' }} />
+              <div style={{ width:8, height:8, borderRadius:'50%', background: activeConvData?.online ? 'var(--neon-green)' : 'var(--text-muted)' }} />
               <div>
-                <div style={{ fontFamily:'monospace', fontSize:'0.8rem', color:'var(--neon-cyan)' }}>PINC-AA-0042</div>
-                <div style={{ fontSize:'0.62rem', color:'var(--neon-green)' }}>● online · E2E encrypted</div>
+                <div style={{ fontFamily:'monospace', fontSize:'0.8rem', color:'var(--neon-cyan)' }}>{activeConv}</div>
+                <div style={{ fontSize:'0.62rem', color:'var(--neon-green)' }}>{activeConvData?.online ? '● online' : '○ offline'} · E2E encrypted</div>
               </div>
             </div>
             <div style={{ display:'flex', gap:'0.5rem' }}>
@@ -89,12 +102,16 @@ export default function MessagingPage() {
               <button className="pinc-btn" style={{ padding:'0.3rem 0.6rem' }}><Lock size={13}/></button>
             </div>
           </div>
-          {/* Messages */}
           <div style={{ flex:1, overflow:'auto', padding:'1rem', display:'flex', flexDirection:'column', gap:'0.75rem' }}>
+            {messages.length === 0 && (
+              <div style={{ textAlign:'center', color:'var(--text-muted)', fontSize:'0.75rem', marginTop:'2rem' }}>
+                No messages yet. Send the first message to start the conversation.
+              </div>
+            )}
             {messages.map((msg, i) => {
               const text = new TextDecoder().decode(new Uint8Array(msg.content));
               const time = new Date(msg.sent_at * 1000).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'});
-              const mine = msg.sender_id === 'me';
+              const mine = msg.sender_id === myNodeId;
               return (
               <motion.div key={msg.id} initial={{ opacity:0, y:4 }} animate={{ opacity:1, y:0 }} transition={{ delay: i * 0.04 }}
                 style={{ display:'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
@@ -109,7 +126,6 @@ export default function MessagingPage() {
             })}
             <div ref={msgEnd} />
           </div>
-          {/* Input */}
           <div style={{ padding:'0.875rem', borderTop:'1px solid var(--border)', display:'flex', gap:'0.75rem' }}>
             <input className="pinc-input" value={input} onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && sendMsg()}
@@ -118,7 +134,9 @@ export default function MessagingPage() {
           </div>
         </div>
       ) : (
-        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-muted)', fontSize:'0.8rem' }}>Select a conversation</div>
+        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-muted)', fontSize:'0.8rem' }}>
+          {peers.length === 0 ? 'Connect to peers first via the Network tab' : 'Select a conversation'}
+        </div>
       )}
     </div>
   );

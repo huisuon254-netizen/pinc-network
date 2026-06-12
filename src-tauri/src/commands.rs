@@ -20,6 +20,9 @@ use crate::{
                 list_storage_contracts,
                 get_wallet_balance,
                 list_transactions,
+                insert_server_listing, list_server_listings,
+                insert_rental, list_rentals,
+                insert_rental_payment, insert_server_metric, get_server_metric,
             },
         },
         identity::generator::create_identity,
@@ -36,7 +39,7 @@ use crate::{
         vault::types::VaultFileRecord,
         infrastructure::{
             nexus::{NexusEngine, SpeedTestResult},
-            rift::{RiftEngine, ServerListing, HardwareSpecs},
+            rift::{RiftEngine, ServerListing, HardwareSpecs, RentalPeriod, ServerMetrics},
         },
         security::kingsman::{KingsmanEngine, KingsmanStatus},
         settings::localization::LocalizationEngine,
@@ -52,6 +55,7 @@ use crate::{
         ai::moderation::moderate_content,
         ai::routing::{recommend_route, PeerMetrics},
         telemetry::metrics::MetricsCollector,
+        infrastructure::rift::{RiftPayment, RiftPaymentStatus, RentalAgreement, RentalStatus},
     },
     startup::{startup_check, StartupReport},
 };
@@ -193,11 +197,106 @@ pub fn cmd_create_server_listing(
         .ok_or_else(|| "No identity found".to_string())?;
     
     let specs = HardwareSpecs { cpu_cores: cpu, ram_gb: ram, storage_gb: storage, network_speed_mbps: speed };
-    let listing = rift.create_listing(&identity.node_id, &tier, price, specs);
+    let listing = rift.create_listing(&identity.node_id, &tier, price, specs).map_err(|e| e.to_string())?;
     
     crate::core::database::queries::insert_server_listing(&db, &listing).map_err(|e| e.to_string())?;
     
     Ok(listing)
+}
+
+#[tauri::command]
+pub fn cmd_rent_server(
+    state: State<'_, AppState>,
+    server_id: String,
+    period: String,
+    duration_hours: u32,
+) -> Result<RentalAgreement, String> {
+    let mut rift = state.rift.lock().unwrap();
+    let db = state.db.lock().unwrap();
+    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+        .ok_or_else(|| "No identity found".to_string())?;
+    
+    let period_enum = match period.to_lowercase().as_str() {
+        "daily" => RentalPeriod::Daily,
+        "weekly" => RentalPeriod::Weekly,
+        "monthly" => RentalPeriod::Monthly,
+        "hourly" | _ => RentalPeriod::Hourly,
+    };
+    
+    let rental = rift.rent_server(&server_id, &identity.node_id, period_enum, duration_hours)
+        .map_err(|e| e.to_string())?;
+    
+    crate::core::database::queries::insert_rental(&db, &rental).map_err(|e| e.to_string())?;
+    
+    let mut payment = RiftPayment {
+        id: Uuid::new_v4().to_string(),
+        rental_id: rental.id.clone(),
+        transaction_id: format!("tx-{}", Uuid::new_v4()),
+        amount: rental.total_cost,
+        currency: "PINC".to_string(),
+        status: RiftPaymentStatus::Pending,
+        payment_type: "rental".to_string(),
+        created_at: chrono::Utc::now().timestamp(),
+    };
+    
+    payment.status = RiftPaymentStatus::Completed;
+    crate::core::database::queries::insert_rental_payment(&db, &payment).map_err(|e| e.to_string())?;
+    
+    let rental_id = rental.id.clone();
+    let payment_id = payment.id.clone();
+    
+    tokio::spawn(async move {
+        let mut rift = state.rift.lock().unwrap();
+        let _ = rift.return_server(&rental_id);
+        let _ = crate::core::database::queries::log_activity(&db, "rental_completed", &format!("Rental {} completed with payment {}", rental_id, payment_id));
+    });
+    
+    Ok(rental)
+}
+
+#[tauri::command]
+pub fn cmd_return_server(
+    state: State<'_, AppState>,
+    rental_id: String,
+) -> Result<(), String> {
+    let mut rift = state.rift.lock().unwrap();
+    rift.return_server(&rental_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn cmd_update_server_metrics(
+    state: State<'_, AppState>,
+    server_id: String,
+    metrics: ServerMetrics,
+) -> Result<(), String> {
+    let mut rift = state.rift.lock().unwrap();
+    let db = state.db.lock().unwrap();
+    rift.update_metrics(&server_id, metrics).map_err(|e| e.to_string())?;
+    crate::core::database::queries::insert_server_metric(&db, &metrics, &server_id).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn cmd_get_server_metrics(
+    state: State<'_, AppState>,
+    server_id: String,
+) -> Result<Option<ServerMetrics>, String> {
+    let db = state.db.lock().unwrap();
+    crate::core::database::queries::get_server_metric(&db, &server_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn cmd_get_active_rentals(state: State<'_, AppState>) -> Result<Vec<RentalAgreement>, String> {
+    let rift = state.rift.lock().unwrap();
+    let mut rentals: Vec<RentalAgreement> = rift.get_active_rentals();
+    let db = state.db.lock().unwrap();
+    let db_rentals = crate::core::database::queries::list_rentals(&db).map_err(|e| e.to_string())?;
+    for db_rental in db_rentals {
+        if !rentals.iter().any(|r| r.id == db_rental.id) {
+            rentals.push(db_rental);
+        }
+    }
+    Ok(rentals)
 }
 
 // ─── MARKETPLACE (Phase 6) ───────────────────────────────────────────────────
@@ -206,6 +305,35 @@ pub fn cmd_create_server_listing(
 pub fn cmd_get_marketplace_listings(state: State<'_, AppState>) -> Result<Vec<Job>, String> {
     let db = state.db.lock().unwrap();
     list_jobs(&db).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn cmd_get_marketplace_stats(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    let db = state.db.lock().unwrap();
+    let jobs = list_jobs(&db).map_err(|e| e.to_string())?;
+    
+    let total_listings = jobs.len() as u64;
+    let active_jobs = jobs.iter().filter(|j| matches!(j.status, JobStatus::Open)).count() as u64;
+    let completed_jobs = jobs.iter().filter(|j| matches!(j.status, JobStatus::Completed)).count() as u64;
+    let average_budget: f64 = if !jobs.is_empty() {
+        jobs.iter().map(|j| j.budget).sum::<f64>() / jobs.len() as f64
+    } else {
+        0.0
+    };
+    
+    let recent_listings: Vec<Job> = jobs.iter()
+        .filter(|j| j.created_at > chrono::Utc::now().timestamp() - 86400 * 7)
+        .cloned()
+        .collect();
+    
+    Ok(serde_json::json!({
+        "total_listings": total_listings,
+        "active_jobs": active_jobs,
+        "completed_jobs": completed_jobs,
+        "average_budget": average_budget,
+        "recent_listings_count": recent_listings.len() as u64,
+        "recent_listings": recent_listings,
+    }))
 }
 
 #[tauri::command]
@@ -772,6 +900,176 @@ async fn call_groq_api(prompt: &str) -> Result<String, String> {
         .as_str()
         .map(|s| s.to_string())
         .ok_or_else(|| "Invalid response".to_string())
+}
+
+// ─── PHASE 10 AI FEATURES ────────────────────────────────────────────────────
+
+// Model cache initialization
+fn init_model_cache() -> Arc<Mutex<ModelCache>> {
+    let cache_dir = std::env::var("PINC_MODEL_CACHE_DIR").unwrap_or_else(|_| "/tmp/pinc/models".to_string());
+    Arc::new(Mutex::new(ModelCache::new(cache_dir)))
+}
+
+#[tauri::command]
+pub async fn cmd_whisper_transcribe(
+    state: State<'_, AppState>,
+    audio_data: Vec<u8>,
+) -> Result<String, String> {
+    let cache = init_model_cache();
+    let mut engine = WhisperEngine::new(cache);
+    
+    let model_path = std::env::var("WHISPER_MODEL_PATH")
+        .unwrap_or_else(|_| "models/ggml-base.en.bin".to_string());
+    
+    engine.load_model(&model_path).await
+        .map_err(|e| e.to_string())?;
+    
+    engine.transcribe(&audio_data).await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn cmd_llama_load_model(
+    state: State<'_, AppState>,
+    model_path: String,
+    params: LlamaParams,
+) -> Result<String, String> {
+    let cache = init_model_cache();
+    let mut engine = LlamaEngine::new(cache);
+    
+    engine.load_model(&model_path, &params).await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn cmd_llama_infer(
+    state: State<'_, AppState>,
+    model_id: String,
+    prompt: String,
+    params: LlamaParams,
+) -> Result<String, String> {
+    let cache = init_model_cache();
+    let engine = LlamaEngine::new(cache);
+    
+    engine.infer(&model_id, &prompt, &params).await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn cmd_llama_generate(
+    state: State<'_, AppState>,
+    model_id: String,
+    prompt: String,
+    params: LlamaParams,
+) -> Result<String, String> {
+    let cache = init_model_cache();
+    let engine = LlamaEngine::new(cache);
+    
+    engine.generate(&model_id, &prompt, &params).await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn cmd_llama_unload_model(
+    state: State<'_, AppState>,
+    model_id: String,
+) -> Result<(), String> {
+    let cache = init_model_cache();
+    let mut engine = LlamaEngine::new(cache);
+    
+    engine.unload_model(&model_id).await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn cmd_onnx_load_model(
+    state: State<'_, AppState>,
+    model_path: String,
+) -> Result<String, String> {
+    let cache = init_model_cache();
+    let mut engine = OnnxEngine::new(cache);
+    
+    engine.load_model(&model_path).await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn cmd_onnx_segment_image(
+    state: State<'_, AppState>,
+    model_id: String,
+    image_data: Vec<u8>,
+) -> Result<ImageSegmentation, String> {
+    let cache = init_model_cache();
+    let engine = OnnxEngine::new(cache);
+    
+    engine.segment_image(&model_id, &image_data).await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn cmd_onnx_unload_model(
+    state: State<'_, AppState>,
+    model_id: String,
+) -> Result<(), String> {
+    let cache = init_model_cache();
+    let mut engine = OnnxEngine::new(cache);
+    
+    engine.unload_model(&model_id).await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn cmd_tts_create_voice_profile(
+    state: State<'_, AppState>,
+    name: String,
+    audio_samples: Vec<Vec<f32>>,
+) -> Result<String, String> {
+    let cache = init_model_cache();
+    let mut engine = TtsEngine::new(cache);
+    
+    engine.create_voice_profile(&name, &audio_samples).await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn cmd_tts_synthesize(
+    state: State<'_, AppState>,
+    profile_id: String,
+    text: String,
+    params: TtsParams,
+) -> Result<Vec<f32>, String> {
+    let cache = init_model_cache();
+    let engine = TtsEngine::new(cache);
+    
+    engine.synthesize(&profile_id, &text, &params).await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn cmd_get_model_cache_stats(
+    state: State<'_, AppState>,
+) -> Result<serde_json::Value, String> {
+    let cache = init_model_cache();
+    let cache_guard = cache.lock().unwrap();
+    
+    Ok(serde_json::json!({
+        "models_cached": cache_guard.models.lock().unwrap().len(),
+        "total_size_bytes": cache_guard.models.lock().unwrap().iter()
+            .map(|(_, m)| m.size_bytes as u64).sum::<u64>(),
+        "cache_directory": cache_guard.local_dir,
+    }))
+}
+
+#[tauri::command]
+pub async fn cmd_clear_model_cache(
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let cache = init_model_cache();
+    let mut cache_guard = cache.lock().unwrap();
+    let mut models = cache_guard.models.lock().unwrap();
+    models.clear();
+    
+    Ok(())
 }
 
 // ─── HEALTH & METRICS ───────────────────────────────────────────────────────

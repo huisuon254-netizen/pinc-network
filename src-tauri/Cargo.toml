@@ -63,15 +63,33 @@ time = "=0.3.36"
 quinn = "0.11"
 rustls = { version = "0.23", features = ["ring"] }
 rcgen = "0.13"
-reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Vendored OpenSSL for Android cross-compilation
+openssl = { version = "0.10", features = ["vendored"] }
 
 # QR Code generation
-qrcode = "0.14"
+qrcode = { version = "0.14", features = ["image"] }
 image = { version = "0.25", features = ["png"] }
 
 # P2P Discovery
 libp2p = { version = "0.55", features = ["kad", "mdns", "identify", "ping", "tcp", "quic", "noise", "yamux", "dcutr", "relay", "websocket", "autonat", "request-response"] }
 multiaddr = "0.18"
+
+# AI Phase 10 - Whisper
+whisper-rs = "0.5"
+
+# AI Phase 10 - Llama.cpp
+llama-rs = "0.16.1"
+
+# AI Phase 10 - ONNX
+ort = { version = "2.0", features = ["ndarray"] }
+
+# AI Phase 10 - TTS
+speechdsp = "0.2"
+
+# Model caching
+redis = "0.23"
 
 [profile.dev]
 incremental = true

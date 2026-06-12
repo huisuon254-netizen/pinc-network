@@ -73,6 +73,7 @@ export interface PincSettings {
   max_peers: number;
   storage_limit_gb: number;
   auto_backup: boolean;
+  groq_api_key: string;
 }
 
 export type AppScreen = 'splash' | 'login' | 'dashboard';

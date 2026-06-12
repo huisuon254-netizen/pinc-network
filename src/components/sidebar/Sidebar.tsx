@@ -1,14 +1,14 @@
 import {
   Shield, HardDrive, Network, MessageSquare, Settings,
   Briefcase, Wallet, Swords, Users, Brain, Globe, Zap, Server,
-  Languages, ShieldCheck, Gauge
+  Languages, ShieldCheck, Gauge, Share2
 } from 'lucide-react';
 
 export type FullDashTab =
   | 'home' | 'vault' | 'network' | 'distributed'
   | 'messages' | 'marketplace' | 'payment' | 'reputation'
   | 'social' | 'wager' | 'ai' | 'admin' | 'settings'
-  | 'language' | 'role' | 'resources';
+  | 'language' | 'role' | 'resources' | 'netshare';
 
 interface NavItem { id: FullDashTab; label: string; icon: React.ReactNode; phase: number; }
 
@@ -16,6 +16,7 @@ const NAV: NavItem[] = [
   { id:'home',        label:'NODE',         icon:<Shield size={15}/>,       phase:1  },
   { id:'vault',       label:'VAULT',        icon:<HardDrive size={15}/>,    phase:1  },
   { id:'network',     label:'NETWORK',      icon:<Network size={15}/>,      phase:3  },
+  { id:'netshare',    label:'NET SHARE',    icon:<Share2 size={15}/>,       phase:16 },
   { id:'distributed', label:'DISTRIB',      icon:<Globe size={15}/>,        phase:4  },
   { id:'messages',    label:'MESSAGES',     icon:<MessageSquare size={15}/>,phase:5  },
   { id:'marketplace', label:'JOBS',         icon:<Briefcase size={15}/>,    phase:6  },

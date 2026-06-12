@@ -18,6 +18,7 @@ import SocialPage from '../social/SocialPage';
 import WagerPage from '../wager/WagerPage';
 import AiPage from '../ai/AiPage';
 import AdminPage from '../admin/AdminPage';
+import NetSharingPage from '../netshare/NetSharingPage';
 
 // System config
 import LanguageSelector from '../language/LanguageSelector';
@@ -49,6 +50,7 @@ export default function DashboardPage() {
       case 'wager':       return <WagerPage />;
       case 'ai':          return <AiPage />;
       case 'admin':       return <AdminPage />;
+      case 'netshare':    return <NetSharingPage />;
       case 'language':    return <div style={{ padding:'2rem', maxWidth:'700px' }}><LanguageSelector /></div>;
       case 'role':        return <div style={{ padding:'2rem', maxWidth:'700px' }}><RoleSelector /></div>;
       case 'resources':   return <ResourcePage />;
