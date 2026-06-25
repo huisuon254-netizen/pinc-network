@@ -21,8 +21,6 @@ const SECTIONS: SectionConfig[] = [
   { key: 'network', title: 'Network', icon: '\u{1F310}', description: 'Proxy, DNS, and connection settings' },
   { key: 'ai', title: 'AI Settings', icon: '\u{1F916}', description: 'API keys and model preferences' },
   { key: 'backup', title: 'Backup & Restore', icon: '\u{1F4BE}', description: 'Wallet backup and data export' },
-  { key: 'role', title: 'Role', icon: '\u{1F64F}', description: 'User permissions and access control' },
-  { key: 'resources', title: 'Resources', icon: '\u{1F4BB}', description: 'Node resource allocation' },
 ];
 
 const DANGER_ACTIONS = [
@@ -369,7 +367,7 @@ function SettingsPage() {
     async (section: SettingsSection) => {
       setSaving(section);
       try {
-        await saveSettings(settings[section]);
+        await saveSettings();
         setDirtySections((prev) => {
           const next = new Set(prev);
           next.delete(section);
@@ -440,7 +438,7 @@ function SettingsPage() {
       try {
         const text = await file.text();
         const imported = JSON.parse(text) as AllSettings;
-        await saveSettings(imported);
+        await saveSettings();
         showStatus('success', 'Settings imported');
       } catch (err) {
         showStatus('error', `Import failed: ${err}`);
@@ -824,7 +822,7 @@ function SettingsPage() {
         <div className="p-3 rounded-lg bg-gray-800 border border-gray-700">
           <p className="text-xs text-gray-400">Last Backup</p>
           <p className="text-sm text-white font-mono">
-            {new Date(settings.backup.lastBackupDate).toLocaleString()}
+            {settings.backup.lastBackupDate ? new Date(settings.backup.lastBackupDate).toLocaleString() : 'Never'}
           </p>
         </div>
       )}
@@ -897,8 +895,6 @@ function SettingsPage() {
       case 'network': return renderNetworkSection();
       case 'ai': return renderAISection();
       case 'backup': return renderBackupSection();
-      case 'role': return renderRoleSection();
-      case 'resources': return renderResourcesSection();
       default: return null;
     }
   };

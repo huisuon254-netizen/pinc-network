@@ -1,38 +1,28 @@
 import {
-  Shield, HardDrive, Network, MessageSquare, Settings,
-  Briefcase, Wallet, Swords, Users, Brain, Globe, Zap, Server,
-  Languages, ShieldCheck, Gauge, Share2
+  Shield, HardDrive, MessageSquare, Settings,
+  Briefcase, Wallet, Swords, Globe, Zap, Server,
+  ShieldCheck, Wifi, Trophy, Bell, Users
 } from 'lucide-react';
 
 export type FullDashTab =
-  | 'home' | 'vault' | 'network' | 'distributed'
-  | 'messages' | 'marketplace' | 'payment' | 'reputation'
-  | 'social' | 'wager' | 'ai' | 'admin' | 'settings'
-  | 'language' | 'role' | 'resources' | 'netshare';
+  | 'home' | 'treific' | 'sarai' | 'starteran' | 'rentbit'
+  | 'wagers' | 'jobs' | 'rankings' | 'security' | 'settings' | 'contacts';
 
-interface NavItem { id: FullDashTab; label: string; icon: React.ReactNode; phase: number; }
+export interface NavItem { id: FullDashTab; label: string; icon: React.ReactNode; }
 
 const NAV: NavItem[] = [
-  { id:'home',        label:'NODE',         icon:<Shield size={15}/>,       phase:1  },
-  { id:'vault',       label:'VAULT',        icon:<HardDrive size={15}/>,    phase:1  },
-  { id:'network',     label:'NETWORK',      icon:<Network size={15}/>,      phase:3  },
-  { id:'netshare',    label:'NET SHARE',    icon:<Share2 size={15}/>,       phase:16 },
-  { id:'distributed', label:'DISTRIB',      icon:<Globe size={15}/>,        phase:4  },
-  { id:'messages',    label:'MESSAGES',     icon:<MessageSquare size={15}/>,phase:5  },
-  { id:'marketplace', label:'JOBS',         icon:<Briefcase size={15}/>,    phase:6  },
-  { id:'payment',     label:'WALLET',       icon:<Wallet size={15}/>,       phase:7  },
-  { id:'reputation',  label:'REPUTATION',   icon:<Zap size={15}/>,          phase:8  },
-  { id:'social',      label:'SOCIAL',       icon:<Users size={15}/>,        phase:9  },
-  { id:'wager',       label:'WAGERS',       icon:<Swords size={15}/>,       phase:10 },
-  { id:'ai',          label:'AI ENGINE',    icon:<Brain size={15}/>,        phase:11 },
-  { id:'admin',       label:'INFRA',        icon:<Server size={15}/>,       phase:12 },
-  { id:'resources',   label:'RESOURCES',    icon:<Gauge size={15}/>,        phase:1  },
-  { id:'role',        label:'ROLE',         icon:<ShieldCheck size={15}/>,  phase:1  },
-  { id:'language',    label:'LANGUAGE',     icon:<Languages size={15}/>,    phase:1  },
-  { id:'settings',    label:'SETTINGS',     icon:<Settings size={15}/>,     phase:0  },
+  { id:'home',       label:'HOME',       icon:<Shield size={15}/> },
+  { id:'treific',    label:'TREIFIC',    icon:<MessageSquare size={15}/> },
+  { id:'sarai',      label:'SARAI',      icon:<Wallet size={15}/> },
+  { id:'contacts',   label:'CONTACTS',   icon:<Users size={15}/> },
+  { id:'starteran',  label:'STARTERAN',  icon:<Wifi size={15}/> },
+  { id:'rentbit',    label:'RENTBIT',    icon:<Server size={15}/> },
+  { id:'wagers',     label:'WAGERS',     icon:<Swords size={15}/> },
+  { id:'jobs',       label:'JOBS',       icon:<Briefcase size={15}/> },
+  { id:'rankings',   label:'RANKINGS',   icon:<Trophy size={15}/> },
+  { id:'security',   label:'SECURITY',   icon:<ShieldCheck size={15}/> },
+  { id:'settings',   label:'SETTINGS',   icon:<Settings size={15}/> },
 ];
-
-const ACTIVE_PHASES = [1, 2, 3]; // phases that are live
 
 interface Props {
   activeTab: FullDashTab;
@@ -40,10 +30,9 @@ interface Props {
   nodeId?: string;
   online?: boolean;
   peerCount?: number;
-  vaultCount?: number;
 }
 
-export default function Sidebar({ activeTab, setActiveTab, nodeId, online, peerCount, vaultCount }: Props) {
+export default function Sidebar({ activeTab, setActiveTab, nodeId, online, peerCount }: Props) {
   return (
     <div style={{
       width:190, minWidth:190, height:'100vh', background:'var(--bg-secondary)',
@@ -53,7 +42,7 @@ export default function Sidebar({ activeTab, setActiveTab, nodeId, online, peerC
       {/* Logo */}
       <div style={{ padding:'0 1rem', marginBottom:'1.5rem' }}>
         <div style={{ fontSize:'1.1rem', fontWeight:900, color:'var(--electric-blue)', letterSpacing:'0.15em' }} className="glow-blue">PINC</div>
-        <div style={{ fontSize:'0.5rem', color:'var(--text-muted)', letterSpacing:'0.2em', marginTop:'1px' }}>v3.0 · ALL PHASES</div>
+        <div style={{ fontSize:'0.5rem', color:'var(--text-muted)', letterSpacing:'0.2em', marginTop:'1px' }}>v3.0</div>
       </div>
 
       {/* Node ID */}
@@ -74,7 +63,6 @@ export default function Sidebar({ activeTab, setActiveTab, nodeId, online, peerC
       <nav style={{ flex:1 }}>
         {NAV.map(item => {
           const active = activeTab === item.id;
-          const phaseColor = item.phase <= 3 ? 'var(--neon-green)' : item.phase <= 6 ? 'var(--neon-yellow)' : item.phase <= 10 ? 'var(--soft-purple)' : 'var(--text-muted)';
 
           return (
             <button key={item.id} onClick={() => setActiveTab(item.id)} style={{
@@ -87,29 +75,10 @@ export default function Sidebar({ activeTab, setActiveTab, nodeId, online, peerC
             }}>
               <span style={{ flexShrink:0 }}>{item.icon}</span>
               <span style={{ flex:1 }}>{item.label}</span>
-              {item.phase > 0 && (
-                <span style={{
-                  fontSize:'0.5rem', padding:'1px 4px', borderRadius:'2px',
-                  border:`1px solid ${phaseColor}44`, color:phaseColor,
-                  background:`${phaseColor}11`,
-                }}>P{item.phase}</span>
-              )}
             </button>
           );
         })}
       </nav>
-
-      {/* Bottom stats */}
-      <div style={{ padding:'0.875rem 1rem', borderTop:'1px solid var(--border)', fontSize:'0.62rem' }}>
-        {[['PEERS', String(peerCount ?? 0), 'var(--text-secondary)'],
-          ['FILES', String(vaultCount ?? 0), 'var(--text-secondary)'],
-          ['PHASE', '3 / 15', 'var(--electric-blue)']].map(([l,v,c]) => (
-          <div key={l} style={{ display:'flex', justifyContent:'space-between', marginBottom:'3px' }}>
-            <span style={{ color:'var(--text-muted)' }}>{l}</span>
-            <span style={{ color:c, fontFamily:'monospace' }}>{v}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

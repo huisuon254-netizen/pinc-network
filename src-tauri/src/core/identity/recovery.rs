@@ -12,9 +12,10 @@ pub fn recover_identity(
     db: &Database,
     phrase: &str,
     master_key: &[u8; 32],
+    username: &str,
 ) -> Result<Identity, IdentityError> {
     let mnemonic: bip39::Mnemonic = phrase.trim().parse()
         .map_err(|_| IdentityError::RecoveryFailed("Invalid recovery phrase".to_string()))?;
-    let identity = build_identity_from_phrase(db, &mnemonic, master_key)?;
+    let identity = build_identity_from_phrase(db, &mnemonic, master_key, username)?;
     Ok(identity)
 }

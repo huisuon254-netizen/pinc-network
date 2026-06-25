@@ -103,3 +103,18 @@ fn check_vault() -> bool {
         Err(_) => false,
     }
 }
+
+/// Generates a cryptographically random 16-character alphanumeric password.
+/// Use this to replace hardcoded default passwords (e.g. "changeme") at first-run.
+/// In lib.rs, replace the `"changeme"` literal with `startup::generate_secure_default_password()`.
+pub fn generate_secure_default_password() -> String {
+    use rand::Rng;
+    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let mut rng = rand::thread_rng();
+    (0..16)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            CHARSET[idx] as char
+        })
+        .collect()
+}

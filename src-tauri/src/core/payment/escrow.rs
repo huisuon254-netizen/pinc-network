@@ -1,6 +1,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 use crate::core::payment::{errors::PaymentError, types::{Escrow, EscrowCondition, Wallet}};
+use crate::core::database::{connection::Database, errors::DatabaseError};
 
 pub fn lock_escrow(
     payer: &mut Wallet, amount: f64, payee_id: &str, reference: &str,
@@ -52,4 +53,16 @@ pub fn mark_condition_met(escrow: &mut Escrow, condition_index: usize) -> Result
 
 fn now_secs() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64
+}
+
+pub fn refund_escrow_db(
+    db: &Database, escrow_id: &str, _refund_to_node_id: &str, _amount: f64,
+) -> Result<(), DatabaseError> {
+    let conn = db.conn.lock().map_err(|_| DatabaseError::LockFailed)?;
+    let now = now_secs();
+    conn.execute(
+        "UPDATE escrow_holds SET status = 'refunded', released_at = ?1 WHERE id = ?2",
+        rusqlite::params![now, escrow_id],
+    ).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+    Ok(())
 }

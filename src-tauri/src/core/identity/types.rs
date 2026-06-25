@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Identity {
     pub id: String,
     pub node_id: String,
+    pub username: String,
     pub public_key: String,
     pub private_key_encrypted: String,
     pub fingerprint: String,

@@ -1,0 +1,470 @@
+   Compiling pinc v3.0.0 (/home/rachael/pinc-network/src-tauri)
+error: expected item after attributes
+   --> src/core/database/queries.rs:694:1
+    |
+694 | #[derive(Debug, Clone, Serialize, Deserialize)]
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0433]: cannot find `__tauri_command_name_cmd_generate_pairing_code` in `commands`
+   --> src/lib.rs:69:25
+    |
+ 69 |           .invoke_handler(tauri::generate_handler![
+    |  _________________________^
+ 70 | |             // Startup
+ 71 | |             commands::cmd_run_startup,
+...   |
+135 | |             commands::cmd_toggle_net_share,
+136 | |         ])
+    | |_________^ could not find `__tauri_command_name_cmd_generate_pairing_code` in `commands`
+    |
+    = note: this error originates in the macro `tauri::generate_handler` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: cannot find `__cmd__cmd_generate_pairing_code` in `commands`
+   --> src/lib.rs:128:23
+    |
+128 |             commands::cmd_generate_pairing_code,
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^ could not find `__cmd__cmd_generate_pairing_code` in `commands`
+
+error[E0433]: cannot find `__tauri_command_name_cmd_validate_pairing_code` in `commands`
+   --> src/lib.rs:69:25
+    |
+ 69 |           .invoke_handler(tauri::generate_handler![
+    |  _________________________^
+ 70 | |             // Startup
+ 71 | |             commands::cmd_run_startup,
+...   |
+135 | |             commands::cmd_toggle_net_share,
+136 | |         ])
+    | |_________^ could not find `__tauri_command_name_cmd_validate_pairing_code` in `commands`
+    |
+    = note: this error originates in the macro `tauri::generate_handler` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: cannot find `__cmd__cmd_validate_pairing_code` in `commands`
+   --> src/lib.rs:129:23
+    |
+129 |             commands::cmd_validate_pairing_code,
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^ could not find `__cmd__cmd_validate_pairing_code` in `commands`
+
+error[E0433]: cannot find `__tauri_command_name_cmd_generate_qr_png` in `commands`
+   --> src/lib.rs:69:25
+    |
+ 69 |           .invoke_handler(tauri::generate_handler![
+    |  _________________________^
+ 70 | |             // Startup
+ 71 | |             commands::cmd_run_startup,
+...   |
+135 | |             commands::cmd_toggle_net_share,
+136 | |         ])
+    | |_________^ could not find `__tauri_command_name_cmd_generate_qr_png` in `commands`
+    |
+    = note: this error originates in the macro `tauri::generate_handler` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: cannot find `__cmd__cmd_generate_qr_png` in `commands`
+   --> src/lib.rs:130:23
+    |
+130 |             commands::cmd_generate_qr_png,
+    |                       ^^^^^^^^^^^^^^^^^^^ could not find `__cmd__cmd_generate_qr_png` in `commands`
+
+error[E0433]: cannot find `__tauri_command_name_cmd_connect_with_code` in `commands`
+   --> src/lib.rs:69:25
+    |
+ 69 |           .invoke_handler(tauri::generate_handler![
+    |  _________________________^
+ 70 | |             // Startup
+ 71 | |             commands::cmd_run_startup,
+...   |
+135 | |             commands::cmd_toggle_net_share,
+136 | |         ])
+    | |_________^ could not find `__tauri_command_name_cmd_connect_with_code` in `commands`
+    |
+    = note: this error originates in the macro `tauri::generate_handler` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: cannot find `__cmd__cmd_connect_with_code` in `commands`
+   --> src/lib.rs:131:23
+    |
+131 |             commands::cmd_connect_with_code,
+    |                       ^^^^^^^^^^^^^^^^^^^^^ could not find `__cmd__cmd_connect_with_code` in `commands`
+
+error[E0433]: cannot find `__tauri_command_name_cmd_get_shared_connections` in `commands`
+   --> src/lib.rs:69:25
+    |
+ 69 |           .invoke_handler(tauri::generate_handler![
+    |  _________________________^
+ 70 | |             // Startup
+ 71 | |             commands::cmd_run_startup,
+...   |
+135 | |             commands::cmd_toggle_net_share,
+136 | |         ])
+    | |_________^ could not find `__tauri_command_name_cmd_get_shared_connections` in `commands`
+    |
+    = note: this error originates in the macro `tauri::generate_handler` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: cannot find `__cmd__cmd_get_shared_connections` in `commands`
+   --> src/lib.rs:132:23
+    |
+132 |             commands::cmd_get_shared_connections,
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ could not find `__cmd__cmd_get_shared_connections` in `commands`
+
+error[E0433]: cannot find `__tauri_command_name_cmd_disconnect_shared` in `commands`
+   --> src/lib.rs:69:25
+    |
+ 69 |           .invoke_handler(tauri::generate_handler![
+    |  _________________________^
+ 70 | |             // Startup
+ 71 | |             commands::cmd_run_startup,
+...   |
+135 | |             commands::cmd_toggle_net_share,
+136 | |         ])
+    | |_________^ could not find `__tauri_command_name_cmd_disconnect_shared` in `commands`
+    |
+    = note: this error originates in the macro `tauri::generate_handler` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: cannot find `__cmd__cmd_disconnect_shared` in `commands`
+   --> src/lib.rs:133:23
+    |
+133 |             commands::cmd_disconnect_shared,
+    |                       ^^^^^^^^^^^^^^^^^^^^^ could not find `__cmd__cmd_disconnect_shared` in `commands`
+
+error[E0433]: cannot find `__tauri_command_name_cmd_get_net_share_status` in `commands`
+   --> src/lib.rs:69:25
+    |
+ 69 |           .invoke_handler(tauri::generate_handler![
+    |  _________________________^
+ 70 | |             // Startup
+ 71 | |             commands::cmd_run_startup,
+...   |
+135 | |             commands::cmd_toggle_net_share,
+136 | |         ])
+    | |_________^ could not find `__tauri_command_name_cmd_get_net_share_status` in `commands`
+    |
+    = note: this error originates in the macro `tauri::generate_handler` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: cannot find `__cmd__cmd_get_net_share_status` in `commands`
+   --> src/lib.rs:134:23
+    |
+134 |             commands::cmd_get_net_share_status,
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^ could not find `__cmd__cmd_get_net_share_status` in `commands`
+
+error[E0433]: cannot find `__tauri_command_name_cmd_toggle_net_share` in `commands`
+   --> src/lib.rs:69:25
+    |
+ 69 |           .invoke_handler(tauri::generate_handler![
+    |  _________________________^
+ 70 | |             // Startup
+ 71 | |             commands::cmd_run_startup,
+...   |
+135 | |             commands::cmd_toggle_net_share,
+136 | |         ])
+    | |_________^ could not find `__tauri_command_name_cmd_toggle_net_share` in `commands`
+    |
+    = note: this error originates in the macro `tauri::generate_handler` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: cannot find `__cmd__cmd_toggle_net_share` in `commands`
+   --> src/lib.rs:135:23
+    |
+135 |             commands::cmd_toggle_net_share,
+    |                       ^^^^^^^^^^^^^^^^^^^^ could not find `__cmd__cmd_toggle_net_share` in `commands`
+
+error[E0425]: cannot find type `ModelCache` in this scope
+    --> src/commands.rs:1133:36
+     |
+1133 | fn init_model_cache() -> Arc<Mutex<ModelCache>> {
+     |                                    ^^^^^^^^^^ not found in this scope
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::ai_engine::ModelCache;
+     |
+
+error[E0433]: cannot find type `ModelCache` in this scope
+    --> src/commands.rs:1135:25
+     |
+1135 |     Arc::new(Mutex::new(ModelCache::new(cache_dir)))
+     |                         ^^^^^^^^^^ use of undeclared type `ModelCache`
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::ai_engine::ModelCache;
+     |
+
+error[E0433]: cannot find type `WhisperEngine` in this scope
+    --> src/commands.rs:1144:22
+     |
+1144 |     let mut engine = WhisperEngine::new(cache);
+     |                      ^^^^^^^^^^^^^ use of undeclared type `WhisperEngine`
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::ai_engine::WhisperEngine;
+     |
+
+error[E0425]: cannot find type `LlamaParams` in this scope
+    --> src/commands.rs:1160:13
+     |
+1160 |     params: LlamaParams,
+     |             ^^^^^^^^^^^ not found in this scope
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::types::LlamaParams;
+     |
+
+error[E0433]: cannot find type `LlamaEngine` in this scope
+    --> src/commands.rs:1163:22
+     |
+1163 |     let mut engine = LlamaEngine::new(cache);
+     |                      ^^^^^^^^^^^ use of undeclared type `LlamaEngine`
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::ai_engine::LlamaEngine;
+     |
+
+error[E0425]: cannot find type `LlamaParams` in this scope
+    --> src/commands.rs:1174:13
+     |
+1174 |     params: LlamaParams,
+     |             ^^^^^^^^^^^ not found in this scope
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::types::LlamaParams;
+     |
+
+error[E0433]: cannot find type `LlamaEngine` in this scope
+    --> src/commands.rs:1177:18
+     |
+1177 |     let engine = LlamaEngine::new(cache);
+     |                  ^^^^^^^^^^^ use of undeclared type `LlamaEngine`
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::ai_engine::LlamaEngine;
+     |
+
+error[E0425]: cannot find type `LlamaParams` in this scope
+    --> src/commands.rs:1188:13
+     |
+1188 |     params: LlamaParams,
+     |             ^^^^^^^^^^^ not found in this scope
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::types::LlamaParams;
+     |
+
+error[E0433]: cannot find type `LlamaEngine` in this scope
+    --> src/commands.rs:1191:18
+     |
+1191 |     let engine = LlamaEngine::new(cache);
+     |                  ^^^^^^^^^^^ use of undeclared type `LlamaEngine`
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::ai_engine::LlamaEngine;
+     |
+
+error[E0433]: cannot find type `LlamaEngine` in this scope
+    --> src/commands.rs:1203:22
+     |
+1203 |     let mut engine = LlamaEngine::new(cache);
+     |                      ^^^^^^^^^^^ use of undeclared type `LlamaEngine`
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::ai_engine::LlamaEngine;
+     |
+
+error[E0433]: cannot find type `OnnxEngine` in this scope
+    --> src/commands.rs:1215:22
+     |
+1215 |     let mut engine = OnnxEngine::new(cache);
+     |                      ^^^^^^^^^^ use of undeclared type `OnnxEngine`
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::ai_engine::OnnxEngine;
+     |
+
+error[E0425]: cannot find type `ImageSegmentation` in this scope
+    --> src/commands.rs:1226:13
+     |
+1226 | ) -> Result<ImageSegmentation, String> {
+     |             ^^^^^^^^^^^^^^^^^ not found in this scope
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::types::ImageSegmentation;
+     |
+
+error[E0433]: cannot find type `OnnxEngine` in this scope
+    --> src/commands.rs:1228:18
+     |
+1228 |     let engine = OnnxEngine::new(cache);
+     |                  ^^^^^^^^^^ use of undeclared type `OnnxEngine`
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::ai_engine::OnnxEngine;
+     |
+
+error[E0433]: cannot find type `OnnxEngine` in this scope
+    --> src/commands.rs:1240:22
+     |
+1240 |     let mut engine = OnnxEngine::new(cache);
+     |                      ^^^^^^^^^^ use of undeclared type `OnnxEngine`
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::ai_engine::OnnxEngine;
+     |
+
+error[E0433]: cannot find type `TtsEngine` in this scope
+    --> src/commands.rs:1253:22
+     |
+1253 |     let mut engine = TtsEngine::new(cache);
+     |                      ^^^^^^^^^ use of undeclared type `TtsEngine`
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::ai_engine::TtsEngine;
+     |
+
+error[E0425]: cannot find type `TtsParams` in this scope
+    --> src/commands.rs:1264:13
+     |
+1264 |     params: TtsParams,
+     |             ^^^^^^^^^ not found in this scope
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::types::TtsParams;
+     |
+
+error[E0433]: cannot find type `TtsEngine` in this scope
+    --> src/commands.rs:1267:18
+     |
+1267 |     let engine = TtsEngine::new(cache);
+     |                  ^^^^^^^^^ use of undeclared type `TtsEngine`
+     |
+help: consider importing this struct
+     |
+   2 + use crate::core::ai::ai_engine::TtsEngine;
+     |
+
+warning: unused import: `fingerprint::device_fingerprint`
+ --> src/core/identity/recovery.rs:4:39
+  |
+4 |     identity::{errors::IdentityError, fingerprint::device_fingerprint, generator::bui...
+  |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `errors::NetworkError`
+ --> src/core/network/peer.rs:2:28
+  |
+2 | use crate::core::network::{errors::NetworkError, types::PeerInfo};
+  |                            ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+ --> src/core/net_share/mod.rs:2:17
+  |
+2 | use std::sync::{Arc, Mutex};
+  |                 ^^^  ^^^^^
+
+warning: unused imports: `SystemTime` and `UNIX_EPOCH`
+ --> src/core/distributed/chunker.rs:7:17
+  |
+7 | use std::time::{SystemTime, UNIX_EPOCH};
+  |                 ^^^^^^^^^^  ^^^^^^^^^^
+
+warning: unused import: `DEFAULT_REPLICATION_FACTOR`
+ --> src/core/distributed/replication.rs:3:40
+  |
+3 |     types::{ChunkReplica, StorageNode, DEFAULT_REPLICATION_FACTOR},
+  |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `verify_chunk_integrity`
+ --> src/core/distributed/retrieval.rs:5:34
+  |
+5 |     chunker::{reassemble_chunks, verify_chunk_integrity},
+  |                                  ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `MessageStatus`
+ --> src/core/messaging/router.rs:2:71
+  |
+2 | ...:MessagingError, types::{Message, MessageStatus, OfflineMessageQueue}};
+  |                                      ^^^^^^^^^^^^^
+
+warning: unused import: `WorkerProfile`
+ --> src/core/marketplace/engine.rs:5:69
+  |
+5 |     types::{Bid, BidStatus, Job, JobStatus, Milestone, ProofOfWork, WorkerProfile},
+  |                                                                     ^^^^^^^^^^^^^
+
+warning: unused import: `crate::core::reputation::errors::RepuationError`
+ --> src/core/reputation/engine.rs:3:5
+  |
+3 | use crate::core::reputation::errors::RepuationError;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src/core/ai/ai_engine/mod.rs:2:5
+  |
+2 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Route`
+ --> src/core/routing/engine.rs:3:49
+  |
+3 | use crate::core::routing::types::{MultiHopPath, Route, RoutingTable};
+  |                                                 ^^^^^
+
+warning: unused import: `chrono`
+ --> src/core/infrastructure/rift.rs:4:5
+  |
+4 | use chrono;
+  |     ^^^^^^
+
+warning: unused import: `chrono::Utc`
+ --> src/commands.rs:6:5
+  |
+6 | use chrono::Utc;
+  |     ^^^^^^^^^^^
+
+warning: unused import: `RentalStatus`
+  --> src/commands.rs:61:81
+   |
+61 | ...ftPaymentStatus, RentalAgreement, RentalStatus},
+   |                                      ^^^^^^^^^^^^
+
+warning: unused import: `errors::AppError`
+ --> src/startup.rs:7:5
+  |
+7 |     errors::AppError,
+  |     ^^^^^^^^^^^^^^^^
+
+warning: unused variable: `max_price`
+  --> src/core/distributed/storage_market.rs:55:5
+   |
+55 |     max_price: f64,
+   |     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_max_price`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `price`
+   --> src/core/infrastructure/rift.rs:115:66
+    |
+115 | ...r, price: f64, specs: HardwareSpecs) -> Result<ServerListing, HardwareValidation...
+    |       ^^^^^ help: if this is intentional, prefix it with an underscore: `_price`
+
+warning: unused variable: `start`
+   --> src/commands.rs:123:9
+    |
+123 |     let start = std::time::Instant::now();
+    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_start`
+
+Some errors have detailed explanations: E0425, E0433.
+For more information about an error, try `rustc --explain E0425`.
+warning: `pinc` (lib) generated 18 warnings
+error: could not compile `pinc` (lib) due to 34 previous errors; 18 warnings emitted

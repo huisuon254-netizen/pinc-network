@@ -4,9 +4,7 @@
   "version": "3.0.0",
   "identifier": "com.pinc.app",
   "build": {
-    "frontendDist": "../dist",
-    "devUrl": "http://localhost:1420",
-    "beforeDevCommand": "bun run dev"
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [
@@ -18,12 +16,11 @@
         "minHeight": 700,
         "decorations": true,
         "resizable": true,
-        "center": true,
-        "transparent": false
+        "center": true
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data:; media-src 'self' https:; connect-src 'self' https: wss:; frame-src https:; font-src 'self' https:; object-src 'none'"
     }
   },
   "bundle": {

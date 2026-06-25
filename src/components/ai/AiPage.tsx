@@ -22,12 +22,13 @@ export default function AiPage() {
         active: a.active ?? false, accuracy: a.accuracy ?? 0, inferences_run: a.inferences_run ?? 0,
       })));
     }).catch(console.error);
-    if (settings?.groq_api_key) setGroqKey(settings.groq_api_key);
+    if ((settings as any)?.groq_api_key) setGroqKey((settings as any).groq_api_key);
   }, [settings]);
 
   const saveGroqKey = async () => {
     if (!settings) return;
-    await saveSettings({ ...settings, groq_api_key: groqKey });
+    (settings as any).groq_api_key = groqKey;
+    saveSettings();
     setGroqSaved(true);
     setTimeout(() => setGroqSaved(false), 2000);
   };

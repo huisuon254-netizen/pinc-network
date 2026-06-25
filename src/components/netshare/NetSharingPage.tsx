@@ -78,7 +78,7 @@ export default function NetSharingPage() {
       const code = await invoke<PairingCodeData>('cmd_generate_pairing_code');
       setPairingCode(code);
       setSharingActive(true);
-      const qr = await invoke<string>('cmd_generate_qr_png');
+      const qr = await invoke<string>('cmd_generate_qr_png', { data: JSON.stringify(code) });
       setQrBase64(qr);
     } catch (e) {
       setError(String(e));

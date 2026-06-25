@@ -7,7 +7,7 @@ import { ROLE_PERMISSIONS } from '../../types';
 const ROLES: { id: UserRole; label: string; desc: string; icon: React.ReactNode; color: string }[] = [
   { id: 'admin', label: 'ADMIN', desc: 'Full system control, manage users, allocate resources', icon: <Shield size={16} />, color: 'var(--neon-red)' },
   { id: 'operator', label: 'OPERATOR', desc: 'Manage nodes, relay traffic, view metrics', icon: <Wrench size={16} />, color: 'var(--neon-yellow)' },
-  { id: 'user', label: 'USER', desc: 'Access vault, marketplace, wallet, messaging', icon: <User size={16} />, color: 'var(--electric-blue)' },
+  { id: 'user', label: 'USER', desc: 'Access Net World, marketplace, wallet, messaging', icon: <User size={16} />, color: 'var(--electric-blue)' },
   { id: 'guest', label: 'GUEST', desc: 'Read-only access to public information', icon: <Eye size={16} />, color: 'var(--text-muted)' },
 ];
 

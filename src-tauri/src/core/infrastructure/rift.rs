@@ -46,11 +46,15 @@ pub struct ServerMetrics {
     pub last_updated: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, thiserror::Error)]
 pub enum HardwareValidationError {
+    #[error("CPU cores too low: minimum 2 required")]
     CpuTooLow,
+    #[error("Memory too low: minimum 4 GB required")]
     MemoryTooLow,
+    #[error("Storage too low: minimum 20 GB required")]
     StorageTooLow,
+    #[error("Network speed too low: minimum 100 Mbps required")]
     NetworkTooLow,
 }
 
@@ -77,6 +81,26 @@ pub struct RentalAgreement {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum RentalStatus { Active, Completed, Cancelled, Disputes }
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum RiftPaymentStatus {
+    Pending,
+    Completed,
+    Failed,
+    Refunded,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RiftPayment {
+    pub id: String,
+    pub rental_id: String,
+    pub transaction_id: String,
+    pub amount: f64,
+    pub currency: String,
+    pub status: RiftPaymentStatus,
+    pub payment_type: String,
+    pub created_at: i64,
+}
 
 pub struct RiftEngine {
     pub listings: Vec<ServerListing>,
@@ -151,7 +175,7 @@ impl RiftEngine {
     }
 
     pub fn return_server(&mut self, rental_id: &str) -> Result<(), String> {
-        let rental = self.active_rentals.iter_mut().find(|r| r.id == rental_id);
+        let rental = self.active_rentals.iter_mut().find(|r| r.server_id == rental_id);
         if let Some(rental) = rental {
             if rental.status != RentalStatus::Active {
                 return Err("Rental not active".to_string());

@@ -5,5 +5,6 @@ pub mod keys;
 pub mod cipher;
 pub mod hash;
 pub mod validator;
+pub mod wallet;
 #[cfg(test)]
 mod tests;

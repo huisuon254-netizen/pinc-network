@@ -10,12 +10,25 @@ pub const CREATE_IDENTITIES: &str = "
 CREATE TABLE IF NOT EXISTS identities (
     id                    TEXT PRIMARY KEY NOT NULL,
     node_id               TEXT NOT NULL,
+    username              TEXT NOT NULL DEFAULT '',
     public_key            TEXT NOT NULL,
     private_key_encrypted TEXT NOT NULL,
     fingerprint           TEXT NOT NULL,
     recovery_key_hash     TEXT NOT NULL,
     recovery_phrase_hash  TEXT NOT NULL,
     created_at            INTEGER NOT NULL
+);";
+
+pub const CREATE_CONTACTS: &str = "
+CREATE TABLE IF NOT EXISTS contacts (
+    id              TEXT PRIMARY KEY NOT NULL,
+    owner_node_id   TEXT NOT NULL,
+    contact_node_id TEXT NOT NULL,
+    contact_username TEXT NOT NULL DEFAULT '',
+    nickname        TEXT NOT NULL DEFAULT '',
+    status          TEXT NOT NULL DEFAULT 'pending',
+    created_at      INTEGER NOT NULL,
+    UNIQUE(owner_node_id, contact_node_id)
 );";
 
 pub const CREATE_VAULT_FILES: &str = "
@@ -242,4 +255,148 @@ CREATE TABLE IF NOT EXISTS rift_payments (
     payment_type       TEXT NOT NULL,
     created_at         INTEGER NOT NULL,
     FOREIGN KEY (rental_id) REFERENCES rift_rentals(id)
-);";;
+);";
+
+pub const CREATE_SHARED_CONNECTIONS: &str = "
+CREATE TABLE IF NOT EXISTS shared_connections (
+    id              TEXT PRIMARY KEY NOT NULL,
+    owner_node_id   TEXT NOT NULL,
+    peer_node_id    TEXT NOT NULL,
+    connection_type TEXT NOT NULL DEFAULT 'wifi',
+    max_bandwidth   REAL NOT NULL DEFAULT 0.0,
+    used_bandwidth  REAL NOT NULL DEFAULT 0.0,
+    price_per_gb    REAL NOT NULL DEFAULT 0.0,
+    status          TEXT NOT NULL DEFAULT 'active',
+    created_at      INTEGER NOT NULL
+);";
+
+pub const CREATE_PEER_BANDWIDTH_USAGE: &str = "
+CREATE TABLE IF NOT EXISTS peer_bandwidth_usage (
+    id          TEXT PRIMARY KEY NOT NULL,
+    peer_id     TEXT NOT NULL,
+    bytes_in    INTEGER NOT NULL DEFAULT 0,
+    bytes_out   INTEGER NOT NULL DEFAULT 0,
+    recorded_at INTEGER NOT NULL
+);";
+
+pub const CREATE_NET_STORE_PURCHASES: &str = "
+CREATE TABLE IF NOT EXISTS net_store_purchases (
+    id          TEXT PRIMARY KEY NOT NULL,
+    buyer_id    TEXT NOT NULL,
+    listing_id  TEXT NOT NULL,
+    amount      REAL NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'pending',
+    created_at  INTEGER NOT NULL,
+    FOREIGN KEY (listing_id) REFERENCES net_store_listings(id)
+);";
+
+pub const CREATE_NET_STORE_LISTINGS: &str = "
+CREATE TABLE IF NOT EXISTS net_store_listings (
+    id              TEXT PRIMARY KEY NOT NULL,
+    seller_node_id  TEXT NOT NULL,
+    title           TEXT NOT NULL,
+    description     TEXT NOT NULL DEFAULT '',
+    bandwidth_gb    REAL NOT NULL DEFAULT 0.0,
+    price_per_gb    REAL NOT NULL DEFAULT 0.0,
+    status          TEXT NOT NULL DEFAULT 'active',
+    created_at      INTEGER NOT NULL
+);";
+
+pub const CREATE_NET_SHARE_CODES: &str = "
+CREATE TABLE IF NOT EXISTS net_share_codes (
+    id              TEXT PRIMARY KEY NOT NULL,
+    code            TEXT NOT NULL UNIQUE,
+    owner_node_id   TEXT NOT NULL,
+    bandwidth_limit REAL NOT NULL DEFAULT 0.0,
+    expires_at      INTEGER NOT NULL,
+    used            INTEGER NOT NULL DEFAULT 0,
+    created_at      INTEGER NOT NULL
+);";
+
+pub const CREATE_MESSAGING_KEYS: &str = "
+CREATE TABLE IF NOT EXISTS messaging_keys (
+    id              TEXT PRIMARY KEY NOT NULL,
+    peer_id         TEXT NOT NULL,
+    public_key      TEXT NOT NULL,
+    private_key_enc TEXT NOT NULL,
+    key_type        TEXT NOT NULL DEFAULT 'signal',
+    created_at      INTEGER NOT NULL
+);";
+
+pub const CREATE_MESSAGES_INDEXES: &str = "
+CREATE INDEX IF NOT EXISTS idx_messages_peer_id ON messages(peer_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);";
+
+pub const CREATE_HOTSPOT_SESSIONS: &str = "
+CREATE TABLE IF NOT EXISTS hotspot_sessions (
+    id              TEXT PRIMARY KEY NOT NULL,
+    device_id       TEXT NOT NULL,
+    mac_address     TEXT NOT NULL,
+    ip_address      TEXT NOT NULL,
+    bytes_in        INTEGER NOT NULL DEFAULT 0,
+    bytes_out       INTEGER NOT NULL DEFAULT 0,
+    connected_at    INTEGER NOT NULL,
+    disconnected_at INTEGER
+);";
+
+pub const CREATE_ESCROW_HOLDS: &str = "
+CREATE TABLE IF NOT EXISTS escrow_holds (
+    id              TEXT PRIMARY KEY NOT NULL,
+    payer_node_id   TEXT NOT NULL,
+    payee_node_id   TEXT NOT NULL,
+    amount          REAL NOT NULL,
+    reason          TEXT NOT NULL DEFAULT '',
+    status          TEXT NOT NULL DEFAULT 'held',
+    created_at      INTEGER NOT NULL,
+    released_at     INTEGER
+);";
+
+pub const CREATE_CONVERSATIONS: &str = "
+CREATE TABLE IF NOT EXISTS conversations (
+    id          TEXT PRIMARY KEY NOT NULL,
+    peer_id     TEXT NOT NULL,
+    title       TEXT NOT NULL DEFAULT '',
+    is_group    INTEGER NOT NULL DEFAULT 0,
+    last_msg_at INTEGER NOT NULL,
+    created_at  INTEGER NOT NULL
+);";
+
+pub const CREATE_BILLING_TRANSACTIONS: &str = "
+CREATE TABLE IF NOT EXISTS billing_transactions (
+    id              TEXT PRIMARY KEY NOT NULL,
+    payer_node_id   TEXT NOT NULL,
+    payee_node_id   TEXT NOT NULL,
+    amount          REAL NOT NULL,
+    currency        TEXT NOT NULL DEFAULT 'PINC',
+    tx_type         TEXT NOT NULL DEFAULT 'transfer',
+    status          TEXT NOT NULL DEFAULT 'pending',
+    description     TEXT NOT NULL DEFAULT '',
+    created_at      INTEGER NOT NULL
+);";
+
+pub const CREATE_GAME_SESSIONS: &str = "
+CREATE TABLE IF NOT EXISTS game_sessions (
+    id              TEXT PRIMARY KEY NOT NULL,
+    game_id         TEXT NOT NULL,
+    player_ids      TEXT NOT NULL DEFAULT '[]',
+    wager_amount    REAL NOT NULL DEFAULT 0.0,
+    start_time      INTEGER NOT NULL,
+    end_time        INTEGER,
+    scores          TEXT NOT NULL DEFAULT '{}',
+    status          TEXT NOT NULL DEFAULT 'waiting',
+    winner_id       TEXT,
+    created_at      INTEGER NOT NULL
+);";
+
+pub const CREATE_GAME_PROGRESS: &str = "
+CREATE TABLE IF NOT EXISTS game_progress (
+    user_id              TEXT NOT NULL,
+    game_id              TEXT NOT NULL,
+    high_score           INTEGER DEFAULT 0,
+    total_play_time_secs INTEGER DEFAULT 0,
+    games_played         INTEGER DEFAULT 0,
+    last_played_at       INTEGER DEFAULT 0,
+    level                INTEGER,
+    metadata             TEXT,
+    PRIMARY KEY (user_id, game_id)
+);";

@@ -1,6 +1,5 @@
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use libp2p::{PeerId, Multiaddr};
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
@@ -27,6 +26,64 @@ pub enum P2PError {
 }
 
 pub type Result<T> = std::result::Result<T, P2PError>;
+
+pub struct WebRTCTransport {
+    _private: (),
+}
+impl WebRTCTransport {
+    pub async fn new() -> Result<Self> { Ok(Self { _private: () }) }
+    pub async fn discover_peers(&self) -> Result<Vec<P2PNode>> { Ok(vec![]) }
+    pub async fn connect(&self, _peer_id: &str) -> Result<P2PConnection> {
+        Err(P2PError::WebRTCError("Not implemented".to_string()))
+    }
+}
+
+pub struct WiFiDirectTransport {
+    _private: (),
+}
+impl WiFiDirectTransport {
+    pub async fn new() -> Result<Self> { Ok(Self { _private: () }) }
+    pub async fn discover_peers(&self) -> Result<Vec<P2PNode>> { Ok(vec![]) }
+    pub async fn connect(&self, _peer_id: &str) -> Result<P2PConnection> {
+        Err(P2PError::WiFiDirectError("Not implemented".to_string()))
+    }
+}
+
+pub struct BluetoothLETransport {
+    _private: (),
+}
+impl BluetoothLETransport {
+    pub async fn new() -> Result<Self> { Ok(Self { _private: () }) }
+    pub async fn discover_peers(&self) -> Result<Vec<P2PNode>> { Ok(vec![]) }
+    pub async fn connect(&self, _peer_id: &str) -> Result<P2PConnection> {
+        Err(P2PError::BluetoothLEError("Not implemented".to_string()))
+    }
+}
+
+pub struct QUICTransport {
+    _private: (),
+}
+impl QUICTransport {
+    pub async fn new() -> Result<Self> { Ok(Self { _private: () }) }
+    pub async fn discover_peers(&self) -> Result<Vec<P2PNode>> { Ok(vec![]) }
+    pub async fn connect(&self, _peer_id: &str) -> Result<P2PConnection> {
+        Err(P2PError::QUICError("Not implemented".to_string()))
+    }
+}
+
+pub struct KademliaDHT {
+    _private: (),
+}
+impl KademliaDHT {
+    pub async fn new() -> Result<Self> { Ok(Self { _private: () }) }
+}
+
+pub struct NATTraversal {
+    _private: (),
+}
+impl NATTraversal {
+    pub async fn new() -> Result<Self> { Ok(Self { _private: () }) }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct P2PNode {

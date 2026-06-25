@@ -12,3 +12,13 @@ Cargo.lock
 .env
 *.log
 .DS_Store
+
+# PINC data files
+*.keystore
+*.db
+*.db-wal
+*.db-shm
+vault/
+models/
+cache/
+logs/

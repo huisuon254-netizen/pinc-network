@@ -62,7 +62,7 @@ export default function AdminPage() {
           { l:'ONLINE',     v: String(onlinePeers),   c:'var(--neon-green)' },
           { l:'OFFLINE',    v: String(peers.length - onlinePeers),   c:'var(--neon-red)' },
           { l:'AVG LATENCY',  v: peers.length ? `${avgLatency.toFixed(0)}ms` : '—', c:'var(--neon-cyan)' },
-          { l:'VAULT FILES', v: nodeStatus?.vault_files !== undefined ? String(nodeStatus.vault_files) : '—', c:'var(--soft-purple)' },
+          { l:'STORAGE', v: nodeStatus?.vault_files !== undefined ? String(nodeStatus.vault_files) : '—', c:'var(--soft-purple)' },
           { l:'UPTIME',     v: uptime,   c:'var(--neon-yellow)' },
         ].map(s => (
           <div key={s.l} className="pinc-card" style={{ textAlign:'center', padding:'0.75rem' }}>
@@ -145,7 +145,7 @@ export default function AdminPage() {
                 ['Identity', nodeStatus?.identity_verified ? 'Verified' : 'Not verified'],
                 ['Peers Connected', String(peers.length)],
                 ['Online Peers', String(onlinePeers)],
-                ['Vault Files', String(nodeStatus?.vault_files ?? 0)],
+                ['Storage Items', String(nodeStatus?.vault_files ?? 0)],
                 ['Uptime', uptime],
               ].map(([l, v]) => (
                 <div key={l} style={{ display:'flex', justifyContent:'space-between', padding:'0.4rem 0', borderBottom:'1px solid var(--border)', fontSize:'0.72rem' }}>
@@ -192,7 +192,7 @@ export default function AdminPage() {
             <div style={{ fontSize:'0.65rem', color:'var(--text-muted)', letterSpacing:'0.2em', marginBottom:'0.5rem' }}>PINC ECOSYSTEM</div>
             <div style={{ fontSize:'1rem', color:'var(--text-primary)', fontWeight:600, marginBottom:'0.75rem' }}>Decentralized Platform</div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:'0.75rem', fontSize:'0.75rem', color:'var(--text-secondary)', lineHeight:1.8 }}>
-              <div>{['Encrypted identity management','P2P networking (libp2p)','Encrypted vault storage','Marketplace for jobs'].map(f => <div key={f}>• {f}</div>)}</div>
+              <div>{['Encrypted identity management','P2P networking (libp2p)','Encrypted distributed storage','Marketplace for jobs'].map(f => <div key={f}>• {f}</div>)}</div>
               <div>{['Payment & escrow system','Social feed','Wagering & tournaments','AI agent coordination'].map(f => <div key={f}>• {f}</div>)}</div>
             </div>
           </div>
@@ -201,7 +201,7 @@ export default function AdminPage() {
             {[
               ['PEERS', String(peers.length), 'var(--electric-blue)'],
               ['ONLINE', String(onlinePeers), 'var(--neon-green)'],
-              ['VAULT FILES', String(nodeStatus?.vault_files ?? 0), 'var(--soft-purple)'],
+              ['STORAGE', String(nodeStatus?.vault_files ?? 0), 'var(--soft-purple)'],
             ].map(([l,v,c]) => (
               <div key={l} className="pinc-card" style={{ textAlign:'center' }}>
                 <div style={{ fontSize:'0.6rem', color:'var(--text-muted)', marginBottom:'6px' }}>{l}</div>
@@ -215,7 +215,7 @@ export default function AdminPage() {
             {[
               { engine:'Identity Engine',    status: nodeStatus?.identity_verified ? 'active' : 'pending', color: nodeStatus?.identity_verified ? 'var(--neon-green)' : 'var(--neon-yellow)' },
               { engine:'Network Engine',     status: peers.length > 0 ? 'active' : 'connecting', color: peers.length > 0 ? 'var(--neon-green)' : 'var(--neon-yellow)' },
-              { engine:'Vault Engine',       status: (nodeStatus?.vault_files ?? 0) > 0 ? 'active' : 'ready', color: (nodeStatus?.vault_files ?? 0) > 0 ? 'var(--neon-green)' : 'var(--neon-yellow)' },
+              { engine:'Storage Engine',       status: (nodeStatus?.vault_files ?? 0) > 0 ? 'active' : 'ready', color: (nodeStatus?.vault_files ?? 0) > 0 ? 'var(--neon-green)' : 'var(--neon-yellow)' },
               { engine:'Messaging Engine',   status: 'active', color: 'var(--neon-green)' },
               { engine:'Marketplace Engine', status: 'ready', color: 'var(--neon-yellow)' },
               { engine:'Payment Engine',     status: 'ready', color: 'var(--neon-yellow)' },

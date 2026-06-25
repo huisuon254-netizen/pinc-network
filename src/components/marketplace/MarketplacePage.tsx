@@ -156,7 +156,7 @@ const MOCK_LISTINGS: MarketplaceListing[] = [
     category: "gift_cards",
     image_url: "",
     seller_address: "pin_seller_j0k1l2",
-    seller_name: "GiftVault",
+    seller_name: "GiftHub",
     created_at: "2026-06-10T09:45:00Z",
     stock: 200,
     sold: 88,

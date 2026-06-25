@@ -27,7 +27,7 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 # Cryptography
 chacha20poly1305 = "0.10"
 ed25519-dalek = { version = "2", features = ["rand_core"] }
-x25519-dalek = "2"
+x25519-dalek = { version = "2", features = ["static_secrets"] }
 hkdf = "0.12"
 rand = "0.8"
 sha2 = "0.10"
@@ -40,6 +40,8 @@ uuid = { version = "1", features = ["v4"] }
 bip39 = "2"
 base64 = "0.22"
 hex = "0.4"
+ethers-core = "2.0"
+ethers-signers = "2.0"
 
 # Error handling
 thiserror = "1"
@@ -63,33 +65,43 @@ time = "=0.3.36"
 quinn = "0.11"
 rustls = { version = "0.23", features = ["ring"] }
 rcgen = "0.13"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "multipart"] }
+tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
+futures-util = "0.3"
 
 # Vendored OpenSSL for Android cross-compilation
 openssl = { version = "0.10", features = ["vendored"] }
+
+# System directories
+dirs = "5"
+libc = "0.2"
 
 # QR Code generation
 qrcode = { version = "0.14", features = ["image"] }
 image = { version = "0.25", features = ["png"] }
 
-# P2P Discovery
-libp2p = { version = "0.55", features = ["kad", "mdns", "identify", "ping", "tcp", "quic", "noise", "yamux", "dcutr", "relay", "websocket", "autonat", "request-response"] }
-multiaddr = "0.18"
+# Tauri plugins
+tauri-plugin-notification = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-http = "2"
+tauri-plugin-deep-link = "2"
 
-# AI Phase 10 - Whisper
+# P2P Discovery — TCP-based (no libp2p dependency)
+
+# AI Phase 10 — Desktop only (not Android)
+[target.'cfg(not(target_os = "android"))'.dependencies]
 whisper-rs = "0.5"
-
-# AI Phase 10 - Llama.cpp
 llama-rs = "0.16.1"
-
-# AI Phase 10 - ONNX
-ort = { version = "2.0", features = ["ndarray"] }
-
-# AI Phase 10 - TTS
-speechdsp = "0.2"
-
-# Model caching
+ort = { version = "2.0.0-rc.12", features = ["ndarray"] }
+ndarray = "0.16"
 redis = "0.23"
+hostname = "0.3"
+
+[target.'cfg(target_os = "android")'.dependencies]
+hostname = "0.3"
 
 [profile.dev]
 incremental = true
@@ -100,6 +112,12 @@ codegen-units = 16
 opt-level = "s"
 lto = false
 strip = true
+
+[target.'cfg(target_os = "android")'.profile.release]
+opt-level = "s"
+lto = false
+strip = true
+codegen-units = 16
 
 [dev-dependencies]
 tempfile = "3"

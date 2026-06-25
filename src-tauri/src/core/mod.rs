@@ -10,6 +10,10 @@ pub mod settings;
 pub mod telemetry;
 pub mod validation;
 pub mod net_share;
+pub mod networking;
+pub mod p2p;
+pub mod config;
+pub mod data;
 
 // Phase 4
 pub mod distributed;
@@ -35,3 +39,6 @@ pub mod infrastructure;
 pub mod security;
 // Phase 15
 pub mod ecosystem;
+pub mod games;
+pub mod admin;
+pub mod commands;

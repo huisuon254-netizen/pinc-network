@@ -14,18 +14,19 @@ use crate::core::{
     },
 };
 
-pub fn create_identity(db: &Database, master_key: &[u8; 32]) -> Result<Identity, IdentityError> {
+pub fn create_identity(db: &Database, master_key: &[u8; 32], username: &str) -> Result<Identity, IdentityError> {
     let mut entropy = [0u8; 32];
     rand::RngCore::fill_bytes(&mut rand::thread_rng(), &mut entropy);
     let mnemonic = bip39::Mnemonic::from_entropy(&entropy)
         .map_err(|e| IdentityError::KeyGenerationFailed(e.to_string()))?;
-    build_identity_from_phrase(db, &mnemonic, master_key)
+    build_identity_from_phrase(db, &mnemonic, master_key, username)
 }
 
 pub fn build_identity_from_phrase(
     db: &Database,
     mnemonic: &bip39::Mnemonic,
     master_key: &[u8; 32],
+    username: &str,
 ) -> Result<Identity, IdentityError> {
     // Step 1: Keypair
     let (pub_bytes, priv_bytes) = generate_keypair()
@@ -42,10 +43,15 @@ pub fn build_identity_from_phrase(
     blob.extend_from_slice(&enc.ciphertext);
     let private_key_encrypted = B64.encode(&blob);
 
-    // Step 4: Node ID  — PINC-XX-XXXX format
-    let uid = Uuid::new_v4().to_string().to_uppercase();
-    let parts: Vec<&str> = uid.split('-').collect();
-    let node_id = format!("PINC-{}-{}", &parts[0][..2], &parts[1][..4]);
+    // Step 4: Node ID — 7-character alphanumeric (base36 encoded random bytes)
+    let mut id_bytes = [0u8; 5];
+    rand::RngCore::fill_bytes(&mut rand::thread_rng(), &mut id_bytes);
+    let id_num = u64::from_be_bytes({
+        let mut buf = [0u8; 8];
+        buf[3..].copy_from_slice(&id_bytes);
+        buf
+    });
+    let node_id = format!("{:07}", id_num % 10_000_000);
 
     // Step 5: Timestamps and hashes
     let created_at = SystemTime::now().duration_since(UNIX_EPOCH)
@@ -59,6 +65,7 @@ pub fn build_identity_from_phrase(
     let identity = Identity {
         id,
         node_id,
+        username: username.to_string(),
         public_key: B64.encode(&pub_bytes),
         private_key_encrypted,
         fingerprint: fp.hash,

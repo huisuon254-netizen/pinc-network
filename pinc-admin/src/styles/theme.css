@@ -1,0 +1,55 @@
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1a2035;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1c2540;
+  --border: #1e2a45;
+  --border-active: #2563eb;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-blue: #2563eb;
+  --accent-cyan: #06b6d4;
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
+  --accent-yellow: #f59e0b;
+  --accent-purple: #8b5cf6;
+  --accent-orange: #f97316;
+  --accent-pink: #ec4899;
+  --neon-blue: #3b82f6;
+  --neon-cyan: #22d3ee;
+  --neon-green: #34d399;
+  --neon-red: #f87171;
+  --neon-yellow: #fbbf24;
+  --neon-purple: #a78bfa;
+  --glow-blue: 0 0 10px rgba(37,99,235,0.3);
+  --glow-cyan: 0 0 10px rgba(6,182,212,0.3);
+  --glow-green: 0 0 10px rgba(16,185,129,0.3);
+  --glow-red: 0 0 10px rgba(239,68,68,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+input, select, textarea {
+  font-family: inherit;
+  outline: none;
+}
+
+button {
+  font-family: inherit;
+  outline: none;
+}

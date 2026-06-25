@@ -7,6 +7,8 @@ pub fn validate_identity(id: &Identity) -> Result<(), IdentityError> {
     if id.private_key_encrypted.is_empty() { return Err(IdentityError::ValidationFailed("private_key_encrypted empty".into())); }
     if id.fingerprint.is_empty() { return Err(IdentityError::ValidationFailed("fingerprint empty".into())); }
     if id.created_at <= 0 { return Err(IdentityError::ValidationFailed("invalid timestamp".into())); }
-    if !id.node_id.starts_with("PINC-") { return Err(IdentityError::ValidationFailed("node_id must start with PINC-".into())); }
+    if id.node_id.len() != 7 || !id.node_id.chars().all(|c| c.is_ascii_digit()) {
+        return Err(IdentityError::ValidationFailed("node_id must be 7 digits".into()));
+    }
     Ok(())
 }

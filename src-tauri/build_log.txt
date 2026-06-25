@@ -1,0 +1,257 @@
+   Compiling pinc v3.0.0 (/home/rachael/pinc-network/src-tauri)
+error: expected item after attributes
+   --> src/core/database/queries.rs:694:1
+    |
+694 | #[derive(Debug, Clone, Serialize, Deserialize)]
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: expected one of `:`, `;`, `=`, `@`, or `|`, found `_start`
+   --> src/commands.rs:129:23
+    |
+129 |             let ping_ _start = std::time::Instant::now();
+    |                       ^^^^^^ expected one of `:`, `;`, `=`, `@`, or `|`
+
+error: expected one of `:`, `;`, `=`, `@`, or `|`, found `_start`
+   --> src/commands.rs:137:15
+    |
+137 |     let test_ _start = std::time::Instant::now();
+    |               ^^^^^^ expected one of `:`, `;`, `=`, `@`, or `|`
+
+error: expected `;`
+   --> src/commands.rs:129:23
+    |
+129 |             let ping_ _start = std::time::Instant::now();
+    |                       ^^^^^^
+
+error[E0433]: cannot find `__tauri_command_name_cmd_run_speed_test` in `commands`
+   --> src/lib.rs:69:25
+    |
+ 69 |           .invoke_handler(tauri::generate_handler![
+    |  _________________________^
+ 70 | |             // Startup
+ 71 | |             commands::cmd_run_startup,
+...   |
+135 | |             commands::cmd_toggle_net_share,
+136 | |         ])
+    | |_________^ could not find `__tauri_command_name_cmd_run_speed_test` in `commands`
+    |
+    = note: this error originates in the macro `tauri::generate_handler` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: cannot find `__cmd__cmd_run_speed_test` in `commands`
+  --> src/lib.rs:76:23
+   |
+76 |             commands::cmd_run_speed_test,
+   |                       ^^^^^^^^^^^^^^^^^^ could not find `__cmd__cmd_run_speed_test` in `commands`
+
+warning: unused import: `fingerprint::device_fingerprint`
+ --> src/core/identity/recovery.rs:4:39
+  |
+4 |     identity::{errors::IdentityError, fingerprint::device_fingerprint, generator::bui...
+  |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `errors::NetworkError`
+ --> src/core/network/peer.rs:2:28
+  |
+2 | use crate::core::network::{errors::NetworkError, types::PeerInfo};
+  |                            ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+ --> src/core/net_share/mod.rs:2:17
+  |
+2 | use std::sync::{Arc, Mutex};
+  |                 ^^^  ^^^^^
+
+warning: unused imports: `SystemTime` and `UNIX_EPOCH`
+ --> src/core/distributed/chunker.rs:7:17
+  |
+7 | use std::time::{SystemTime, UNIX_EPOCH};
+  |                 ^^^^^^^^^^  ^^^^^^^^^^
+
+warning: unused import: `DEFAULT_REPLICATION_FACTOR`
+ --> src/core/distributed/replication.rs:3:40
+  |
+3 |     types::{ChunkReplica, StorageNode, DEFAULT_REPLICATION_FACTOR},
+  |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `verify_chunk_integrity`
+ --> src/core/distributed/retrieval.rs:5:34
+  |
+5 |     chunker::{reassemble_chunks, verify_chunk_integrity},
+  |                                  ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `MessageStatus`
+ --> src/core/messaging/router.rs:2:71
+  |
+2 | ...:MessagingError, types::{Message, MessageStatus, OfflineMessageQueue}};
+  |                                      ^^^^^^^^^^^^^
+
+warning: unused import: `WorkerProfile`
+ --> src/core/marketplace/engine.rs:5:69
+  |
+5 |     types::{Bid, BidStatus, Job, JobStatus, Milestone, ProofOfWork, WorkerProfile},
+  |                                                                     ^^^^^^^^^^^^^
+
+warning: unused import: `crate::core::reputation::errors::RepuationError`
+ --> src/core/reputation/engine.rs:3:5
+  |
+3 | use crate::core::reputation::errors::RepuationError;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Route`
+ --> src/core/routing/engine.rs:3:49
+  |
+3 | use crate::core::routing::types::{MultiHopPath, Route, RoutingTable};
+  |                                                 ^^^^^
+
+warning: unused import: `chrono`
+ --> src/core/infrastructure/rift.rs:4:5
+  |
+4 | use chrono;
+  |     ^^^^^^
+
+warning: unused import: `SpeedTestResult`
+  --> src/commands.rs:45:34
+   |
+45 |             nexus::{NexusEngine, SpeedTestResult},
+   |                                  ^^^^^^^^^^^^^^^
+
+warning: unused import: `errors::AppError`
+ --> src/startup.rs:7:5
+  |
+7 |     errors::AppError,
+  |     ^^^^^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+   --> src/commands.rs:397:5
+    |
+395 | pub async fn cmd_has_identity( _state: State<'_, AppState>) -> Result<bool, String> {
+    |                                                                -------------------- expected `Result<bool, std::string::String>` because of return type
+396 |     let db = state.db.lock().unwrap();
+397 |     identity_count(&db).unwrap_or(0) > 0
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Result<bool, String>`, found `bool`
+    |
+    = note: expected enum `Result<bool, std::string::String>`
+               found type `bool`
+help: try wrapping the expression in `Ok`
+    |
+397 |     Ok(identity_count(&db).unwrap_or(0) > 0)
+    |     +++                                    +
+
+error[E0308]: mismatched types
+   --> src/commands.rs:462:5
+    |
+453 |   pub async fn cmd_get_node_status( _state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    |                                                                     --------------------------------- expected `Result<serde_json::Value, std::string::String>` because of return type
+...
+462 | /     serde_json::json!({
+463 | |         "online": true,
+464 | |         "peer_count": peers.online_count(),
+465 | |         "vault_file_count": files.len(),
+...   |
+470 | |         "peer_connections": snap.peer_connections,
+471 | |     })
+    | |______^ expected `Result<Value, String>`, found `Value`
+    |
+    = note: expected enum `Result<serde_json::Value, std::string::String>`
+               found enum `serde_json::Value`
+    = note: this error originates in the macro `$crate::json_internal` which comes from the expansion of the macro `serde_json::json` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+   --> src/commands.rs:532:5
+    |
+519 |   pub async fn cmd_get_network_status( _state: State<'_, AppState>) -> Result<NetworkStatus, String> {
+    |                                                                        ----------------------------- expected `Result<NetworkStatus, std::string::String>` because of return type
+...
+532 | /     NetworkStatus {
+533 | |         online,
+534 | |         peer_count: online_peer_count,
+535 | |         relay_count,
+...   |
+539 | |         nat_traversal,
+540 | |     }
+    | |_____^ expected `Result<NetworkStatus, String>`, found `NetworkStatus`
+    |
+    = note: expected enum `Result<NetworkStatus, std::string::String>`
+             found struct `NetworkStatus`
+help: try wrapping the expression in `Ok`
+    |
+532 ~     Ok(NetworkStatus {
+533 |         online,
+...
+539 |         nat_traversal,
+540 ~     })
+    |
+
+error[E0308]: mismatched types
+    --> src/commands.rs:1337:5
+     |
+1334 |   pub async fn cmd_get_metrics( _state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+     |                                                                 --------------------------------- expected `Result<serde_json::Value, std::string::String>` because of return type
+...
+1337 | /     serde_json::json!({
+1338 | |         "messages_relayed": snap.messages_relayed,
+1339 | |         "vault_operations": snap.vault_operations,
+1340 | |         "peer_connections": snap.peer_connections,
+1341 | |     })
+     | |______^ expected `Result<Value, String>`, found `Value`
+     |
+     = note: expected enum `Result<serde_json::Value, std::string::String>`
+                found enum `serde_json::Value`
+     = note: this error originates in the macro `$crate::json_internal` which comes from the expansion of the macro `serde_json::json` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: async commands that contain references as inputs must return a `Result`
+  --> src/commands.rs:85:63
+   |
+85 | pub async fn cmd_run_startup( _state: State<'_, AppState>) -> StartupReport {
+   |                                                               ^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `commands::_::AsyncCommandMustReturnResult` is not implemented for `StartupReport`
+  --> src/startup.rs:19:1
+   |
+19 | pub struct StartupReport {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^
+help: the trait `commands::_::AsyncCommandMustReturnResult` is implemented for `Result<A, B>`
+  --> src/commands.rs:85:63
+   |
+85 | pub async fn cmd_run_startup( _state: State<'_, AppState>) -> StartupReport {
+   |                                                               ^^^^^^^^^^^^^
+   = note: required for the cast from `&StartupReport` to `&dyn commands::_::AsyncCommandMustReturnResult`
+
+error[E0277]: async commands that contain references as inputs must return a `Result`
+  --> src/commands.rs:99:68
+   |
+99 | pub async fn cmd_get_admin_status( _state: State<'_, AppState>) -> KingsmanStatus {
+   |                                                                    ^^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `commands::_::AsyncCommandMustReturnResult` is not implemented for `KingsmanStatus`
+  --> src/core/security/kingsman.rs:5:1
+   |
+ 5 | pub struct KingsmanStatus {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^
+help: the trait `commands::_::AsyncCommandMustReturnResult` is implemented for `Result<A, B>`
+  --> src/commands.rs:99:68
+   |
+99 | pub async fn cmd_get_admin_status( _state: State<'_, AppState>) -> KingsmanStatus {
+   |                                                                    ^^^^^^^^^^^^^^
+   = note: required for the cast from `&KingsmanStatus` to `&dyn commands::_::AsyncCommandMustReturnResult`
+
+warning: unused variable: `max_price`
+  --> src/core/distributed/storage_market.rs:55:5
+   |
+55 |     max_price: f64,
+   |     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_max_price`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `price`
+   --> src/core/infrastructure/rift.rs:115:66
+    |
+115 | ...r, price: f64, specs: HardwareSpecs) -> Result<ServerListing, HardwareValidation...
+    |       ^^^^^ help: if this is intentional, prefix it with an underscore: `_price`
+
+Some errors have detailed explanations: E0277, E0308, E0433.
+For more information about an error, try `rustc --explain E0277`.
+warning: `pinc` (lib) generated 15 warnings
+error: could not compile `pinc` (lib) due to 12 previous errors; 15 warnings emitted

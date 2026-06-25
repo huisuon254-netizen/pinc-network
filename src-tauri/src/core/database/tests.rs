@@ -8,7 +8,7 @@ mod tests {
 
     fn mock_id(id: &str) -> Identity {
         Identity {
-            id: id.to_string(), node_id: format!("PINC-AB-1234"),
+            id: id.to_string(), node_id: "1234567".to_string(), username: "test".to_string(),
             public_key: "cHVia2V5".to_string(),
             private_key_encrypted: "ZW5jcnlwdGVk".to_string(),
             fingerprint: "fp_abc123".to_string(),

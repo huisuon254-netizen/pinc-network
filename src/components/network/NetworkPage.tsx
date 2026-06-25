@@ -34,7 +34,7 @@ export default function NetworkPage() {
     const checks = [
       { component: 'Database', check: async () => { await invoke('cmd_get_node_status'); return 'Operational'; } },
       { component: 'Network', check: async () => { const s = await invoke<any>('cmd_get_network_status'); return s.online ? 'Online' : 'Offline'; } },
-      { component: 'Vault', check: async () => { const f = await invoke<any[]>('cmd_list_vault'); return `${f.length} files stored`; } },
+      { component: 'Storage', check: async () => { await invoke('cmd_get_distributed_status'); return 'Distributed storage ready'; } },
       { component: 'Peers', check: async () => { const p = await invoke<any[]>('cmd_get_peers'); return `${p.length} connected`; } },
       { component: 'Identity', check: async () => { const i = await invoke<any>('cmd_get_identity'); return i ? 'Verified' : 'Not found'; } },
       { component: 'Settings', check: async () => { await invoke('cmd_get_settings'); return 'Loaded'; } },
