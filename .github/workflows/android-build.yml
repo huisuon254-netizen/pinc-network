@@ -50,7 +50,7 @@ jobs:
         continue-on-error: true
 
       - name: Build Android APK
-        run: cd src-tauri && npx tauri android build --target aarch64-linux-android
+        run: cd src-tauri && npx tauri android build --target aarch64
         timeout-minutes: 30
 
       - name: Find APK
@@ -126,7 +126,7 @@ jobs:
 
       - name: Build Admin Android APK
         working-directory: pinc-admin/src-tauri
-        run: npx tauri android build --target aarch64-linux-android
+        run: npx tauri android build --target aarch64
         timeout-minutes: 30
 
       - name: Find APK
