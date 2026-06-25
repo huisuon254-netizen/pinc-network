@@ -77,7 +77,7 @@ jobs:
           APK_PATH="${{ steps.find-apk.outputs.apk_path }}"
           if [ -n "$APK_PATH" ] && [ -f "$APK_PATH" ]; then
             zipalign -v 4 "$APK_PATH" pinc-aligned.apk
-            apksigner sign --ks release.keystore --ks-pass pass:pinc123 --key-alias pinc-release --out pinc-android.apk pinc-aligned.apk
+            apksigner sign --ks release.keystore --ks-pass pass:pinc123 --ks-key-alias pinc-release --out pinc-android.apk pinc-aligned.apk
           fi
 
       - name: Upload APK Artifact
@@ -162,7 +162,7 @@ jobs:
           APK_PATH="${{ steps.find-apk.outputs.apk_path }}"
           if [ -n "$APK_PATH" ] && [ -f "$APK_PATH" ]; then
             zipalign -v 4 "$APK_PATH" pinc-admin-aligned.apk
-            apksigner sign --ks release.keystore --ks-pass pass:pinc123 --key-alias pinc-admin --out pinc-admin-android.apk pinc-admin-aligned.apk
+            apksigner sign --ks release.keystore --ks-pass pass:pinc123 --ks-key-alias pinc-admin --out pinc-admin-android.apk pinc-admin-aligned.apk
           fi
 
       - name: Upload Admin APK
