@@ -37,6 +37,7 @@ jobs:
           NDK_BIN="$ANDROID_HOME/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin"
           echo "NDK_BIN=$NDK_BIN" >> $GITHUB_ENV
           echo "$NDK_BIN" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH
 
       - name: Set Android cross-compilation env
         run: |
@@ -72,13 +73,11 @@ jobs:
 
       - name: Sign APK
         run: |
-          # Create a release keystore
           keytool -genkeypair -v -keystore release.keystore -alias pinc-release -keyalg RSA -keysize 2048 -validity 10000 -storepass pinc123 -dname "CN=PINC, OU=Dev, O=PINC, L=Unknown, ST=Unknown, C=US"
-          # Sign the APK
           APK_PATH="${{ steps.find-apk.outputs.apk_path }}"
           if [ -n "$APK_PATH" ] && [ -f "$APK_PATH" ]; then
-            jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore release.keystore -storepass pinc123 "$APK_PATH" pinc-release
-            zipalign -v 4 "$APK_PATH" pinc-android.apk
+            zipalign -v 4 "$APK_PATH" pinc-aligned.apk
+            apksigner sign --ks release.keystore --ks-pass pass:pinc123 --key-alias pinc-release --out pinc-android.apk pinc-aligned.apk
           fi
 
       - name: Upload APK Artifact
@@ -120,6 +119,7 @@ jobs:
           NDK_BIN="$ANDROID_HOME/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin"
           echo "NDK_BIN=$NDK_BIN" >> $GITHUB_ENV
           echo "$NDK_BIN" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH
 
       - name: Set Android cross-compilation env
         run: |
@@ -161,8 +161,8 @@ jobs:
           keytool -genkeypair -v -keystore release.keystore -alias pinc-admin -keyalg RSA -keysize 2048 -validity 10000 -storepass pinc123 -dname "CN=PINC Admin, OU=Dev, O=PINC, L=Unknown, ST=Unknown, C=US"
           APK_PATH="${{ steps.find-apk.outputs.apk_path }}"
           if [ -n "$APK_PATH" ] && [ -f "$APK_PATH" ]; then
-            jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore release.keystore -storepass pinc123 "$APK_PATH" pinc-admin
-            zipalign -v 4 "$APK_PATH" pinc-admin-android.apk
+            zipalign -v 4 "$APK_PATH" pinc-admin-aligned.apk
+            apksigner sign --ks release.keystore --ks-pass pass:pinc123 --key-alias pinc-admin --out pinc-admin-android.apk pinc-admin-aligned.apk
           fi
 
       - name: Upload Admin APK
