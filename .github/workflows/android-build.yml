@@ -34,7 +34,17 @@ jobs:
       - name: Install Android NDK
         run: |
           sdkmanager "ndk;27.0.12077973" "build-tools;34.0.0" "platforms;android-34"
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          NDK_BIN="$ANDROID_HOME/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          echo "NDK_BIN=$NDK_BIN" >> $GITHUB_ENV
+          echo "$NDK_BIN" >> $GITHUB_PATH
+
+      - name: Set Android cross-compilation env
+        run: |
+          NDK_BIN="$ANDROID_HOME/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          echo "CC_aarch64_linux_android=$NDK_BIN/aarch64-linux-android34-clang" >> $GITHUB_ENV
+          echo "CXX_aarch64_linux_android=$NDK_BIN/aarch64-linux-android34-clang++" >> $GITHUB_ENV
+          echo "AR_aarch64_linux_android=$NDK_BIN/llvm-ar" >> $GITHUB_ENV
+          echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$NDK_BIN/aarch64-linux-android34-clang" >> $GITHUB_ENV
 
       - name: Install cargo-tauri
         run: cargo install tauri-cli
@@ -107,6 +117,17 @@ jobs:
       - name: Install Android NDK
         run: |
           sdkmanager "ndk;27.0.12077973" "build-tools;34.0.0" "platforms;android-34"
+          NDK_BIN="$ANDROID_HOME/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          echo "NDK_BIN=$NDK_BIN" >> $GITHUB_ENV
+          echo "$NDK_BIN" >> $GITHUB_PATH
+
+      - name: Set Android cross-compilation env
+        run: |
+          NDK_BIN="$ANDROID_HOME/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          echo "CC_aarch64_linux_android=$NDK_BIN/aarch64-linux-android34-clang" >> $GITHUB_ENV
+          echo "CXX_aarch64_linux_android=$NDK_BIN/aarch64-linux-android34-clang++" >> $GITHUB_ENV
+          echo "AR_aarch64_linux_android=$NDK_BIN/llvm-ar" >> $GITHUB_ENV
+          echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$NDK_BIN/aarch64-linux-android34-clang" >> $GITHUB_ENV
 
       - name: Install cargo-tauri
         run: cargo install tauri-cli
