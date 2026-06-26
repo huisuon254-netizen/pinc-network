@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 
 use crate::core::database::connection::Database;
 use crate::core::database::queries;
@@ -7,6 +6,12 @@ use crate::core::games::types::{now_secs, GameSession, GameSessionSummary, Sessi
 
 pub struct SessionManager {
     sessions: HashMap<String, GameSession>,
+}
+
+impl Default for SessionManager {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SessionManager {
@@ -97,7 +102,6 @@ impl SessionManager {
         session.players.push(player_id.to_string());
 
         let result = session.clone();
-        drop(session);
         self.persist_session(&result, db)?;
         Ok(result)
     }
@@ -126,7 +130,6 @@ impl SessionManager {
         }
 
         let result = session.clone();
-        drop(session);
         self.persist_session(&result, db)?;
         Ok(result)
     }
@@ -156,7 +159,6 @@ impl SessionManager {
         session.started_at = Some(now_secs());
 
         let result = session.clone();
-        drop(session);
         self.persist_session(&result, db)?;
         Ok(result)
     }
@@ -183,7 +185,6 @@ impl SessionManager {
         session.scores.insert(player_id.to_string(), score);
 
         let result = session.clone();
-        drop(session);
         self.persist_session(&result, db)?;
         Ok(result)
     }
@@ -202,7 +203,6 @@ impl SessionManager {
         session.ended_at = Some(now_secs());
 
         let result = session.clone();
-        drop(session);
         self.persist_session(&result, db)?;
         Ok(result)
     }

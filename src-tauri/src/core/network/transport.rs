@@ -85,10 +85,7 @@ pub async fn connect_to_node(
 /// Accept an incoming connection from the server endpoint
 pub async fn accept_connection(endpoint: &Endpoint) -> Option<Connection> {
     let incoming = endpoint.accept().await?;
-    match incoming.await {
-        Ok(conn) => Some(conn),
-        Err(_) => None,
-    }
+    incoming.await.ok()
 }
 
 /// Send a framed message over a QUIC stream

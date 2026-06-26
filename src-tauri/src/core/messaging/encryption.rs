@@ -22,7 +22,7 @@ pub fn encrypt_message(
     }
     let shared_secret = derive_shared_secret(sender_private_key, recipient_public_key);
     encrypt_with_secret(shared_secret.as_bytes(), plaintext)
-        .map_err(|e| MessagingError::EncryptionFailed(e))
+        .map_err(MessagingError::EncryptionFailed)
 }
 
 /// Decrypt a message using recipient's private key + sender's public key.
@@ -36,7 +36,7 @@ pub fn decrypt_message(
 ) -> Result<Vec<u8>, MessagingError> {
     let shared_secret = derive_shared_secret(recipient_private_key, sender_public_key);
     decrypt_with_secret(shared_secret.as_bytes(), ciphertext)
-        .map_err(|e| MessagingError::DecodeFailed(e))
+        .map_err(MessagingError::DecodeFailed)
 }
 
 /// Real X25519 Diffie-Hellman key agreement.

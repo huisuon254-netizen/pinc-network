@@ -70,7 +70,7 @@ pub fn mark_condition_met(escrow: &mut Escrow, condition_index: usize) -> Result
     let c = escrow
         .conditions
         .get_mut(condition_index)
-        .ok_or_else(|| PaymentError::ConditionsNotMet)?;
+        .ok_or(PaymentError::ConditionsNotMet)?;
     c.met = true;
     c.verified_at = Some(now_secs());
     Ok(())

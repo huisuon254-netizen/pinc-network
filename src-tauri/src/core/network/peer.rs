@@ -1,4 +1,4 @@
-use crate::core::network::{errors::NetworkError, types::PeerInfo};
+use crate::core::network::types::PeerInfo;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},

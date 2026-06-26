@@ -1,5 +1,4 @@
 use crate::core::database::connection::Database;
-use crate::core::database::errors::DatabaseError;
 use crate::core::messaging::encryption::{
     decrypt_message, encrypt_message, generate_messaging_keypair,
 };
@@ -68,7 +67,7 @@ fn now_secs() -> i64 {
 }
 
 fn make_conversation_id(a: &str, b: &str) -> String {
-    let mut parts = vec![a, b];
+    let mut parts = [a, b];
     parts.sort();
     format!("conv-{}-{}", parts[0], parts[1])
 }
@@ -341,7 +340,7 @@ pub fn get_conversations(
             unread_count,
             encrypted,
             last_content,
-            sender_id,
+            _sender_id,
         ) = row.map_err(|e| MessagingError::EncryptionFailed(e.to_string()))?;
 
         // Extract peer_id from participants

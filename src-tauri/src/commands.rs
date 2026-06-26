@@ -16,11 +16,9 @@ use crate::{
         database::{
             connection::Database,
             queries::{
-                delete_vault_file, get_settings_row, identity_count, insert_job, insert_post,
-                insert_tournament, insert_vault_file, insert_wager, list_ai_agents, list_jobs,
+                delete_vault_file, get_settings_row, identity_count, insert_job, insert_post, insert_vault_file, insert_wager, list_ai_agents, list_jobs,
                 list_posts, list_storage_contracts, list_transactions, list_vault_files,
-                list_wagers, load_first_identity, load_peers, log_activity, update_peer_last_seen,
-                update_peer_online, upsert_peer, upsert_settings,
+                list_wagers, load_first_identity, load_peers, log_activity, upsert_peer, upsert_settings,
             },
         },
         distributed::types::StorageContract,
@@ -29,25 +27,20 @@ use crate::{
         infrastructure::{
             nexus::{NexusEngine, SpeedTestResult},
             rift::{
-                HardwareSpecs, RentalAgreement, RentalPeriod, RiftEngine, RiftPayment,
-                RiftPaymentStatus, ServerListing, ServerMetrics,
+                HardwareSpecs, RentalAgreement, RentalPeriod, RiftEngine, ServerListing, ServerMetrics,
             },
         },
-        marketplace::{
-            engine::{create_job, submit_bid},
-            types::{Job, JobStatus},
-        },
+        marketplace::types::{Job, JobStatus},
         messaging::{
             router::MessageRouter,
             types::{Message, MessageStatus, MessageType},
         },
         net_share::NetShareEngine,
         network::{
-            bandwidth::{measure_latency_ms, BandwidthMonitor},
-            discovery::{self, Discovery},
+            bandwidth::BandwidthMonitor,
+            discovery::Discovery,
             peer::PeerRegistry,
             relay::RelayManager,
-            transport::{connect_to_node, create_client_endpoint, generate_node_cert},
             types::{NetworkStatus, PeerInfo},
         },
         p2p::p2p_network::P2PNetwork,
@@ -244,7 +237,7 @@ pub fn cmd_set_ghost_origin_hops(
     state: State<'_, AppState>,
     hops: u8,
 ) -> Result<GhostOriginStatus, String> {
-    if hops < 1 || hops > 7 {
+    if !(1..=7).contains(&hops) {
         return Err("Hops must be between 1 and 7".to_string());
     }
     let mut ghost = state.ghost_origin.lock().map_err(|e| e.to_string())?;
@@ -265,7 +258,7 @@ pub async fn cmd_run_speed_test(state: State<'_, AppState>) -> Result<SpeedTestR
         .timeout(std::time::Duration::from_secs(15))
         .build()
         .map_err(|e| e.to_string())?;
-    let latency = measure_public_latency(&client).await.unwrap_or_else(|_| 0);
+    let latency = measure_public_latency(&client).await.unwrap_or(0);
     let jitter = measure_public_jitter(&client).await.unwrap_or(latency);
     let download_kbps = measure_download_kbps(&client).await.unwrap_or_else(|_| {
         let bw = state.bandwidth.lock().unwrap();
@@ -274,7 +267,7 @@ pub async fn cmd_run_speed_test(state: State<'_, AppState>) -> Result<SpeedTestR
     });
     let upload_kbps = measure_upload_kbps(&client)
         .await
-        .unwrap_or_else(|_| download_kbps * 0.35);
+        .unwrap_or(download_kbps * 0.35);
 
     Ok(SpeedTestResult {
         download_kbps,
@@ -1134,7 +1127,7 @@ pub async fn cmd_run_ai_inference(
     state: State<'_, AppState>,
     prompt: String,
 ) -> Result<serde_json::Value, String> {
-    let (moderation, peer_metrics, routing, use_external_llm) = {
+    let (moderation, _peer_metrics, routing, use_external_llm) = {
         let db = state.db.lock().unwrap();
 
         let moderation = moderate_content(&format!("inf-{}", uuid::Uuid::new_v4()), &prompt);
@@ -1248,7 +1241,7 @@ fn init_model_cache() -> Arc<Mutex<ModelCache>> {
 
 #[tauri::command]
 pub async fn cmd_whisper_transcribe(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     audio_data: Vec<u8>,
 ) -> Result<String, String> {
     let cache = init_model_cache();
@@ -1270,7 +1263,7 @@ pub async fn cmd_whisper_transcribe(
 
 #[tauri::command]
 pub async fn cmd_llama_load_model(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     model_path: String,
     params: LlamaParams,
 ) -> Result<String, String> {
@@ -1285,7 +1278,7 @@ pub async fn cmd_llama_load_model(
 
 #[tauri::command]
 pub async fn cmd_llama_infer(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     model_id: String,
     prompt: String,
     params: LlamaParams,
@@ -1301,7 +1294,7 @@ pub async fn cmd_llama_infer(
 
 #[tauri::command]
 pub async fn cmd_llama_generate(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     model_id: String,
     prompt: String,
     params: LlamaParams,
@@ -1317,7 +1310,7 @@ pub async fn cmd_llama_generate(
 
 #[tauri::command]
 pub async fn cmd_llama_unload_model(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     model_id: String,
 ) -> Result<(), String> {
     let cache = init_model_cache();
@@ -1331,7 +1324,7 @@ pub async fn cmd_llama_unload_model(
 
 #[tauri::command]
 pub async fn cmd_onnx_load_model(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     model_path: String,
 ) -> Result<String, String> {
     let cache = init_model_cache();
@@ -1345,7 +1338,7 @@ pub async fn cmd_onnx_load_model(
 
 #[tauri::command]
 pub async fn cmd_onnx_segment_image(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     model_id: String,
     image_data: Vec<u8>,
 ) -> Result<ImageSegmentation, String> {
@@ -1360,7 +1353,7 @@ pub async fn cmd_onnx_segment_image(
 
 #[tauri::command]
 pub async fn cmd_onnx_unload_model(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     model_id: String,
 ) -> Result<(), String> {
     let cache = init_model_cache();
@@ -1374,7 +1367,7 @@ pub async fn cmd_onnx_unload_model(
 
 #[tauri::command]
 pub async fn cmd_tts_create_voice_profile(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     name: String,
     audio_samples: Vec<Vec<f32>>,
 ) -> Result<String, String> {
@@ -1389,7 +1382,7 @@ pub async fn cmd_tts_create_voice_profile(
 
 #[tauri::command]
 pub async fn cmd_tts_synthesize(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     profile_id: String,
     text: String,
     params: TtsParams,
@@ -1405,23 +1398,22 @@ pub async fn cmd_tts_synthesize(
 
 #[tauri::command]
 pub async fn cmd_get_model_cache_stats(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
 ) -> Result<serde_json::Value, String> {
     let cache = init_model_cache();
     let cache_guard = cache.lock().unwrap();
 
     Ok(serde_json::json!({
         "models_cached": cache_guard.models.lock().unwrap().len(),
-        "total_size_bytes": cache_guard.models.lock().unwrap().iter()
-            .map(|(_, m)| m.size_bytes as u64).sum::<u64>(),
+        "total_size_bytes": cache_guard.models.lock().unwrap().values().map(|m| m.size_bytes).sum::<u64>(),
         "cache_directory": cache_guard.cache_dir,
     }))
 }
 
 #[tauri::command]
-pub async fn cmd_clear_model_cache(state: State<'_, AppState>) -> Result<(), String> {
+pub async fn cmd_clear_model_cache(_state: State<'_, AppState>) -> Result<(), String> {
     let cache = init_model_cache();
-    let mut cache_guard = cache.lock().unwrap();
+    let cache_guard = cache.lock().unwrap();
     let mut models = cache_guard.models.lock().unwrap();
     models.clear();
 
@@ -1443,7 +1435,7 @@ pub fn cmd_get_metrics(state: State<'_, AppState>) -> serde_json::Value {
 
 // ─── WEBRTC CALLS (Phase 16) ─────────────────────────────────────────────────
 
-use crate::core::p2p::signaling::{CallHistoryEntry, CallType};
+use crate::core::p2p::signaling::CallType;
 
 #[tauri::command]
 pub async fn cmd_initiate_call(
@@ -1451,7 +1443,7 @@ pub async fn cmd_initiate_call(
     peer_id: String,
     call_type: String,
 ) -> Result<serde_json::Value, String> {
-    let ct = match call_type.to_lowercase().as_str() {
+    let _ct = match call_type.to_lowercase().as_str() {
         "video" => CallType::Video,
         _ => CallType::Voice,
     };
@@ -1532,7 +1524,7 @@ pub async fn cmd_initiate_call(
 pub async fn cmd_answer_call(
     state: State<'_, AppState>,
     peer_id: String,
-    offer_sdp: String,
+    _offer_sdp: String,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let identity = load_first_identity(&db)
@@ -1746,7 +1738,7 @@ pub async fn cmd_get_websocket_status(
         .ok_or("WebSocket server not available")?;
     let ws = ws_arc.lock().await;
     let status = ws.get_status().map_err(|e| e.to_string())?;
-    Ok(serde_json::to_value(status).map_err(|e| e.to_string())?)
+    serde_json::to_value(status).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -1784,14 +1776,14 @@ pub fn validate_admin_access(
 }
 
 #[tauri::command]
-pub fn cmd_apply_settings(state: State<'_, AppState>) -> Result<(), String> {
+pub fn cmd_apply_settings(_state: State<'_, AppState>) -> Result<(), String> {
     log::info!("Settings applied");
     Ok(())
 }
 
 #[tauri::command]
 pub fn cmd_reset_settings_section(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     section: String,
 ) -> Result<(), String> {
     log::info!("Reset settings section: {}", section);
@@ -1799,7 +1791,7 @@ pub fn cmd_reset_settings_section(
 }
 
 #[tauri::command]
-pub fn cmd_reset_all_settings(state: State<'_, AppState>) -> Result<(), String> {
+pub fn cmd_reset_all_settings(_state: State<'_, AppState>) -> Result<(), String> {
     log::info!("All settings reset");
     Ok(())
 }
@@ -1907,7 +1899,7 @@ pub fn cmd_send_payment(
     state: State<'_, AppState>,
     to_node: String,
     amount: f64,
-    memo: Option<String>,
+    _memo: Option<String>,
 ) -> Result<serde_json::Value, String> {
     cmd_transfer_tokens(state, to_node, amount)
 }
@@ -2137,11 +2129,9 @@ pub fn cmd_get_tournaments(state: State<'_, AppState>) -> Result<Vec<serde_json:
         .query_map([], |row| row.get::<_, String>(0))
         .map_err(|e| e.to_string())?;
     let mut tournaments = Vec::new();
-    for row in rows {
-        if let Ok(data) = row {
-            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&data) {
-                tournaments.push(v);
-            }
+    for data in rows.flatten() {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&data) {
+            tournaments.push(v);
         }
     }
     Ok(tournaments)
@@ -2158,11 +2148,9 @@ pub fn cmd_get_games(state: State<'_, AppState>) -> Result<Vec<serde_json::Value
         .query_map([], |row| row.get::<_, String>(0))
         .map_err(|e| e.to_string())?;
     let mut games = Vec::new();
-    for row in rows {
-        if let Ok(data) = row {
-            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&data) {
-                games.push(v);
-            }
+    for data in rows.flatten() {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&data) {
+            games.push(v);
         }
     }
     Ok(games)
@@ -2244,7 +2232,7 @@ pub fn cmd_get_user_game_stats(state: State<'_, AppState>) -> Result<serde_json:
 pub fn cmd_create_game_session(
     state: State<'_, AppState>,
     game_id: String,
-    max_players: u32,
+    _max_players: u32,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let identity = load_first_identity(&db)
@@ -2344,13 +2332,13 @@ pub fn cmd_arena_create_duel(
 }
 
 #[tauri::command]
-pub fn cmd_generate_pairing_code(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+pub fn cmd_generate_pairing_code(_state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let code = format!("PINC-{:06}", rand::random::<u32>() % 1000000);
     Ok(serde_json::json!({ "code": code, "expires_in_secs": 300 }))
 }
 
 #[tauri::command]
-pub fn cmd_validate_pairing_code(state: State<'_, AppState>, code: String) -> Result<bool, String> {
+pub fn cmd_validate_pairing_code(_state: State<'_, AppState>, code: String) -> Result<bool, String> {
     Ok(code.starts_with("PINC-") && code.len() == 11)
 }
 
@@ -2398,7 +2386,7 @@ pub fn cmd_generate_qr_png(
 
 #[tauri::command]
 pub fn cmd_connect_with_code(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     code: String,
 ) -> Result<serde_json::Value, String> {
     if !code.starts_with("PINC-") {
@@ -2409,34 +2397,34 @@ pub fn cmd_connect_with_code(
 
 #[tauri::command]
 pub fn cmd_get_shared_connections(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
 ) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
 
 #[tauri::command]
-pub fn cmd_disconnect_shared(state: State<'_, AppState>, peer_id: String) -> Result<(), String> {
+pub fn cmd_disconnect_shared(_state: State<'_, AppState>, peer_id: String) -> Result<(), String> {
     log::info!("Disconnected shared connection: {}", peer_id);
     Ok(())
 }
 
 #[tauri::command]
-pub fn cmd_get_net_share_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+pub fn cmd_get_net_share_status(_state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     Ok(serde_json::json!({ "sharing": false, "connected_peers": 0 }))
 }
 
 #[tauri::command]
-pub fn cmd_toggle_net_share(state: State<'_, AppState>, enabled: bool) -> Result<(), String> {
+pub fn cmd_toggle_net_share(_state: State<'_, AppState>, enabled: bool) -> Result<(), String> {
     log::info!("Net sharing toggled: {}", enabled);
     Ok(())
 }
 
 #[tauri::command]
 pub fn cmd_create_net_store_listing(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     bandwidth_mbps: u32,
     price_per_gb: f64,
-    location: String,
+    _location: String,
 ) -> Result<serde_json::Value, String> {
     let listing_id = Uuid::new_v4().to_string();
     Ok(
@@ -2446,14 +2434,14 @@ pub fn cmd_create_net_store_listing(
 
 #[tauri::command]
 pub fn cmd_list_net_store_listings(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
 ) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
 
 #[tauri::command]
 pub fn cmd_purchase_bandwidth(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     listing_id: String,
     hours: u32,
 ) -> Result<serde_json::Value, String> {
@@ -2462,23 +2450,23 @@ pub fn cmd_purchase_bandwidth(
 }
 
 #[tauri::command]
-pub fn cmd_get_my_listings(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_get_my_listings(_state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
 
 #[tauri::command]
-pub fn cmd_get_my_purchases(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_get_my_purchases(_state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
 
 #[tauri::command]
-pub fn cmd_get_api_keys(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+pub fn cmd_get_api_keys(_state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let keys = crate::core::config::api_keys::ApiKeys::new();
     Ok(serde_json::json!({ "keys": keys.list_keys() }))
 }
 
 #[tauri::command]
-pub fn cmd_get_api_key_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+pub fn cmd_get_api_key_status(_state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let keys = crate::core::config::api_keys::ApiKeys::new();
     Ok(serde_json::json!({
         "gamepix": keys.has_key("gamepix_sid"),
@@ -2523,20 +2511,18 @@ pub fn cmd_admin_list_users(state: State<'_, AppState>) -> Result<Vec<serde_json
         })
         .map_err(|e| e.to_string())?;
     let mut users = Vec::new();
-    for row in rows {
-        if let Ok(u) = row {
-            users.push(u);
-        }
+    for u in rows.flatten() {
+        users.push(u);
     }
     Ok(users)
 }
 
 #[tauri::command]
 pub fn cmd_admin_create_user(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     username: String,
-    email: String,
-    password: String,
+    _email: String,
+    _password: String,
     role: String,
 ) -> Result<serde_json::Value, String> {
     let user_id = Uuid::new_v4().to_string();
@@ -2545,7 +2531,7 @@ pub fn cmd_admin_create_user(
 
 #[tauri::command]
 pub fn cmd_admin_update_user(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     user_id: String,
     updates: serde_json::Value,
 ) -> Result<(), String> {
@@ -2605,10 +2591,8 @@ pub fn cmd_admin_list_logs(
         })
         .map_err(|e| e.to_string())?;
     let mut logs = Vec::new();
-    for row in rows {
-        if let Ok(l) = row {
-            logs.push(l);
-        }
+    for l in rows.flatten() {
+        logs.push(l);
     }
     Ok(logs)
 }
@@ -2616,7 +2600,7 @@ pub fn cmd_admin_list_logs(
 #[tauri::command]
 pub fn cmd_admin_list_logs_filtered(
     state: State<'_, AppState>,
-    action: Option<String>,
+    _action: Option<String>,
     limit: Option<u32>,
 ) -> Result<Vec<serde_json::Value>, String> {
     cmd_admin_list_logs(state, limit)
@@ -2666,7 +2650,7 @@ pub fn cmd_admin_delete_config(state: State<'_, AppState>, key: String) -> Resul
 }
 
 #[tauri::command]
-pub fn cmd_admin_get_security(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+pub fn cmd_admin_get_security(_state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     Ok(serde_json::json!({
         "encryption": "XChaCha20-Poly1305",
         "signing": "Ed25519",
@@ -2692,22 +2676,22 @@ pub fn cmd_admin_get_network_monitor(
 }
 
 #[tauri::command]
-pub fn cmd_admin_ban_peer(state: State<'_, AppState>, peer_id: String) -> Result<(), String> {
+pub fn cmd_admin_ban_peer(_state: State<'_, AppState>, peer_id: String) -> Result<(), String> {
     log::info!("Admin banned peer: {}", peer_id);
     Ok(())
 }
 
 #[tauri::command]
-pub fn cmd_admin_unban_peer(state: State<'_, AppState>, peer_id: String) -> Result<(), String> {
+pub fn cmd_admin_unban_peer(_state: State<'_, AppState>, peer_id: String) -> Result<(), String> {
     log::info!("Admin unbanned peer: {}", peer_id);
     Ok(())
 }
 
 #[tauri::command]
 pub fn cmd_admin_reset_password(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
     user_id: String,
-    new_password: String,
+    _new_password: String,
 ) -> Result<(), String> {
     log::info!("Admin reset password for user: {}", user_id);
     Ok(())
@@ -2715,7 +2699,7 @@ pub fn cmd_admin_reset_password(
 
 #[tauri::command]
 pub fn cmd_admin_list_banned_peers(
-    state: State<'_, AppState>,
+    _state: State<'_, AppState>,
 ) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
@@ -2896,7 +2880,7 @@ pub fn cmd_get_game_sessions(state: State<'_, AppState>) -> Result<Vec<serde_jso
             let scores_str: String = row.get(6)?;
             let status: String = row.get(7)?;
             let winner_id: Option<String> = row.get(8)?;
-            let created_at: i64 = row.get(9)?;
+            let _created_at: i64 = row.get(9)?;
 
             let player_ids: Vec<String> = serde_json::from_str(&player_ids_str).unwrap_or_default();
             let scores: serde_json::Value =
@@ -2930,10 +2914,8 @@ pub fn cmd_get_game_sessions(state: State<'_, AppState>) -> Result<Vec<serde_jso
         .map_err(|e| e.to_string())?;
 
     let mut result = Vec::new();
-    for session in sessions {
-        if let Ok(s) = session {
-            result.push(s);
-        }
+    for s in sessions.flatten() {
+        result.push(s);
     }
     Ok(result)
 }
@@ -3189,10 +3171,8 @@ pub fn cmd_get_game_progress_all(
         .map_err(|e| e.to_string())?;
 
     let mut result = Vec::new();
-    for p in progress {
-        if let Ok(entry) = p {
-            result.push(entry);
-        }
+    for entry in progress.flatten() {
+        result.push(entry);
     }
     Ok(result)
 }

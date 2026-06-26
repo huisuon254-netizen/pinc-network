@@ -18,6 +18,12 @@ pub struct NexusEngine {
     pub bandwidth_limit_kbps: Option<u64>,
 }
 
+impl Default for NexusEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NexusEngine {
     pub fn new() -> Self {
         NexusEngine {

@@ -1,13 +1,13 @@
 use crate::core::distributed::{
-    chunker::{reassemble_chunks, verify_chunk_integrity},
+    chunker::reassemble_chunks,
     errors::DistributedError,
     types::{ChunkReplica, RetrievalResult},
 };
 use std::time::Instant;
 
 /// Find the best replica for a chunk (lowest latency, highest trust)
-pub fn select_best_replica<'a>(replicas: &'a [ChunkReplica]) -> Option<&'a ChunkReplica> {
-    replicas.iter().filter(|r| r.verified).next()
+pub fn select_best_replica(replicas: &[ChunkReplica]) -> Option<&ChunkReplica> {
+    replicas.iter().find(|r| r.verified)
 }
 
 /// Simulate chunk fetch from a replica (real impl uses QUIC transport)

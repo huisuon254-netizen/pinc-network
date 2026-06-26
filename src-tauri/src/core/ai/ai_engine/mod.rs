@@ -222,16 +222,16 @@ impl WhisperEngine {
     }
 
     fn bytes_to_samples(&self, bytes: &[u8]) -> Vec<f32> {
-        if bytes.len() >= 4 && bytes.len() % 4 == 0 {
+        if bytes.len() >= 4 && bytes.len().is_multiple_of(4) {
             let samples: Vec<f32> = bytes
                 .chunks_exact(4)
                 .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
                 .collect();
-            if samples.iter().all(|&s| s >= -1.0 && s <= 1.0) && !samples.is_empty() {
+            if samples.iter().all(|&s| (-1.0..=1.0).contains(&s)) && !samples.is_empty() {
                 return samples;
             }
         }
-        if bytes.len() >= 2 && bytes.len() % 2 == 0 {
+        if bytes.len() >= 2 && bytes.len().is_multiple_of(2) {
             return bytes
                 .chunks_exact(2)
                 .map(|c| i16::from_le_bytes([c[0], c[1]]) as f32 / i16::MAX as f32)

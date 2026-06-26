@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,6 +33,12 @@ pub struct NetShareEngine {
     active: bool,
     current_code: Option<PairingCode>,
     connections: Vec<SharedConnection>,
+}
+
+impl Default for NetShareEngine {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl NetShareEngine {

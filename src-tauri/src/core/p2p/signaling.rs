@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -174,7 +173,7 @@ impl CallManager {
         &self,
         peer_id: &str,
         call_type: CallType,
-        offer: &str,
+        _offer: &str,
     ) -> Result<ActiveCall, String> {
         let current = self.active_call.read().await;
         if let Some(ref call) = *current {

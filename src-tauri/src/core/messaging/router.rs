@@ -1,6 +1,6 @@
 use crate::core::messaging::{
     errors::MessagingError,
-    types::{Message, MessageStatus, OfflineMessageQueue},
+    types::{Message, OfflineMessageQueue},
 };
 use std::collections::HashMap;
 

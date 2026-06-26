@@ -86,7 +86,7 @@ pub async fn fetch_gamepix_games(
     let games: Vec<crate::commands::Game> = feed
         .items
         .into_iter()
-        .map(|item| item_to_game(item))
+        .map(item_to_game)
         .collect();
 
     if games.is_empty() {

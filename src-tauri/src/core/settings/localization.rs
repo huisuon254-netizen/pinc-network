@@ -28,6 +28,12 @@ pub struct LocalizationEngine {
     pub loaded_packs: HashMap<String, LanguagePack>,
 }
 
+impl Default for LocalizationEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LocalizationEngine {
     pub fn new() -> Self {
         let mut loaded = HashMap::new();

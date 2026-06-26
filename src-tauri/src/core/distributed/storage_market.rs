@@ -17,7 +17,7 @@ pub fn create_contract(
     price_per_gb: f64,
     duration_days: i64,
 ) -> Result<StorageContract, DistributedError> {
-    if duration_days < MIN_CONTRACT_DAYS || duration_days > MAX_CONTRACT_DAYS {
+    if !(MIN_CONTRACT_DAYS..=MAX_CONTRACT_DAYS).contains(&duration_days) {
         return Err(DistributedError::ContractError(format!(
             "duration must be between {} and {} days",
             MIN_CONTRACT_DAYS, MAX_CONTRACT_DAYS
@@ -55,7 +55,7 @@ pub fn is_contract_valid(contract: &StorageContract) -> bool {
 pub fn find_providers(
     nodes: &[StorageNode],
     bytes_needed: u64,
-    max_price: f64,
+    _max_price: f64,
 ) -> Vec<&StorageNode> {
     nodes
         .iter()

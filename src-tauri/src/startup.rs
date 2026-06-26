@@ -1,11 +1,8 @@
-use crate::{
-    core::{
+use crate::core::{
         crypto::{cipher::encrypt, types::NonceType},
         database::{connection::Database, validator::check_schema_version},
         vault::encryptor::{vault_decrypt, vault_encrypt},
-    },
-    errors::AppError,
-};
+    };
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -124,7 +121,7 @@ fn check_database(db: &Database) -> bool {
 fn check_vault() -> bool {
     let key = [1u8; 32];
     match vault_encrypt(&key, b"vault-ping") {
-        Ok(blob) => vault_decrypt(&key, &blob).map_or(false, |v| v == b"vault-ping"),
+        Ok(blob) => vault_decrypt(&key, &blob).is_ok_and(|v| v == b"vault-ping"),
         Err(_) => false,
     }
 }

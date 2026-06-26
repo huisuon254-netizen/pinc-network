@@ -1,6 +1,6 @@
 use crate::core::marketplace::{
     errors::MarketplaceError,
-    types::{Bid, BidStatus, Job, JobStatus, Milestone, ProofOfWork, WorkerProfile},
+    types::{Bid, BidStatus, Job, JobStatus, Milestone, ProofOfWork},
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
@@ -20,7 +20,7 @@ pub fn create_job(
         });
     }
     let milestone_total: f64 = milestones.iter().map(|m| m.amount).sum();
-    if milestones.len() > 0 && (milestone_total - budget).abs() > 0.01 {
+    if !milestones.is_empty() && (milestone_total - budget).abs() > 0.01 {
         return Err(MarketplaceError::InvalidMilestoneAmount);
     }
     let now = now_secs();

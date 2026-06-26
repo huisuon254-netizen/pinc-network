@@ -322,8 +322,8 @@ pub fn cmd_create_challenge(
     title: String,
     category: String,
     difficulty: String,
-    reward_points: u32,
-    description: String,
+    _reward_points: u32,
+    _description: String,
 ) -> Result<serde_json::Value, String> {
     let challenge_id = uuid::Uuid::new_v4().to_string();
     log::info!("Challenge created: {} ({}/{})", title, category, difficulty);
@@ -346,7 +346,7 @@ pub fn cmd_add_contact(
     let contact_username =
         crate::core::database::queries::search_identities_by_query(&db, &contact_node_id)
             .ok()
-            .and_then(|mut v| {
+            .and_then(|v| {
                 v.into_iter()
                     .find(|i| i.node_id == contact_node_id)
                     .map(|i| i.username)
@@ -450,7 +450,7 @@ pub fn cmd_search_users(
 // === OPENMAESTRO COMMANDS ===
 
 #[tauri::command]
-pub fn cmd_list_challenges(category: Option<String>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_list_challenges(_category: Option<String>) -> Result<Vec<serde_json::Value>, String> {
     // Return mock challenges for now
     Ok(vec![
         serde_json::json!({
@@ -531,7 +531,7 @@ pub fn cmd_list_duels() -> Result<Vec<serde_json::Value>, String> {
 }
 
 #[tauri::command]
-pub fn cmd_list_rankings(filter: Option<String>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_list_rankings(_filter: Option<String>) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![
         serde_json::json!({"rank": 1, "nodeId": "3847291", "username": "cryptoking", "score": 15420, "wins": 89, "country": "US"}),
         serde_json::json!({"rank": 2, "nodeId": "9261834", "username": "zeroday", "score": 14200, "wins": 82, "country": "DE"}),
@@ -548,8 +548,8 @@ pub fn cmd_list_rankings(filter: Option<String>) -> Result<Vec<serde_json::Value
 
 #[tauri::command]
 pub fn cmd_list_products(
-    category: Option<String>,
-    search: Option<String>,
+    _category: Option<String>,
+    _search: Option<String>,
 ) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![
         serde_json::json!({"id": "p-1", "name": "AI Customer Support Agent", "category": "AI Agents", "price": 149.99, "rating": 4.9, "seller": "NeuralForge", "type": "Template"}),

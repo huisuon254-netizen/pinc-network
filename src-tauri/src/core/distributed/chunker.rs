@@ -3,7 +3,6 @@ use crate::core::distributed::{
     types::{DistributedChunk, CHUNK_SIZE_BYTES},
 };
 use sha2::{Digest, Sha256};
-use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
 pub fn split_into_distributed_chunks(

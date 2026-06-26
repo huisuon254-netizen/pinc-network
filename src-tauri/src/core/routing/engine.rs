@@ -1,4 +1,4 @@
-use crate::core::routing::types::{MultiHopPath, Route, RoutingTable};
+use crate::core::routing::types::{MultiHopPath, RoutingTable};
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
 use std::time::{SystemTime, UNIX_EPOCH};

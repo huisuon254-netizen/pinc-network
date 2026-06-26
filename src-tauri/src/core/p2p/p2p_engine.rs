@@ -152,6 +152,12 @@ pub struct P2PEngine {
     pub nat_traversal: Option<NATTraversal>,
 }
 
+impl Default for P2PEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl P2PEngine {
     pub fn new() -> Self {
         Self {

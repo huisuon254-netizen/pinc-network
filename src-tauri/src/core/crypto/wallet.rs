@@ -1,8 +1,6 @@
-use ethers_core::types::{Address, U256};
 use ethers_signers::{coins_bip39::English, MnemonicBuilder, Signer};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::str::FromStr;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Wallet {
@@ -100,6 +98,12 @@ pub struct DepositManager {
     pub user_balances: HashMap<String, f64>,
     // Maps wallet address to user_id
     pub address_to_user: HashMap<String, String>,
+}
+
+impl Default for DepositManager {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl DepositManager {

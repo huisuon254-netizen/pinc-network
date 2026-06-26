@@ -62,12 +62,12 @@ impl Default for NatTraversalConfig {
             turn_servers: vec!["turn.pinc.network:3478".to_string()],
             ice_candidates: Vec::new(),
             upnp_enabled: true,
-            nat_type: NatType::Unknown,
+            nat_type: NatType::UNKNOWN,
         }
     }
 }
 
 // Allow unknown NAT type during detection
 impl NatType {
-    const Unknown: NatType = NatType::PortRestricted; // fallback
+    const UNKNOWN: NatType = NatType::PortRestricted; // fallback
 }

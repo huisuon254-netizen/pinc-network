@@ -79,7 +79,7 @@ pub fn run() {
             let ws_peer_registry = peer_registry.clone();
             let ws_app_handle = app.handle().clone();
             let web_socket_server = {
-                let mut ws = core::networking::WebSocketServer::new(ws_peer_registry);
+                let ws = core::networking::WebSocketServer::new(ws_peer_registry);
                 ws.register_handler("webrtc_signaling".to_string(), Box::new(move |msg| {
                     use tauri::Emitter;
                     if let Ok(payload) = String::from_utf8(msg.payload.clone()) {

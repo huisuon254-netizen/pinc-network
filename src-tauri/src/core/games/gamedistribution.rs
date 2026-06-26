@@ -65,7 +65,7 @@ pub async fn fetch_gd_games(
     let games: Vec<Game> = feed
         .items
         .into_iter()
-        .map(|item| gd_item_to_game(item))
+        .map(gd_item_to_game)
         .collect();
 
     let filtered = if category == "all" || category.is_empty() {

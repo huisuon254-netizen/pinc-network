@@ -18,7 +18,7 @@ pub fn crypto_self_test() -> bool {
     let key = [0u8; 32];
     let msg = b"pinc-self-test";
     match encrypt(&key, msg, NonceType::XChaCha24) {
-        Ok(enc) => decrypt(&key, &enc, NonceType::XChaCha24).map_or(false, |v| v == msg),
+        Ok(enc) => decrypt(&key, &enc, NonceType::XChaCha24).is_ok_and(|v| v == msg),
         Err(_) => false,
     }
 }

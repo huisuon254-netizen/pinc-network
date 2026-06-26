@@ -2,7 +2,7 @@ use crate::core::network::{
     errors::NetworkError,
     types::{DiscoveredPeer, PeerSource},
 };
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::SocketAddr;
 
 pub struct Discovery {
     bootstrap_nodes: Vec<String>,

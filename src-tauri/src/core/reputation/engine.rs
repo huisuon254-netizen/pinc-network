@@ -1,4 +1,3 @@
-use crate::core::reputation::errors::RepuationError;
 use crate::core::reputation::types::{BurnRecord, ReputationScore, Review, ReviewCategory};
 use std::time::{SystemTime, UNIX_EPOCH};
 

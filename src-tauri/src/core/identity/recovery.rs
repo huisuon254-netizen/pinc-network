@@ -1,8 +1,8 @@
 use crate::core::{
     crypto::hash::sha256_hex,
-    database::{connection::Database, queries::insert_identity},
+    database::connection::Database,
     identity::{
-        errors::IdentityError, fingerprint::device_fingerprint,
+        errors::IdentityError,
         generator::build_identity_from_phrase, types::Identity,
     },
 };

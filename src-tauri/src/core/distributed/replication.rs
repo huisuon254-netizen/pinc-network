@@ -1,6 +1,6 @@
 use crate::core::distributed::{
     errors::DistributedError,
-    types::{ChunkReplica, StorageNode, DEFAULT_REPLICATION_FACTOR},
+    types::{ChunkReplica, StorageNode},
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 

@@ -11,7 +11,7 @@ use crate::core::{
     payment::types::Transaction,
     social::types::{Post, PostType, Visibility},
     vault::types::VaultFileRecord,
-    wager::types::{Tournament, TournamentMatch, TournamentStatus, Wager, WagerStatus},
+    wager::types::{Tournament, Wager, WagerStatus},
 };
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
@@ -1193,10 +1193,8 @@ pub fn list_admin_users(db: &Database) -> Result<Vec<AdminUser>, DatabaseError> 
         })
         .map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
     let mut users = Vec::new();
-    for row in rows {
-        if let Ok(u) = row {
-            users.push(u);
-        }
+    for u in rows.flatten() {
+        users.push(u);
     }
     Ok(users)
 }
@@ -1255,10 +1253,8 @@ pub fn list_admin_logs(
         })
         .map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
     let mut logs = Vec::new();
-    for row in rows {
-        if let Ok(l) = row {
-            logs.push(l);
-        }
+    for l in rows.flatten() {
+        logs.push(l);
     }
     Ok(logs)
 }
@@ -1377,10 +1373,8 @@ pub fn list_system_config(
         })
         .map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
     let mut configs = Vec::new();
-    for row in rows {
-        if let Ok(c) = row {
-            configs.push(c);
-        }
+    for c in rows.flatten() {
+        configs.push(c);
     }
     Ok(configs)
 }

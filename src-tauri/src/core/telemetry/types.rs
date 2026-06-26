@@ -26,6 +26,7 @@ impl Default for HealthStatus {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct NodeMetrics {
     pub uptime_seconds: u64,
     pub messages_relayed: u64,
@@ -35,15 +36,3 @@ pub struct NodeMetrics {
     pub peer_connections: u64,
 }
 
-impl Default for NodeMetrics {
-    fn default() -> Self {
-        NodeMetrics {
-            uptime_seconds: 0,
-            messages_relayed: 0,
-            bytes_relayed: 0,
-            identity_checks: 0,
-            vault_operations: 0,
-            peer_connections: 0,
-        }
-    }
-}

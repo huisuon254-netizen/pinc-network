@@ -1,6 +1,4 @@
-use chrono;
 use serde::{Deserialize, Serialize};
-use serde_json;
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
@@ -119,6 +117,12 @@ pub struct RiftEngine {
     pub payment_pending: Vec<RentalAgreement>,
 }
 
+impl Default for RiftEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RiftEngine {
     pub fn new() -> Self {
         RiftEngine {
@@ -132,7 +136,7 @@ impl RiftEngine {
         &mut self,
         owner_id: &str,
         tier: &str,
-        price: f64,
+        _price: f64,
         specs: HardwareSpecs,
     ) -> Result<ServerListing, HardwareValidationError> {
         validate_hardware_specs(&specs)?;

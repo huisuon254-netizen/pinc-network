@@ -1,5 +1,5 @@
 use crate::core::data::errors::DataError;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub struct CacheManager {
     cache_dir: PathBuf,
