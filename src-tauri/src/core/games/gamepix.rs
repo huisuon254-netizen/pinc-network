@@ -83,11 +83,7 @@ pub async fn fetch_gamepix_games(
         .await
         .map_err(|e| format!("GamePix JSON parse error: {}", e))?;
 
-    let games: Vec<crate::commands::Game> = feed
-        .items
-        .into_iter()
-        .map(item_to_game)
-        .collect();
+    let games: Vec<crate::commands::Game> = feed.items.into_iter().map(item_to_game).collect();
 
     if games.is_empty() {
         return Err("No games returned from GamePix".to_string());

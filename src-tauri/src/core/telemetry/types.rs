@@ -25,8 +25,7 @@ impl Default for HealthStatus {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct NodeMetrics {
     pub uptime_seconds: u64,
     pub messages_relayed: u64,
@@ -35,4 +34,3 @@ pub struct NodeMetrics {
     pub vault_operations: u64,
     pub peer_connections: u64,
 }
-

@@ -16,9 +16,10 @@ use crate::{
         database::{
             connection::Database,
             queries::{
-                delete_vault_file, get_settings_row, identity_count, insert_job, insert_post, insert_vault_file, insert_wager, list_ai_agents, list_jobs,
-                list_posts, list_storage_contracts, list_transactions, list_vault_files,
-                list_wagers, load_first_identity, load_peers, log_activity, upsert_peer, upsert_settings,
+                delete_vault_file, get_settings_row, identity_count, insert_job, insert_post,
+                insert_vault_file, insert_wager, list_ai_agents, list_jobs, list_posts,
+                list_storage_contracts, list_transactions, list_vault_files, list_wagers,
+                load_first_identity, load_peers, log_activity, upsert_peer, upsert_settings,
             },
         },
         distributed::types::StorageContract,
@@ -27,7 +28,8 @@ use crate::{
         infrastructure::{
             nexus::{NexusEngine, SpeedTestResult},
             rift::{
-                HardwareSpecs, RentalAgreement, RentalPeriod, RiftEngine, ServerListing, ServerMetrics,
+                HardwareSpecs, RentalAgreement, RentalPeriod, RiftEngine, ServerListing,
+                ServerMetrics,
             },
         },
         marketplace::types::{Job, JobStatus},
@@ -2338,7 +2340,10 @@ pub fn cmd_generate_pairing_code(_state: State<'_, AppState>) -> Result<serde_js
 }
 
 #[tauri::command]
-pub fn cmd_validate_pairing_code(_state: State<'_, AppState>, code: String) -> Result<bool, String> {
+pub fn cmd_validate_pairing_code(
+    _state: State<'_, AppState>,
+    code: String,
+) -> Result<bool, String> {
     Ok(code.starts_with("PINC-") && code.len() == 11)
 }
 

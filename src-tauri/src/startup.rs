@@ -1,8 +1,8 @@
 use crate::core::{
-        crypto::{cipher::encrypt, types::NonceType},
-        database::{connection::Database, validator::check_schema_version},
-        vault::encryptor::{vault_decrypt, vault_encrypt},
-    };
+    crypto::{cipher::encrypt, types::NonceType},
+    database::{connection::Database, validator::check_schema_version},
+    vault::encryptor::{vault_decrypt, vault_encrypt},
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

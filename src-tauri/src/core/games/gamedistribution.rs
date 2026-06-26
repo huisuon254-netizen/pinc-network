@@ -62,11 +62,7 @@ pub async fn fetch_gd_games(
         .await
         .map_err(|e| format!("GameDistribution JSON parse error: {}", e))?;
 
-    let games: Vec<Game> = feed
-        .items
-        .into_iter()
-        .map(gd_item_to_game)
-        .collect();
+    let games: Vec<Game> = feed.items.into_iter().map(gd_item_to_game).collect();
 
     let filtered = if category == "all" || category.is_empty() {
         games
