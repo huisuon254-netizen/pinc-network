@@ -3,6 +3,7 @@ dist/
 target/
 src-tauri/target/
 src-tauri/gen/
+src-tauri/.cargo/config.toml
 *.apk
 *.AppImage
 *.deb
