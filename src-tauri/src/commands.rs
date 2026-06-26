@@ -60,7 +60,6 @@ use crate::{
         ai::routing::{recommend_route, PeerMetrics},
         telemetry::metrics::MetricsCollector,
         net_share::NetShareEngine,
-        games::ad_blocker::AdBlocker,
     },
     startup::{startup_check, StartupReport},
 };
@@ -163,7 +162,6 @@ pub struct AppState {
     pub p2p_network: Arc<P2PNetwork>,
     pub web_socket_server: Option<Arc<AsyncMutex<crate::core::networking::WebSocketServer>>>,
     pub vault_dir: std::path::PathBuf,
-    pub ad_blocker: Arc<Mutex<AdBlocker>>,
 }
 
 // ─── STARTUP ─────────────────────────────────────────────────────────────────
@@ -2856,27 +2854,4 @@ pub fn cmd_get_game_progress_all(
         if let Ok(entry) = p { result.push(entry); }
     }
     Ok(result)
-}
-
-// ─── AD BLOCKER ──────────────────────────────────────────────────────────────
-
-#[tauri::command]
-pub fn cmd_get_ad_blocker_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    let ad = state.ad_blocker.lock().map_err(|e| e.to_string())?;
-    Ok(serde_json::json!({
-        "running": ad.is_running(),
-        "proxy_port": ad.proxy_port(),
-    }))
-}
-
-#[tauri::command]
-pub fn cmd_toggle_ad_blocker(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    let mut ad = state.ad_blocker.lock().map_err(|e| e.to_string())?;
-    if ad.is_running() {
-        ad.stop();
-    } else {
-        let _ = tokio::runtime::Handle::current().block_on(ad.start());
-    }
-    let running = ad.is_running();
-    Ok(serde_json::json!({ "running": running }))
 }

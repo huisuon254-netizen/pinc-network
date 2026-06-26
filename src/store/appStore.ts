@@ -6,6 +6,7 @@ import {
   Identity, StartupReport, NodeStatus, PeerInfo, NetworkStatus, VaultFile, UserRole,
   WalletBalance, Transaction, StarteranStatus, RentbitStatus, Conversation,
   AppNotification, SecurityLog, Device, Job, Tournament, Challenge, RankingEntry,
+  ProblemPost, Product, DuelChallenge,
 } from '../types';
 
 interface AppState {
@@ -50,6 +51,9 @@ interface AppState {
   tournaments: Tournament[];
   challenges: Challenge[];
   rankings: RankingEntry[];
+  products: Product[];
+  duels: DuelChallenge[];
+  problems: ProblemPost[];
 
   refreshWallet: () => void;
   refreshStarteran: () => void;
@@ -58,6 +62,8 @@ interface AppState {
   refreshNotifications: () => void;
   refreshSecurity: () => void;
   refreshJobs: () => void;
+  refreshOpenMaestro: () => void;
+  refreshZeroFlipper: () => void;
 
   refreshNodeStatus: () => void;
   refreshNetwork: () => void;
@@ -146,6 +152,9 @@ export const useAppStore = create<AppState>()(
       tournaments: [],
       challenges: [],
       rankings: [],
+      products: [],
+      duels: [],
+      problems: [],
 
       refreshWallet: async () => {
         try {
@@ -194,10 +203,26 @@ export const useAppStore = create<AppState>()(
       refreshJobs: async () => {
         try {
           const jobs = await invoke<Job[]>('cmd_get_jobs');
-          const tournaments = await invoke<Tournament[]>('cmd_get_tournaments');
-          const challenges = await invoke<Challenge[]>('cmd_get_challenges');
-          const rankings = await invoke<RankingEntry[]>('cmd_get_rankings', { category: 'all' });
-          set({ jobs, tournaments, challenges, rankings });
+          set({ jobs });
+        } catch {}
+      },
+
+      refreshOpenMaestro: async () => {
+        try {
+          const [challenges, rankings, problems, duels] = await Promise.all([
+            invoke<Challenge[]>('cmd_list_challenges').catch(() => []),
+            invoke<RankingEntry[]>('cmd_list_rankings').catch(() => []),
+            invoke<ProblemPost[]>('cmd_list_problems').catch(() => []),
+            invoke<DuelChallenge[]>('cmd_list_duels').catch(() => []),
+          ]);
+          set({ challenges, rankings, problems, duels });
+        } catch {}
+      },
+
+      refreshZeroFlipper: async () => {
+        try {
+          const products = await invoke<Product[]>('cmd_list_products').catch(() => []);
+          set({ products });
         } catch {}
       },
 

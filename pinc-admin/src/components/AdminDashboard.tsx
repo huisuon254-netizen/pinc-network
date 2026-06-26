@@ -17,6 +17,7 @@ import NotificationsPage from './pages/NotificationsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SuperAdminPage from './pages/SuperAdminPage';
 import OwnerDashboardPage from './pages/OwnerDashboardPage';
+import OpenMaestroPage from './pages/OpenMaestroPage';
 
 const PAGES: Record<AdminSection, React.FC> = {
   dashboard: DashboardPage,
@@ -35,6 +36,7 @@ const PAGES: Record<AdminSection, React.FC> = {
   analytics: AnalyticsPage,
   superadmin: SuperAdminPage,
   owner: OwnerDashboardPage,
+  openmaestro: OpenMaestroPage,
 };
 
 export default function AdminDashboard() {

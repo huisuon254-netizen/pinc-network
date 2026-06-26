@@ -8,7 +8,7 @@ export type AdminSection =
   | 'dashboard' | 'network' | 'rentbit' | 'traffic' | 'treific'
   | 'sarai' | 'wagers' | 'challenges' | 'jobs' | 'globalmap'
   | 'security' | 'premium' | 'notifications' | 'analytics'
-  | 'superadmin' | 'owner';
+  | 'superadmin' | 'owner' | 'openmaestro';
 
 interface NavGroup {
   label: string;
@@ -48,6 +48,12 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'security', label: 'Security Ops', icon: <ShieldCheck size={14} />, color: 'var(--accent-red)' },
       { id: 'premium', label: 'Premium Mgmt', icon: <Crown size={14} />, color: 'var(--accent-yellow)' },
       { id: 'notifications', label: 'Notifications', icon: <Bell size={14} />, color: 'var(--accent-blue)' },
+    ],
+  },
+  {
+    label: 'OPENMAESTRO',
+    items: [
+      { id: 'openmaestro', label: 'Challenges', icon: <Trophy size={14} />, color: 'var(--accent-yellow)' },
     ],
   },
   {

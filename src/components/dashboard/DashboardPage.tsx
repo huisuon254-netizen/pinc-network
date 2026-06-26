@@ -6,15 +6,15 @@ import TreificPage from '../treific/TreificPage';
 import SaraiPage from '../sarai/SaraiPage';
 import StarteranPage from '../starteran/StarteranPage';
 import RentbitPage from '../rentbit/RentbitPage';
-import WagerPage from '../wager/WagerPage';
-import JobsPage from '../jobs/JobsPage';
-import RankingsPage from '../rankings/RankingsPage';
+import OpenMaestroPage from '../openmaestro/OpenMaestroPage';
+import ZeroFlipperPage from '../zeroflipper/ZeroFlipperPage';
 import SecurityPage from '../security/SecurityPage';
-import SettingsPage from '../settings/SettingsPage';
 import ContactsPage from '../contacts/ContactsPage';
+import NotificationsPage from '../notifications/NotificationsPage';
+import NetWorldPage from '../networld/NetWorldPage';
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState<FullDashTab>('home');
+  const [activePage, setActivePage] = useState<FullDashTab>('identity');
   const store = useAppStore();
 
   useEffect(() => {
@@ -25,19 +25,19 @@ export default function DashboardPage() {
   }, [store]);
 
   const renderContent = () => {
-    switch (activeTab) {
-      case 'home':       return <NodeHome />;
-      case 'treific':    return <TreificPage />;
-      case 'sarai':      return <SaraiPage />;
-      case 'starteran':  return <StarteranPage />;
-      case 'rentbit':    return <RentbitPage />;
-      case 'wagers':     return <WagerPage />;
-      case 'jobs':       return <JobsPage />;
-      case 'rankings':   return <RankingsPage />;
-      case 'security':   return <SecurityPage />;
-      case 'contacts':   return <ContactsPage />;
-      case 'settings':   return <SettingsPage />;
-      default:           return <NodeHome />;
+    switch (activePage) {
+      case 'identity':      return <NodeHome />;
+      case 'contacts':      return <ContactsPage />;
+      case 'treific':       return <TreificPage />;
+      case 'starteran':     return <StarteranPage />;
+      case 'rentbit':       return <RentbitPage />;
+      case 'sarai':         return <SaraiPage />;
+      case 'zeroflipper':   return <ZeroFlipperPage />;
+      case 'openmaestro':   return <OpenMaestroPage />;
+      case 'security':      return <SecurityPage />;
+      case 'notifications': return <NotificationsPage />;
+      case 'networld':      return <NetWorldPage />;
+      default:              return <NodeHome />;
     }
   };
 
@@ -46,7 +46,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab}
+      <Sidebar activePage={activePage} setActivePage={setActivePage}
         nodeId={identity?.node_id} online={nodeStatus?.online} peerCount={nodeStatus?.peer_count} />
       <main style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
         {renderContent()}

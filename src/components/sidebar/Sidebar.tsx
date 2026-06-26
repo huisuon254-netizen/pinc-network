@@ -1,38 +1,39 @@
 import {
-  Shield, HardDrive, MessageSquare, Settings,
-  Briefcase, Wallet, Swords, Globe, Zap, Server,
-  ShieldCheck, Wifi, Trophy, Bell, Users
+  Shield, ShieldCheck, Wallet, Wifi, Server,
+  Globe, Bell, Users, User, MessageCircle,
+  ShoppingBag, Trophy
 } from 'lucide-react';
 
 export type FullDashTab =
-  | 'home' | 'treific' | 'sarai' | 'starteran' | 'rentbit'
-  | 'wagers' | 'jobs' | 'rankings' | 'security' | 'settings' | 'contacts';
+  | 'identity' | 'contacts' | 'treific' | 'starteran' | 'rentbit'
+  | 'sarai' | 'zeroflipper' | 'openmaestro' | 'security'
+  | 'notifications' | 'networld';
 
 export interface NavItem { id: FullDashTab; label: string; icon: React.ReactNode; }
 
 const NAV: NavItem[] = [
-  { id:'home',       label:'HOME',       icon:<Shield size={15}/> },
-  { id:'treific',    label:'TREIFIC',    icon:<MessageSquare size={15}/> },
-  { id:'sarai',      label:'SARAI',      icon:<Wallet size={15}/> },
-  { id:'contacts',   label:'CONTACTS',   icon:<Users size={15}/> },
-  { id:'starteran',  label:'STARTERAN',  icon:<Wifi size={15}/> },
-  { id:'rentbit',    label:'RENTBIT',    icon:<Server size={15}/> },
-  { id:'wagers',     label:'WAGERS',     icon:<Swords size={15}/> },
-  { id:'jobs',       label:'JOBS',       icon:<Briefcase size={15}/> },
-  { id:'rankings',   label:'RANKINGS',   icon:<Trophy size={15}/> },
-  { id:'security',   label:'SECURITY',   icon:<ShieldCheck size={15}/> },
-  { id:'settings',   label:'SETTINGS',   icon:<Settings size={15}/> },
+  { id:'identity',     label:'IDENTITY',     icon:<User size={15}/> },
+  { id:'contacts',     label:'CONTACTS',     icon:<Users size={15}/> },
+  { id:'treific',      label:'TREIFIC',      icon:<MessageCircle size={15}/> },
+  { id:'starteran',    label:'STARTERAN',    icon:<Wifi size={15}/> },
+  { id:'rentbit',      label:'RENTBIT',      icon:<Server size={15}/> },
+  { id:'sarai',        label:'SARAI',        icon:<Wallet size={15}/> },
+  { id:'zeroflipper',  label:'ZEROFLIPPER',  icon:<ShoppingBag size={15}/> },
+  { id:'openmaestro',  label:'OPENMAESTRO',  icon:<Trophy size={15}/> },
+  { id:'security',     label:'SECURITY',     icon:<ShieldCheck size={15}/> },
+  { id:'notifications',label:'NOTIFICATIONS',icon:<Bell size={15}/> },
+  { id:'networld',     label:'NETWORLD',     icon:<Globe size={15}/> },
 ];
 
 interface Props {
-  activeTab: FullDashTab;
-  setActiveTab: (t: FullDashTab) => void;
+  activePage: FullDashTab;
+  setActivePage: (t: FullDashTab) => void;
   nodeId?: string;
   online?: boolean;
   peerCount?: number;
 }
 
-export default function Sidebar({ activeTab, setActiveTab, nodeId, online, peerCount }: Props) {
+export default function Sidebar({ activePage, setActivePage, nodeId, online, peerCount }: Props) {
   return (
     <div style={{
       width:190, minWidth:190, height:'100vh', background:'var(--bg-secondary)',
@@ -62,10 +63,10 @@ export default function Sidebar({ activeTab, setActiveTab, nodeId, online, peerC
       {/* Navigation */}
       <nav style={{ flex:1 }}>
         {NAV.map(item => {
-          const active = activeTab === item.id;
+          const active = activePage === item.id;
 
           return (
-            <button key={item.id} onClick={() => setActiveTab(item.id)} style={{
+            <button key={item.id} onClick={() => setActivePage(item.id)} style={{
               width:'100%', display:'flex', alignItems:'center', gap:'8px', padding:'0.6rem 1rem',
               background: active ? 'rgba(0,212,255,0.08)' : 'transparent',
               border:'none', borderLeft: active ? '2px solid var(--electric-blue)' : '2px solid transparent',

@@ -78,7 +78,7 @@ export interface PincSettings {
 }
 
 export type AppScreen = 'splash' | 'login' | 'dashboard';
-export type DashTab = 'home' | 'treific' | 'sarai' | 'starteran' | 'rentbit' | 'wagers' | 'jobs' | 'rankings' | 'security' | 'settings';
+export type DashTab = 'home' | 'treific' | 'sarai' | 'starteran' | 'rentbit' | 'zeroflipper' | 'openmaestro' | 'security' | 'notifications' | 'networld';
 
 export type UserRole = 'admin' | 'operator' | 'user' | 'guest';
 
@@ -401,4 +401,33 @@ export interface AppNotification {
   message: string;
   timestamp: number;
   read: boolean;
+}
+
+// ─── NEW TYPES ───────────────────────────────────────────────────────────────
+export interface ProblemPost {
+  id: string;
+  title: string;
+  description: string;
+  reward: number;
+  status: 'open' | 'urgent' | 'critical';
+  timeRemaining: string;
+  postedBy: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  rating: number;
+  seller: string;
+  type: string;
+}
+
+export interface DuelChallenge {
+  id: string;
+  type: string;
+  entryFee: number;
+  prizePool: number;
+  playersOnline: number;
 }

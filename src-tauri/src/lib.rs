@@ -117,7 +117,7 @@ pub fn run() {
                 p2p_network: Arc::new(core::p2p::P2PNetwork::new(p2p_registry)),
                 web_socket_server: web_socket_server.clone(),
                 vault_dir,
-                ad_blocker: Arc::new(Mutex::new(core::games::ad_blocker::AdBlocker::new())),
+
             });
 
             if let Some(ws) = web_socket_server {
@@ -287,8 +287,7 @@ pub fn run() {
             commands::cmd_get_game_progress_all,
             commands::cmd_get_api_keys,
             commands::cmd_get_api_key_status,
-            commands::cmd_get_ad_blocker_status,
-            commands::cmd_toggle_ad_blocker,
+
             core::commands::cmd_get_starteran_status,
             core::commands::cmd_get_rentbit_status,
             core::commands::cmd_run_device_scan,
@@ -307,6 +306,13 @@ pub fn run() {
             core::commands::cmd_list_contacts,
             core::commands::cmd_remove_contact,
             core::commands::cmd_search_users,
+            core::commands::cmd_list_challenges,
+            core::commands::cmd_list_problems,
+            core::commands::cmd_join_challenge,
+            core::commands::cmd_list_duels,
+            core::commands::cmd_list_rankings,
+            core::commands::cmd_list_products,
+            core::commands::cmd_buy_product,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PINC");

@@ -391,3 +391,127 @@ pub fn cmd_search_users(
         })
     }).collect())
 }
+
+// === OPENMAESTRO COMMANDS ===
+
+#[tauri::command]
+pub fn cmd_list_challenges(category: Option<String>) -> Result<Vec<serde_json::Value>, String> {
+    // Return mock challenges for now
+    Ok(vec![
+        serde_json::json!({
+            "id": "ch-001", "title": "Build REST API", "category": "coding",
+            "difficulty": "medium", "reward": 150, "participants": 23, "timeLimit": 3600, "status": "open"
+        }),
+        serde_json::json!({
+            "id": "ch-002", "title": "Capture The Flag", "category": "cybersecurity",
+            "difficulty": "hard", "reward": 500, "participants": 45, "timeLimit": 7200, "status": "open"
+        }),
+        serde_json::json!({
+            "id": "ch-003", "title": "Build AI Chatbot", "category": "ai",
+            "difficulty": "medium", "reward": 300, "participants": 18, "timeLimit": 5400, "status": "open"
+        }),
+        serde_json::json!({
+            "id": "ch-004", "title": "Logo Design Sprint", "category": "design",
+            "difficulty": "easy", "reward": 75, "participants": 34, "timeLimit": 1800, "status": "open"
+        }),
+        serde_json::json!({
+            "id": "ch-005", "title": "Data Pipeline Optimization", "category": "data",
+            "difficulty": "hard", "reward": 400, "participants": 12, "timeLimit": 4800, "status": "open"
+        }),
+        serde_json::json!({
+            "id": "ch-006", "title": "Kubernetes Cluster Recovery", "category": "infrastructure",
+            "difficulty": "hard", "reward": 750, "participants": 8, "timeLimit": 1800, "status": "open"
+        }),
+    ])
+}
+
+#[tauri::command]
+pub fn cmd_list_problems() -> Result<Vec<serde_json::Value>, String> {
+    Ok(vec![
+        serde_json::json!({
+            "id": "pr-001", "title": "Website Down - 502 Bad Gateway",
+            "description": "Production site returning 502. Need fix within 30 minutes.",
+            "reward": 100, "status": "urgent", "timeRemaining": "28m", "postedBy": "TechCorp"
+        }),
+        serde_json::json!({
+            "id": "pr-002", "title": "Database Corrupted",
+            "description": "PostgreSQL primary DB corrupted. Data recovery needed.",
+            "reward": 500, "status": "critical", "timeRemaining": "1h", "postedBy": "DataFlow Inc"
+        }),
+        serde_json::json!({
+            "id": "pr-003", "title": "API Endpoint Broken",
+            "description": "Payment API returning 500 errors intermittently.",
+            "reward": 50, "status": "open", "timeRemaining": "4h", "postedBy": "PayStack"
+        }),
+        serde_json::json!({
+            "id": "pr-004", "title": "Network Outage - Partial",
+            "description": "US-East region experiencing packet loss.",
+            "reward": 250, "status": "urgent", "timeRemaining": "45m", "postedBy": "CloudNet"
+        }),
+        serde_json::json!({
+            "id": "pr-005", "title": "Server Security Breach",
+            "description": "Suspicious activity detected. Need immediate investigation.",
+            "reward": 1000, "status": "critical", "timeRemaining": "15m", "postedBy": "SecureBank"
+        }),
+    ])
+}
+
+#[tauri::command]
+pub fn cmd_join_challenge(challenge_id: String) -> Result<serde_json::Value, String> {
+    Ok(serde_json::json!({
+        "success": true, "challenge_id": challenge_id,
+        "message": "Joined challenge successfully"
+    }))
+}
+
+#[tauri::command]
+pub fn cmd_list_duels() -> Result<Vec<serde_json::Value>, String> {
+    Ok(vec![
+        serde_json::json!({"id": "d-1", "type": "Coding Duel", "entryFee": 5, "prizePool": 10, "playersOnline": 234}),
+        serde_json::json!({"id": "d-2", "type": "Chess Duel", "entryFee": 5, "prizePool": 10, "playersOnline": 189}),
+        serde_json::json!({"id": "d-3", "type": "AI Duel", "entryFee": 10, "prizePool": 20, "playersOnline": 156}),
+        serde_json::json!({"id": "d-4", "type": "Security Duel", "entryFee": 10, "prizePool": 20, "playersOnline": 98}),
+        serde_json::json!({"id": "d-5", "type": "Design Duel", "entryFee": 5, "prizePool": 10, "playersOnline": 167}),
+    ])
+}
+
+#[tauri::command]
+pub fn cmd_list_rankings(filter: Option<String>) -> Result<Vec<serde_json::Value>, String> {
+    Ok(vec![
+        serde_json::json!({"rank": 1, "nodeId": "3847291", "username": "cryptoking", "score": 15420, "wins": 89, "country": "US"}),
+        serde_json::json!({"rank": 2, "nodeId": "9261834", "username": "zeroday", "score": 14200, "wins": 82, "country": "DE"}),
+        serde_json::json!({"rank": 3, "nodeId": "5173620", "username": "rustacean", "score": 13800, "wins": 78, "country": "JP"}),
+        serde_json::json!({"rank": 4, "nodeId": "7492015", "username": "aibuilder", "score": 12500, "wins": 71, "country": "UK"}),
+        serde_json::json!({"rank": 5, "nodeId": "6038471", "username": "datawizard", "score": 11900, "wins": 67, "country": "IN"}),
+        serde_json::json!({"rank": 6, "nodeId": "2951038", "username": "netrunner", "score": 11200, "wins": 63, "country": "KR"}),
+        serde_json::json!({"rank": 7, "nodeId": "8145920", "username": "devopsqueen", "score": 10800, "wins": 60, "country": "CA"}),
+        serde_json::json!({"rank": 8, "nodeId": "4302719", "username": "hackerman", "score": 10200, "wins": 57, "country": "IL"}),
+    ])
+}
+
+// === ZEROFLIPPER COMMANDS ===
+
+#[tauri::command]
+pub fn cmd_list_products(category: Option<String>, search: Option<String>) -> Result<Vec<serde_json::Value>, String> {
+    Ok(vec![
+        serde_json::json!({"id": "p-1", "name": "AI Customer Support Agent", "category": "AI Agents", "price": 149.99, "rating": 4.9, "seller": "NeuralForge", "type": "Template"}),
+        serde_json::json!({"id": "p-2", "name": "SaaS Dashboard Kit", "category": "Dashboards", "price": 79.99, "rating": 4.8, "seller": "UIMasters", "type": "UI Kit"}),
+        serde_json::json!({"id": "p-3", "name": "E-Commerce Mobile App", "category": "Mobile Apps", "price": 199.99, "rating": 4.7, "seller": "AppCraft", "type": "Template"}),
+        serde_json::json!({"id": "p-4", "name": "REST API Boilerplate", "category": "APIs", "price": 49.99, "rating": 4.9, "seller": "CodeLab", "type": "Template"}),
+        serde_json::json!({"id": "p-5", "name": "CRM Enterprise System", "category": "CRM Systems", "price": 399.99, "rating": 4.6, "seller": "BizTech", "type": "System"}),
+        serde_json::json!({"id": "p-6", "name": "Marketing Video Pack", "category": "Video Assets", "price": 29.99, "rating": 4.5, "seller": "MediaPro", "type": "Asset"}),
+        serde_json::json!({"id": "p-7", "name": "ERP Management Suite", "category": "ERP Systems", "price": 499.99, "rating": 4.8, "seller": "EnterpriseTech", "type": "System"}),
+        serde_json::json!({"id": "p-8", "name": "3D Icon Collection", "category": "3D Models", "price": 39.99, "rating": 4.7, "seller": "DesignStudio", "type": "Asset"}),
+        serde_json::json!({"id": "p-9", "name": "AI Prompt Templates", "category": "AI Agents", "price": 19.99, "rating": 4.9, "seller": "PromptMaster", "type": "Pack"}),
+        serde_json::json!({"id": "p-10", "name": "React Dashboard Pro", "category": "UI Kits", "price": 89.99, "rating": 4.8, "seller": "ReactUI", "type": "Template"}),
+        serde_json::json!({"id": "p-11", "name": "Legal Contract Bundle", "category": "Legal Documents", "price": 59.99, "rating": 4.4, "seller": "LegalTech", "type": "Pack"}),
+        serde_json::json!({"id": "p-12", "name": "Automation Workflow Kit", "category": "Automation Systems", "price": 119.99, "rating": 4.7, "seller": "AutoFlow", "type": "System"}),
+    ])
+}
+
+#[tauri::command]
+pub fn cmd_buy_product(product_id: String) -> Result<serde_json::Value, String> {
+    Ok(serde_json::json!({
+        "success": true, "product_id": product_id, "message": "Purchase successful"
+    }))
+}
