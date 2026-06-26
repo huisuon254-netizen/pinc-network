@@ -35,6 +35,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npx vite build
+
       - name: Check formatting
         run: cargo fmt --all -- --check
         working-directory: src-tauri
