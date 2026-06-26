@@ -4,9 +4,10 @@
   "features": {
     "ghcr.io/devcontainers/features/sshd:1": { "version": "latest" },
     "ghcr.io/devcontainers/features/rust:1": {},
-    "ghcr.io/devcontainers/features/node:1": { "version": "20" }
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+    "ghcr.io/devcontainers/features/java:1": { "version": "17" }
   },
-  "postCreateCommand": "sudo apt-get update -qq && sudo apt-get install -y -qq libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev pkg-config && curl -fsSL https://bun.sh/install | bash && export PATH=\"$HOME/.bun/bin:$PATH\" && cd src-tauri && cargo fetch && cd .. && bun install",
+  "postCreateCommand": "bash .devcontainer/setup.sh",
   "postStartCommand": "export PATH=\"$HOME/.bun/bin:$PATH\"",
   "customizations": {
     "vscode": {
@@ -16,7 +17,7 @@
       ]
     }
   },
-  "forwardPorts": [1420],
+  "forwardPorts": [1420, 14200],
   "remoteEnv": {
     "PATH": "${containerEnv:PATH}:${containerHome}/.bun/bin"
   },

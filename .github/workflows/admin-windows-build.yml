@@ -1,0 +1,57 @@
+name: Build Admin Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install cargo-tauri
+        run: cargo install tauri-cli
+
+      - name: Install frontend dependencies
+        working-directory: pinc-admin
+        run: npm install
+
+      - name: Build frontend
+        working-directory: pinc-admin
+        run: npx vite build
+
+      - name: Build Admin Windows
+        working-directory: pinc-admin/src-tauri
+        run: npx tauri build --target x86_64-pc-windows-msvc
+        timeout-minutes: 30
+
+      - name: Find EXE
+        id: find-exe
+        run: |
+          $exePath = Get-ChildItem -Path "pinc-admin/src-tauri/target/x86_64-pc-windows-msvc/release" -Filter "*.exe" -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          Write-Host "Found: $exePath"
+          "exe_path=$exePath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinc-admin-windows
+          path: ${{ steps.find-exe.outputs.exe_path }}
+          retention-days: 7
