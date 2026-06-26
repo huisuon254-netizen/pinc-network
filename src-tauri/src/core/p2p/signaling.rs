@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum CallState {
@@ -116,7 +116,12 @@ impl CallManager {
             *call = Some(active_call.clone());
         }
 
-        log::info!("Initiated {} call to {} (id={})", format!("{:?}", call_type).to_lowercase(), peer_id, call_id);
+        log::info!(
+            "Initiated {} call to {} (id={})",
+            format!("{:?}", call_type).to_lowercase(),
+            peer_id,
+            call_id
+        );
         Ok(active_call)
     }
 
@@ -127,10 +132,15 @@ impl CallManager {
     ) -> Result<ActiveCall, String> {
         let mut call_guard = self.active_call.write().await;
 
-        let call = call_guard.as_mut().ok_or_else(|| "No active call to answer".to_string())?;
+        let call = call_guard
+            .as_mut()
+            .ok_or_else(|| "No active call to answer".to_string())?;
 
         if call.peer_id != peer_id {
-            return Err(format!("Active call is with {}, not {}", call.peer_id, peer_id));
+            return Err(format!(
+                "Active call is with {}, not {}",
+                call.peer_id, peer_id
+            ));
         }
 
         if call.state != CallState::Ringing && call.state != CallState::Idle {
@@ -202,7 +212,9 @@ impl CallManager {
         answer: &str,
     ) -> Result<ActiveCall, String> {
         let mut call_guard = self.active_call.write().await;
-        let call = call_guard.as_mut().ok_or_else(|| "No active call".to_string())?;
+        let call = call_guard
+            .as_mut()
+            .ok_or_else(|| "No active call".to_string())?;
 
         if call.peer_id != peer_id {
             return Err(format!("No call with peer {}", peer_id));
@@ -217,7 +229,9 @@ impl CallManager {
 
     pub async fn hang_up(&self) -> Result<CallHistoryEntry, String> {
         let mut call_guard = self.active_call.write().await;
-        let call = call_guard.as_mut().ok_or_else(|| "No active call to hang up".to_string())?;
+        let call = call_guard
+            .as_mut()
+            .ok_or_else(|| "No active call to hang up".to_string())?;
 
         let now = chrono::Utc::now().timestamp();
         let peer_id = call.peer_id.clone();
@@ -270,10 +284,12 @@ impl CallManager {
     pub async fn receive_signal(&self, signal: SignalingMessage) -> Result<(), String> {
         match signal.signal_type {
             SignalType::Offer => {
-                self.accept_incoming_offer(&signal.from, CallType::Voice, &signal.payload).await?;
+                self.accept_incoming_offer(&signal.from, CallType::Voice, &signal.payload)
+                    .await?;
             }
             SignalType::Answer => {
-                self.receive_remote_answer(&signal.from, &signal.payload).await?;
+                self.receive_remote_answer(&signal.from, &signal.payload)
+                    .await?;
             }
             SignalType::HangUp => {
                 let mut call_guard = self.active_call.write().await;

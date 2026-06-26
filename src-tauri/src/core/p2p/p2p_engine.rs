@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tokio::sync::RwLock;
-use serde::{Serialize, Deserialize};
 use thiserror::Error;
+use tokio::sync::RwLock;
 
 #[derive(Error, Debug)]
 pub enum P2PError {
@@ -31,8 +31,12 @@ pub struct WebRTCTransport {
     _private: (),
 }
 impl WebRTCTransport {
-    pub async fn new() -> Result<Self> { Ok(Self { _private: () }) }
-    pub async fn discover_peers(&self) -> Result<Vec<P2PNode>> { Ok(vec![]) }
+    pub async fn new() -> Result<Self> {
+        Ok(Self { _private: () })
+    }
+    pub async fn discover_peers(&self) -> Result<Vec<P2PNode>> {
+        Ok(vec![])
+    }
     pub async fn connect(&self, _peer_id: &str) -> Result<P2PConnection> {
         Err(P2PError::WebRTCError("Not implemented".to_string()))
     }
@@ -42,8 +46,12 @@ pub struct WiFiDirectTransport {
     _private: (),
 }
 impl WiFiDirectTransport {
-    pub async fn new() -> Result<Self> { Ok(Self { _private: () }) }
-    pub async fn discover_peers(&self) -> Result<Vec<P2PNode>> { Ok(vec![]) }
+    pub async fn new() -> Result<Self> {
+        Ok(Self { _private: () })
+    }
+    pub async fn discover_peers(&self) -> Result<Vec<P2PNode>> {
+        Ok(vec![])
+    }
     pub async fn connect(&self, _peer_id: &str) -> Result<P2PConnection> {
         Err(P2PError::WiFiDirectError("Not implemented".to_string()))
     }
@@ -53,8 +61,12 @@ pub struct BluetoothLETransport {
     _private: (),
 }
 impl BluetoothLETransport {
-    pub async fn new() -> Result<Self> { Ok(Self { _private: () }) }
-    pub async fn discover_peers(&self) -> Result<Vec<P2PNode>> { Ok(vec![]) }
+    pub async fn new() -> Result<Self> {
+        Ok(Self { _private: () })
+    }
+    pub async fn discover_peers(&self) -> Result<Vec<P2PNode>> {
+        Ok(vec![])
+    }
     pub async fn connect(&self, _peer_id: &str) -> Result<P2PConnection> {
         Err(P2PError::BluetoothLEError("Not implemented".to_string()))
     }
@@ -64,8 +76,12 @@ pub struct QUICTransport {
     _private: (),
 }
 impl QUICTransport {
-    pub async fn new() -> Result<Self> { Ok(Self { _private: () }) }
-    pub async fn discover_peers(&self) -> Result<Vec<P2PNode>> { Ok(vec![]) }
+    pub async fn new() -> Result<Self> {
+        Ok(Self { _private: () })
+    }
+    pub async fn discover_peers(&self) -> Result<Vec<P2PNode>> {
+        Ok(vec![])
+    }
     pub async fn connect(&self, _peer_id: &str) -> Result<P2PConnection> {
         Err(P2PError::QUICError("Not implemented".to_string()))
     }
@@ -75,14 +91,18 @@ pub struct KademliaDHT {
     _private: (),
 }
 impl KademliaDHT {
-    pub async fn new() -> Result<Self> { Ok(Self { _private: () }) }
+    pub async fn new() -> Result<Self> {
+        Ok(Self { _private: () })
+    }
 }
 
 pub struct NATTraversal {
     _private: (),
 }
 impl NATTraversal {
-    pub async fn new() -> Result<Self> { Ok(Self { _private: () }) }
+    pub async fn new() -> Result<Self> {
+        Ok(Self { _private: () })
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -153,7 +173,7 @@ impl P2PEngine {
         self.quic_transport = Some(QUICTransport::new().await?);
         self.kademlia = Some(KademliaDHT::new().await?);
         self.nat_traversal = Some(NATTraversal::new().await?);
-        
+
         log::info!("All P2P transports initialized successfully");
         Ok(())
     }
@@ -164,70 +184,93 @@ impl P2PEngine {
                 if let Some(ref transport) = self.webrtc_transport {
                     transport.discover_peers().await
                 } else {
-                    Err(P2PError::WebRTCError("WebRTC transport not initialized".to_string()))
+                    Err(P2PError::WebRTCError(
+                        "WebRTC transport not initialized".to_string(),
+                    ))
                 }
             }
             PeerType::WiFiDirect => {
                 if let Some(ref transport) = self.wifi_direct_transport {
                     transport.discover_peers().await
                 } else {
-                    Err(P2PError::WiFiDirectError("WiFi-Direct transport not initialized".to_string()))
+                    Err(P2PError::WiFiDirectError(
+                        "WiFi-Direct transport not initialized".to_string(),
+                    ))
                 }
             }
             PeerType::BluetoothLE => {
                 if let Some(ref transport) = self.bluetooth_le_transport {
                     transport.discover_peers().await
                 } else {
-                    Err(P2PError::BluetoothLEError("Bluetooth LE transport not initialized".to_string()))
+                    Err(P2PError::BluetoothLEError(
+                        "Bluetooth LE transport not initialized".to_string(),
+                    ))
                 }
             }
             PeerType::QUIC => {
                 if let Some(ref transport) = self.quic_transport {
                     transport.discover_peers().await
                 } else {
-                    Err(P2PError::QUICError("QUIC transport not initialized".to_string()))
+                    Err(P2PError::QUICError(
+                        "QUIC transport not initialized".to_string(),
+                    ))
                 }
             }
         }
     }
 
-    pub async fn connect_to_peer(&self, peer_id: &str, connection_type: ConnectionType) -> Result<P2PConnection> {
+    pub async fn connect_to_peer(
+        &self,
+        peer_id: &str,
+        connection_type: ConnectionType,
+    ) -> Result<P2PConnection> {
         match connection_type {
             ConnectionType::WebRTC => {
                 if let Some(ref transport) = self.webrtc_transport {
                     transport.connect(peer_id).await
                 } else {
-                    Err(P2PError::WebRTCError("WebRTC transport not initialized".to_string()))
+                    Err(P2PError::WebRTCError(
+                        "WebRTC transport not initialized".to_string(),
+                    ))
                 }
             }
             ConnectionType::WiFiDirect => {
                 if let Some(ref transport) = self.wifi_direct_transport {
                     transport.connect(peer_id).await
                 } else {
-                    Err(P2PError::WiFiDirectError("WiFi-Direct transport not initialized".to_string()))
+                    Err(P2PError::WiFiDirectError(
+                        "WiFi-Direct transport not initialized".to_string(),
+                    ))
                 }
             }
             ConnectionType::BluetoothLE => {
                 if let Some(ref transport) = self.bluetooth_le_transport {
                     transport.connect(peer_id).await
                 } else {
-                    Err(P2PError::BluetoothLEError("Bluetooth LE transport not initialized".to_string()))
+                    Err(P2PError::BluetoothLEError(
+                        "Bluetooth LE transport not initialized".to_string(),
+                    ))
                 }
             }
             ConnectionType::QUIC => {
                 if let Some(ref transport) = self.quic_transport {
                     transport.connect(peer_id).await
                 } else {
-                    Err(P2PError::QUICError("QUIC transport not initialized".to_string()))
+                    Err(P2PError::QUICError(
+                        "QUIC transport not initialized".to_string(),
+                    ))
                 }
             }
-            _ => Err(P2PError::ConnectionFailed("Unsupported connection type".to_string())),
+            _ => Err(P2PError::ConnectionFailed(
+                "Unsupported connection type".to_string(),
+            )),
         }
     }
 
     pub async fn get_node_info(&self) -> Result<P2PNode> {
         let nodes = self.nodes.read().await;
-        nodes.first()
+        nodes
+            .first()
             .cloned()
             .ok_or_else(|| P2PError::ConnectionFailed("No nodes available".to_string()))
     }

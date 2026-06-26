@@ -1,7 +1,7 @@
-use std::time::{Instant, Duration};
-use serde::{Deserialize, Serialize};
 use crate::core::network::bandwidth::BandwidthMonitor;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpeedTestResult {
@@ -29,10 +29,10 @@ impl NexusEngine {
 
     pub async fn run_speed_test_logic() -> SpeedTestResult {
         let start = Instant::now();
-        
+
         // Simulating a real multi-stage speed test
         // 1. Latency (Ping)
-        tokio::time::sleep(Duration::from_millis(42)).await; 
+        tokio::time::sleep(Duration::from_millis(42)).await;
         let latency = start.elapsed().as_millis() as u64;
 
         // 2. Download simulation
@@ -42,7 +42,7 @@ impl NexusEngine {
             (
                 42000.0 + rng.gen_range(-2000.0..5000.0), // 40-47 Mbps
                 12000.0 + rng.gen_range(-1000.0..2000.0), // 11-14 Mbps
-                rng.gen_range(1..5)
+                rng.gen_range(1..5),
             )
         };
 

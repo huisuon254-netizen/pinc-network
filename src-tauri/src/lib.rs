@@ -1,17 +1,17 @@
 #![allow(dead_code)]
 
-pub mod errors;
-pub mod core;
 mod commands;
+pub mod core;
+pub mod errors;
 mod startup;
 
 #[cfg(target_os = "android")]
 pub mod android;
 
-use std::sync::{Arc, Mutex};
-use tokio::sync::Mutex as AsyncMutex;
-use tauri::Manager;
 use commands::AppState;
+use std::sync::{Arc, Mutex};
+use tauri::Manager;
+use tokio::sync::Mutex as AsyncMutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

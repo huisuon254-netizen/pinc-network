@@ -1,11 +1,11 @@
+use crate::core::network::peer::PeerRegistry;
+use crate::core::network::types::PeerInfo;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{mpsc, oneshot, Mutex};
-use crate::core::network::types::PeerInfo;
-use crate::core::network::peer::PeerRegistry;
 
 const MSG_LEN_BYTES: usize = 4;
 const PROTOCOL_VERSION: &str = "pinc/3.0.0";
@@ -76,7 +76,7 @@ impl P2PNetwork {
 }
 
 fn generate_peer_id() -> String {
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let random_bytes: Vec<u8> = (0..32).map(|_| rand::random::<u8>()).collect();
     let mut hasher = Sha256::new();
     hasher.update(&random_bytes);
@@ -222,9 +222,16 @@ async fn accept_loop(
                     }
                     connected_peers.lock().await.insert(
                         peer_id.clone(),
-                        PeerConnection { peer_id: peer_id.clone(), address: peer_addr.to_string() },
+                        PeerConnection {
+                            peer_id: peer_id.clone(),
+                            address: peer_addr.to_string(),
+                        },
                     );
-                    log::info!("PINC P2P: handshake complete with {} at {}", peer_id, peer_addr);
+                    log::info!(
+                        "PINC P2P: handshake complete with {} at {}",
+                        peer_id,
+                        peer_addr
+                    );
                 });
             }
             Err(e) => {
@@ -235,11 +242,7 @@ async fn accept_loop(
     }
 }
 
-async fn perform_handshake(
-    mut stream: TcpStream,
-    local_id: &str,
-    _is_dialer: bool,
-) -> String {
+async fn perform_handshake(mut stream: TcpStream, local_id: &str, _is_dialer: bool) -> String {
     let handshake = serde_json::json!({
         "protocol": PROTOCOL_VERSION,
         "peer_id": local_id,
@@ -263,7 +266,10 @@ async fn perform_handshake(
         return format!("unknown-{}", rand::random::<u32>());
     }
     let remote: serde_json::Value = serde_json::from_slice(&buf).unwrap_or(serde_json::json!({}));
-    remote["peer_id"].as_str().unwrap_or(&format!("unknown-{}", rand::random::<u32>())).to_string()
+    remote["peer_id"]
+        .as_str()
+        .unwrap_or(&format!("unknown-{}", rand::random::<u32>()))
+        .to_string()
 }
 
 async fn write_message(stream: &mut TcpStream, data: &[u8]) -> Result<(), std::io::Error> {
@@ -279,7 +285,10 @@ async fn read_message(stream: &mut TcpStream) -> Result<Vec<u8>, std::io::Error>
     stream.read_exact(&mut len_buf).await?;
     let msg_len = u32::from_be_bytes(len_buf) as usize;
     if msg_len > 10 * 1024 * 1024 {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "message too large"));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "message too large",
+        ));
     }
     let mut buf = vec![0u8; msg_len];
     stream.read_exact(&mut buf).await?;

@@ -1,5 +1,5 @@
-pub mod types;
-pub mod errors;
 pub mod engine;
+pub mod errors;
 #[cfg(test)]
 mod tests;
+pub mod types;

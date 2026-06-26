@@ -2,17 +2,22 @@
 mod tests {
     use crate::core::distributed::{
         chunker::{split_into_distributed_chunks, verify_chunk_integrity},
-        replication::{select_storage_nodes, node_score, replication_health},
-        storage_market::{create_contract, contract_cost, is_contract_valid},
+        replication::{node_score, replication_health, select_storage_nodes},
+        storage_market::{contract_cost, create_contract, is_contract_valid},
         types::{StorageNode, CHUNK_SIZE_BYTES},
     };
 
     fn mock_node(id: &str, free_gb: u64) -> StorageNode {
         StorageNode {
-            id: id.to_string(), address: "127.0.0.1:9000".to_string(),
+            id: id.to_string(),
+            address: "127.0.0.1:9000".to_string(),
             free_space_bytes: free_gb * 1024 * 1024 * 1024,
-            used_space_bytes: 0, reputation: 0.9, uptime_pct: 99.0,
-            online: true, last_seen: 0, chunks_hosted: 0,
+            used_space_bytes: 0,
+            reputation: 0.9,
+            uptime_pct: 99.0,
+            online: true,
+            last_seen: 0,
+            chunks_hosted: 0,
         }
     }
 

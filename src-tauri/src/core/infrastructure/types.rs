@@ -23,7 +23,13 @@ pub struct DnsRecord {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum DnsRecordType { A, AAAA, TXT, SRV, PINC }
+pub enum DnsRecordType {
+    A,
+    AAAA,
+    TXT,
+    SRV,
+    PINC,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GlobalNetworkState {
@@ -46,7 +52,12 @@ pub struct EmergencyRecovery {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum RecoveryTrigger { MajorOutage, PartitionEvent, Censorship, Manual }
+pub enum RecoveryTrigger {
+    MajorOutage,
+    PartitionEvent,
+    Censorship,
+    Manual,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoadBalancer {

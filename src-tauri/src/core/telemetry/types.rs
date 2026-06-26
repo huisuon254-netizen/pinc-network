@@ -13,8 +13,15 @@ pub struct HealthStatus {
 
 impl Default for HealthStatus {
     fn default() -> Self {
-        HealthStatus { overall: "OK".to_string(), cpu_ok: true, memory_ok: true,
-            storage_ok: true, network_ok: false, crypto_ok: true, database_ok: true }
+        HealthStatus {
+            overall: "OK".to_string(),
+            cpu_ok: true,
+            memory_ok: true,
+            storage_ok: true,
+            network_ok: false,
+            crypto_ok: true,
+            database_ok: true,
+        }
     }
 }
 
@@ -30,7 +37,13 @@ pub struct NodeMetrics {
 
 impl Default for NodeMetrics {
     fn default() -> Self {
-        NodeMetrics { uptime_seconds: 0, messages_relayed: 0, bytes_relayed: 0,
-            identity_checks: 0, vault_operations: 0, peer_connections: 0 }
+        NodeMetrics {
+            uptime_seconds: 0,
+            messages_relayed: 0,
+            bytes_relayed: 0,
+            identity_checks: 0,
+            vault_operations: 0,
+            peer_connections: 0,
+        }
     }
 }

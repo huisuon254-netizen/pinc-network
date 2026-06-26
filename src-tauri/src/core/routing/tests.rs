@@ -1,18 +1,22 @@
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
     use crate::core::routing::{
         engine::{find_shortest_path, prune_stale_routes, select_region},
         types::{RegionConfig, Route, RoutingTable},
     };
+    use std::collections::HashMap;
 
     fn make_table(node: &str, dest: &str, lat: u64) -> RoutingTable {
         RoutingTable {
             node_id: node.to_string(),
             routes: vec![Route {
-                destination: dest.to_string(), next_hop: dest.to_string(),
-                hops: 1, latency_ms: lat, bandwidth_kbps: 10_000.0,
-                reliability: 0.99, last_verified: 1700000000,
+                destination: dest.to_string(),
+                next_hop: dest.to_string(),
+                hops: 1,
+                latency_ms: lat,
+                bandwidth_kbps: 10_000.0,
+                reliability: 0.99,
+                last_verified: 1700000000,
             }],
             updated_at: 1700000000,
         }
@@ -47,8 +51,20 @@ mod tests {
     #[test]
     fn test_select_least_loaded_region() {
         let regions = vec![
-            RegionConfig { region_id: "us".to_string(), name: "US East".to_string(), seed_nodes: vec![], load: 0.8, node_count: 100 },
-            RegionConfig { region_id: "eu".to_string(), name: "EU West".to_string(), seed_nodes: vec![], load: 0.3, node_count: 80 },
+            RegionConfig {
+                region_id: "us".to_string(),
+                name: "US East".to_string(),
+                seed_nodes: vec![],
+                load: 0.8,
+                node_count: 100,
+            },
+            RegionConfig {
+                region_id: "eu".to_string(),
+                name: "EU West".to_string(),
+                seed_nodes: vec![],
+                load: 0.3,
+                node_count: 80,
+            },
         ];
         let selected = select_region(&regions).unwrap();
         assert_eq!(selected.region_id, "eu");

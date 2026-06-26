@@ -1,13 +1,13 @@
-use std::path::PathBuf;
+use crate::core::crypto::hash::blake3_hex;
 use crate::core::database::connection::Database;
 use crate::core::database::queries::{
-    insert_vault_file, list_vault_files, delete_vault_file as db_delete_vault_file,
-    get_vault_file, get_system_config, update_system_config,
+    delete_vault_file as db_delete_vault_file, get_system_config, get_vault_file,
+    insert_vault_file, list_vault_files, update_system_config,
 };
 use crate::core::vault::encryptor;
 use crate::core::vault::storage;
 use crate::core::vault::types::VaultFileRecord;
-use crate::core::crypto::hash::blake3_hex;
+use std::path::PathBuf;
 
 pub fn ensure_vault_dir(vault_dir: &std::path::Path) -> Result<(), String> {
     std::fs::create_dir_all(vault_dir).map_err(|e| format!("Failed to create vault dir: {}", e))
@@ -26,8 +26,14 @@ pub fn get_or_create_vault_key(db: &Database) -> Result<[u8; 32], String> {
     rand::RngCore::fill_bytes(&mut rand::thread_rng(), &mut seed);
     let seed_hex = hex::encode(seed);
 
-    update_system_config(db, "vault_key", &seed_hex, Some("Auto-generated vault encryption key".to_string()), "security")
-        .map_err(|e| format!("Failed to store vault key: {}", e))?;
+    update_system_config(
+        db,
+        "vault_key",
+        &seed_hex,
+        Some("Auto-generated vault encryption key".to_string()),
+        "security",
+    )
+    .map_err(|e| format!("Failed to store vault key: {}", e))?;
 
     let hash = blake3::hash(&seed);
     let mut key = [0u8; 32];
@@ -89,8 +95,8 @@ pub fn download_file(
         .ok_or_else(|| format!("File '{}' not found", file_id))?;
 
     let path = file_path(vault_dir, &record.id);
-    let stored_data = storage::read_vault_file(&path)
-        .map_err(|e| format!("Failed to read vault file: {}", e))?;
+    let stored_data =
+        storage::read_vault_file(&path).map_err(|e| format!("Failed to read vault file: {}", e))?;
 
     if record.encrypted {
         let key = get_or_create_vault_key(db)?;
@@ -118,10 +124,7 @@ pub fn list_files(db: &Database) -> Result<Vec<VaultFileRecord>, String> {
     list_vault_files(db).map_err(|e| e.to_string())
 }
 
-pub fn get_file_info(
-    db: &Database,
-    file_id: &str,
-) -> Result<VaultFileRecord, String> {
+pub fn get_file_info(db: &Database, file_id: &str) -> Result<VaultFileRecord, String> {
     get_vault_file(db, file_id)
         .map_err(|e| e.to_string())?
         .ok_or_else(|| format!("File '{}' not found", file_id))

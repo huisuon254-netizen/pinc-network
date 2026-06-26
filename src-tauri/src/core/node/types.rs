@@ -13,8 +13,11 @@ pub struct NodeStatus {
 impl Default for NodeStatus {
     fn default() -> Self {
         NodeStatus {
-            node_id: None, online: false, peer_count: 0,
-            relay_active: false, uptime_seconds: 0,
+            node_id: None,
+            online: false,
+            peer_count: 0,
+            relay_active: false,
+            uptime_seconds: 0,
             version: env!("CARGO_PKG_VERSION").to_string(),
         }
     }

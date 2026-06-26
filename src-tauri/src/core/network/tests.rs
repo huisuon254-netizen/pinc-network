@@ -1,18 +1,27 @@
 #[cfg(test)]
 mod tests {
     use crate::core::network::{
-        handshake::{build_handshake, validate_handshake, serialize_handshake, deserialize_handshake},
-        peer::{PeerRegistry, compute_trust_score},
-        relay::{RelayManager, validate_relay_request},
         bandwidth::BandwidthMonitor,
         discovery::Discovery,
-        types::{RelayRequest, PeerInfo},
+        handshake::{
+            build_handshake, deserialize_handshake, serialize_handshake, validate_handshake,
+        },
+        peer::{compute_trust_score, PeerRegistry},
+        relay::{validate_relay_request, RelayManager},
+        types::{PeerInfo, RelayRequest},
     };
 
     fn mock_peer(id: &str) -> PeerInfo {
-        PeerInfo { id: id.to_string(), address: "127.0.0.1:9000".to_string(),
-            public_key: "key".to_string(), latency_ms: 50, trust_score: 0.8,
-            relay_score: 0.7, online: true, last_seen: 1700000000 }
+        PeerInfo {
+            id: id.to_string(),
+            address: "127.0.0.1:9000".to_string(),
+            public_key: "key".to_string(),
+            latency_ms: 50,
+            trust_score: 0.8,
+            relay_score: 0.7,
+            online: true,
+            last_seen: 1700000000,
+        }
     }
 
     #[test]
@@ -78,13 +87,23 @@ mod tests {
 
     #[test]
     fn test_relay_request_validation_ok() {
-        let req = RelayRequest { from_node: "a".into(), to_node: "b".into(), payload: vec![1,2,3], encrypted: true };
+        let req = RelayRequest {
+            from_node: "a".into(),
+            to_node: "b".into(),
+            payload: vec![1, 2, 3],
+            encrypted: true,
+        };
         assert!(validate_relay_request(&req).is_ok());
     }
 
     #[test]
     fn test_relay_request_empty_payload_fails() {
-        let req = RelayRequest { from_node: "a".into(), to_node: "b".into(), payload: vec![], encrypted: true };
+        let req = RelayRequest {
+            from_node: "a".into(),
+            to_node: "b".into(),
+            payload: vec![],
+            encrypted: true,
+        };
         assert!(validate_relay_request(&req).is_err());
     }
 
@@ -107,7 +126,12 @@ mod tests {
     fn test_discovery_dedup() {
         use crate::core::network::types::{DiscoveredPeer, PeerSource};
         let mut d = Discovery::new();
-        let peer = DiscoveredPeer { address: "1.2.3.4:9000".into(), node_id: "PINC-XX-0001".into(), public_key: "k".into(), source: PeerSource::Bootstrap };
+        let peer = DiscoveredPeer {
+            address: "1.2.3.4:9000".into(),
+            node_id: "PINC-XX-0001".into(),
+            public_key: "k".into(),
+            source: PeerSource::Bootstrap,
+        };
         d.add_discovered(peer.clone());
         d.add_discovered(peer);
         assert_eq!(d.known_peers().len(), 1);

@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use std::time::{SystemTime, UNIX_EPOCH};
 use chrono;
+use serde::{Deserialize, Serialize};
 use serde_json;
+use std::time::{SystemTime, UNIX_EPOCH};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerListing {
@@ -30,7 +30,13 @@ pub struct HardwareSpecs {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum ServerStatus { Available, Rented, Maintenance, Offline, Reserved }
+pub enum ServerStatus {
+    Available,
+    Rented,
+    Maintenance,
+    Offline,
+    Reserved,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ServerMetrics {
@@ -80,7 +86,12 @@ pub struct RentalAgreement {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum RentalStatus { Active, Completed, Cancelled, Disputes }
+pub enum RentalStatus {
+    Active,
+    Completed,
+    Cancelled,
+    Disputes,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum RiftPaymentStatus {
@@ -117,7 +128,13 @@ impl RiftEngine {
         }
     }
 
-    pub fn create_listing(&mut self, owner_id: &str, tier: &str, price: f64, specs: HardwareSpecs) -> Result<ServerListing, HardwareValidationError> {
+    pub fn create_listing(
+        &mut self,
+        owner_id: &str,
+        tier: &str,
+        price: f64,
+        specs: HardwareSpecs,
+    ) -> Result<ServerListing, HardwareValidationError> {
         validate_hardware_specs(&specs)?;
         let price_per_hour = determine_price(tier, &specs);
         let listing = ServerListing {
@@ -127,7 +144,10 @@ impl RiftEngine {
             price_per_hour,
             hardware_specs: specs,
             status: ServerStatus::Available,
-            created_at: SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64,
+            created_at: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs() as i64,
             rental_start: None,
             rental_duration_hours: None,
             renter_id: None,
@@ -143,13 +163,22 @@ impl RiftEngine {
         self.listings.clone()
     }
 
-    pub fn rent_server(&mut self, listing_id: &str, renter_id: &str, period: RentalPeriod, duration_hours: u32) -> Result<RentalAgreement, String> {
+    pub fn rent_server(
+        &mut self,
+        listing_id: &str,
+        renter_id: &str,
+        period: RentalPeriod,
+        duration_hours: u32,
+    ) -> Result<RentalAgreement, String> {
         let listing = self.listings.iter_mut().find(|l| l.id == listing_id);
         if let Some(listing) = listing {
             if listing.status != ServerStatus::Available {
                 return Err("Server not available for rent".to_string());
             }
-            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64;
+            let now = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs() as i64;
             let end_time = now + (duration_hours as i64 * 3600);
             let total_cost = calculate_rental_cost(listing.price_per_hour, duration_hours, &period);
             let rental = RentalAgreement {
@@ -175,7 +204,10 @@ impl RiftEngine {
     }
 
     pub fn return_server(&mut self, rental_id: &str) -> Result<(), String> {
-        let rental = self.active_rentals.iter_mut().find(|r| r.server_id == rental_id);
+        let rental = self
+            .active_rentals
+            .iter_mut()
+            .find(|r| r.server_id == rental_id);
         if let Some(rental) = rental {
             if rental.status != RentalStatus::Active {
                 return Err("Rental not active".to_string());
@@ -197,7 +229,11 @@ impl RiftEngine {
         }
     }
 
-    pub fn update_metrics(&mut self, listing_id: &str, metrics: ServerMetrics) -> Result<(), String> {
+    pub fn update_metrics(
+        &mut self,
+        listing_id: &str,
+        metrics: ServerMetrics,
+    ) -> Result<(), String> {
         let listing = self.listings.iter_mut().find(|l| l.id == listing_id);
         if let Some(listing) = listing {
             listing.metrics = metrics;
@@ -217,10 +253,18 @@ impl RiftEngine {
 }
 
 fn validate_hardware_specs(specs: &HardwareSpecs) -> Result<(), HardwareValidationError> {
-    if specs.cpu_cores < 2 { return Err(HardwareValidationError::CpuTooLow); }
-    if specs.ram_gb < 4 { return Err(HardwareValidationError::MemoryTooLow); }
-    if specs.storage_gb < 20 { return Err(HardwareValidationError::StorageTooLow); }
-    if specs.network_speed_mbps < 100 { return Err(HardwareValidationError::NetworkTooLow); }
+    if specs.cpu_cores < 2 {
+        return Err(HardwareValidationError::CpuTooLow);
+    }
+    if specs.ram_gb < 4 {
+        return Err(HardwareValidationError::MemoryTooLow);
+    }
+    if specs.storage_gb < 20 {
+        return Err(HardwareValidationError::StorageTooLow);
+    }
+    if specs.network_speed_mbps < 100 {
+        return Err(HardwareValidationError::NetworkTooLow);
+    }
     Ok(())
 }
 

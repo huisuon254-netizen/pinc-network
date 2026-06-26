@@ -10,7 +10,12 @@ pub struct MeshConfig {
 
 impl Default for MeshConfig {
     fn default() -> Self {
-        MeshConfig { max_peers: 50, relay_enabled: true, bandwidth_cap_kbps: 10_000.0, nat_traversal: true }
+        MeshConfig {
+            max_peers: 50,
+            relay_enabled: true,
+            bandwidth_cap_kbps: 10_000.0,
+            nat_traversal: true,
+        }
     }
 }
 
@@ -24,6 +29,11 @@ pub struct MeshStatus {
 
 impl Default for MeshStatus {
     fn default() -> Self {
-        MeshStatus { peer_count: 0, relay_count: 0, ready: false, phase: "Phase 3 — Transport Ready".to_string() }
+        MeshStatus {
+            peer_count: 0,
+            relay_count: 0,
+            ready: false,
+            phase: "Phase 3 — Transport Ready".to_string(),
+        }
     }
 }

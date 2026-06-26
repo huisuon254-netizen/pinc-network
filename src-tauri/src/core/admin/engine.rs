@@ -83,8 +83,7 @@ impl<'a> AdminEngine<'a> {
     }
 
     pub fn list_admins(&self) -> Result<Vec<queries::AdminUser>, String> {
-        queries::list_admin_users(self.db)
-            .map_err(|e| format!("Failed to list admins: {}", e))
+        queries::list_admin_users(self.db).map_err(|e| format!("Failed to list admins: {}", e))
     }
 
     pub fn update_admin_role(&self, admin_id: &str, role: &str) -> Result<(), String> {

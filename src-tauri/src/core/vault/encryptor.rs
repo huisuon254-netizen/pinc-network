@@ -1,5 +1,8 @@
 use crate::core::{
-    crypto::{cipher::{encrypt, decrypt, EncryptedData}, types::NonceType},
+    crypto::{
+        cipher::{decrypt, encrypt, EncryptedData},
+        types::NonceType,
+    },
     vault::errors::VaultError,
 };
 
@@ -15,13 +18,15 @@ pub fn vault_encrypt(key: &[u8; 32], data: &[u8]) -> Result<Vec<u8>, VaultError>
 /// Decrypt a vault blob (nonce prepended).
 pub fn vault_decrypt(key: &[u8; 32], blob: &[u8]) -> Result<Vec<u8>, VaultError> {
     if blob.len() < 25 {
-        return Err(VaultError::CorruptBlob(format!("too short: {} bytes", blob.len())));
+        return Err(VaultError::CorruptBlob(format!(
+            "too short: {} bytes",
+            blob.len()
+        )));
     }
     let (nonce_bytes, ciphertext_bytes) = blob.split_at(24);
     let enc = EncryptedData {
         nonce: nonce_bytes.to_vec(),
         ciphertext: ciphertext_bytes.to_vec(),
     };
-    decrypt(key, &enc, NonceType::XChaCha24)
-        .map_err(|_| VaultError::DecryptionFailed)
+    decrypt(key, &enc, NonceType::XChaCha24).map_err(|_| VaultError::DecryptionFailed)
 }

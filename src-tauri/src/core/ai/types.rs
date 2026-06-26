@@ -42,11 +42,23 @@ pub struct ModerationResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ModerationCategory {
-    Spam, Fraud, HateSpeech, FakeWork, Malware, Illegal, Safe,
+    Spam,
+    Fraud,
+    HateSpeech,
+    FakeWork,
+    Malware,
+    Illegal,
+    Safe,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum ModerationAction { Allow, Warn, Remove, Ban, Escalate }
+pub enum ModerationAction {
+    Allow,
+    Warn,
+    Remove,
+    Ban,
+    Escalate,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FraudSignal {
@@ -59,8 +71,12 @@ pub struct FraudSignal {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum FraudSignalType {
-    MultipleAccounts, FakeWork, PaymentFraud,
-    RelayAbuse, SpamPosting, IdentitySpoof,
+    MultipleAccounts,
+    FakeWork,
+    PaymentFraud,
+    RelayAbuse,
+    SpamPosting,
+    IdentitySpoof,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

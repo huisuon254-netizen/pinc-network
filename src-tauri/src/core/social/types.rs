@@ -33,10 +33,22 @@ pub struct Post {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum PostType { Text, Image, Video, Challenge, Announcement, JobPost }
+pub enum PostType {
+    Text,
+    Image,
+    Video,
+    Challenge,
+    Announcement,
+    JobPost,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum Visibility { Public, Followers, Private, Group(String) }
+pub enum Visibility {
+    Public,
+    Followers,
+    Private,
+    Group(String),
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Group {
@@ -61,7 +73,12 @@ pub struct Badge {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum BadgeRarity { Common, Rare, Epic, Legendary }
+pub enum BadgeRarity {
+    Common,
+    Rare,
+    Epic,
+    Legendary,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Feed {

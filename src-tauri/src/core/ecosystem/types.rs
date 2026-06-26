@@ -18,7 +18,12 @@ pub struct EcosystemStatus {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum EcosystemHealth { Healthy, Degraded, Critical, Recovering }
+pub enum EcosystemHealth {
+    Healthy,
+    Degraded,
+    Critical,
+    Recovering,
+}
 
 /// Cross-engine event that flows through the entire system
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,19 +39,42 @@ pub struct SystemEvent {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum SystemEventType {
-    IdentityCreated, PeerConnected, PeerDisconnected,
-    FileUploaded, FileDistributed, ChunkReplicated,
-    MessageSent, MessageDelivered, CallStarted, CallEnded,
-    JobCreated, JobCompleted, DisputeRaised, DisputeResolved,
-    PaymentMade, EscrowLocked, EscrowReleased,
-    WagerCreated, WagerCompleted, TournamentStarted,
-    ReputationUpdated, AccountBurned,
-    SecurityEvent, AiDecision,
-    NodeJoined, NodeLeft, NodeBanned,
+    IdentityCreated,
+    PeerConnected,
+    PeerDisconnected,
+    FileUploaded,
+    FileDistributed,
+    ChunkReplicated,
+    MessageSent,
+    MessageDelivered,
+    CallStarted,
+    CallEnded,
+    JobCreated,
+    JobCompleted,
+    DisputeRaised,
+    DisputeResolved,
+    PaymentMade,
+    EscrowLocked,
+    EscrowReleased,
+    WagerCreated,
+    WagerCompleted,
+    TournamentStarted,
+    ReputationUpdated,
+    AccountBurned,
+    SecurityEvent,
+    AiDecision,
+    NodeJoined,
+    NodeLeft,
+    NodeBanned,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
-pub enum EventPriority { Low, Normal, High, Critical }
+pub enum EventPriority {
+    Low,
+    Normal,
+    High,
+    Critical,
+}
 
 /// Plugin/extension hook system for ecosystem extensibility
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,7 +84,7 @@ pub struct EcosystemPlugin {
     pub version: String,
     pub author_node_id: String,
     pub description: String,
-    pub hooks: Vec<String>,  // event types this plugin subscribes to
+    pub hooks: Vec<String>, // event types this plugin subscribes to
     pub enabled: bool,
     pub verified: bool,
     pub install_count: u64,
@@ -76,4 +104,11 @@ pub struct PlatformCapabilities {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum Platform { Linux, Windows, MacOs, Android, Ios, Console }
+pub enum Platform {
+    Linux,
+    Windows,
+    MacOs,
+    Android,
+    Ios,
+    Console,
+}

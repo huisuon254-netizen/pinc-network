@@ -2,7 +2,10 @@
 mod tests {
     use crate::core::{
         database::connection::open_test_db,
-        identity::{generator::create_identity, validator::validate_identity, fingerprint::device_fingerprint},
+        identity::{
+            fingerprint::device_fingerprint, generator::create_identity,
+            validator::validate_identity,
+        },
     };
 
     const KEY: [u8; 32] = [7u8; 32];
@@ -54,11 +57,17 @@ mod tests {
     #[test]
     fn test_validation_catches_empty_id() {
         use crate::core::identity::types::Identity;
-        let bad = Identity { id: "".to_string(), node_id: "1234567".to_string(),
+        let bad = Identity {
+            id: "".to_string(),
+            node_id: "1234567".to_string(),
             username: "".to_string(),
-            public_key: "key".to_string(), private_key_encrypted: "enc".to_string(),
-            fingerprint: "fp".to_string(), recovery_key_hash: "rk".to_string(),
-            recovery_phrase_hash: "rp".to_string(), created_at: 1700000000 };
+            public_key: "key".to_string(),
+            private_key_encrypted: "enc".to_string(),
+            fingerprint: "fp".to_string(),
+            recovery_key_hash: "rk".to_string(),
+            recovery_phrase_hash: "rp".to_string(),
+            created_at: 1700000000,
+        };
         assert!(validate_identity(&bad).is_err());
     }
 

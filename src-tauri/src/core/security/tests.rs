@@ -8,13 +8,17 @@ mod tests {
     #[test]
     fn test_rate_limiter_allows_within_limit() {
         let mut rl = RateLimiter::new(100);
-        for _ in 0..50 { assert!(rl.check("peer-1")); }
+        for _ in 0..50 {
+            assert!(rl.check("peer-1"));
+        }
     }
 
     #[test]
     fn test_rate_limiter_blocks_over_limit() {
         let mut rl = RateLimiter::new(5);
-        for _ in 0..5 { rl.check("peer-x"); }
+        for _ in 0..5 {
+            rl.check("peer-x");
+        }
         assert!(!rl.check("peer-x"));
     }
 

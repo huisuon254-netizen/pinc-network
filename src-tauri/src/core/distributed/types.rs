@@ -20,7 +20,7 @@ pub enum DistributedFileStatus {
     Uploading,
     Distributing,
     Available,
-    Degraded,   // some replicas missing
+    Degraded, // some replicas missing
     Recovering,
     Deleted,
 }

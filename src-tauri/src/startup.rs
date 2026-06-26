@@ -2,7 +2,7 @@ use crate::{
     core::{
         crypto::{cipher::encrypt, types::NonceType},
         database::{connection::Database, validator::check_schema_version},
-        vault::encryptor::{vault_encrypt, vault_decrypt},
+        vault::encryptor::{vault_decrypt, vault_encrypt},
     },
     errors::AppError,
 };
@@ -33,27 +33,48 @@ pub fn startup_check(db: &Database) -> StartupReport {
     checks.push(StartupCheck {
         name: "Crypto".to_string(),
         passed: crypto_ok,
-        message: if crypto_ok { "OK".to_string() } else { "Crypto self-test failed".to_string() },
+        message: if crypto_ok {
+            "OK".to_string()
+        } else {
+            "Crypto self-test failed".to_string()
+        },
     });
-    if !crypto_ok { all_passed = false; failed_component.get_or_insert("Crypto".to_string()); }
+    if !crypto_ok {
+        all_passed = false;
+        failed_component.get_or_insert("Crypto".to_string());
+    }
 
     // 2. Database
     let db_ok = check_database(db);
     checks.push(StartupCheck {
         name: "Database".to_string(),
         passed: db_ok,
-        message: if db_ok { "OK".to_string() } else { "Schema validation failed".to_string() },
+        message: if db_ok {
+            "OK".to_string()
+        } else {
+            "Schema validation failed".to_string()
+        },
     });
-    if !db_ok { all_passed = false; failed_component.get_or_insert("Database".to_string()); }
+    if !db_ok {
+        all_passed = false;
+        failed_component.get_or_insert("Database".to_string());
+    }
 
     // 3. Vault
     let vault_ok = check_vault();
     checks.push(StartupCheck {
         name: "Vault".to_string(),
         passed: vault_ok,
-        message: if vault_ok { "OK".to_string() } else { "Vault self-test failed".to_string() },
+        message: if vault_ok {
+            "OK".to_string()
+        } else {
+            "Vault self-test failed".to_string()
+        },
     });
-    if !vault_ok { all_passed = false; failed_component.get_or_insert("Vault".to_string()); }
+    if !vault_ok {
+        all_passed = false;
+        failed_component.get_or_insert("Vault".to_string());
+    }
 
     // 4. Identity (check if one exists — not required)
     checks.push(StartupCheck {
@@ -76,7 +97,11 @@ pub fn startup_check(db: &Database) -> StartupReport {
         message: "Phase 3 Ready".to_string(),
     });
 
-    StartupReport { all_passed, checks, failed_component }
+    StartupReport {
+        all_passed,
+        checks,
+        failed_component,
+    }
 }
 
 fn check_crypto() -> bool {

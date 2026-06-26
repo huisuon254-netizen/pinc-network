@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
     use crate::core::payment::{
-        escrow::{lock_escrow, release_escrow, return_escrow, mark_condition_met},
-        ledger::{new_wallet, transfer, deposit},
-        types::{EscrowCondition},
+        escrow::{lock_escrow, mark_condition_met, release_escrow, return_escrow},
+        ledger::{deposit, new_wallet, transfer},
+        types::EscrowCondition,
     };
 
     fn funded_wallet(id: &str, bal: f64) -> crate::core::payment::types::Wallet {
@@ -39,7 +39,11 @@ mod tests {
     fn test_escrow_lock_and_release() {
         let mut payer = funded_wallet("payer", 100.0);
         let mut payee = funded_wallet("payee", 0.0);
-        let cond = EscrowCondition { description: "done".to_string(), met: false, verified_at: None };
+        let cond = EscrowCondition {
+            description: "done".to_string(),
+            met: false,
+            verified_at: None,
+        };
         let mut escrow = lock_escrow(&mut payer, 50.0, "payee", "job-1", vec![cond]).unwrap();
         assert_eq!(payer.escrow_locked, 50.0);
         assert_eq!(payer.available_balance(), 50.0);
@@ -53,7 +57,11 @@ mod tests {
     fn test_escrow_conditions_not_met_blocks_release() {
         let mut payer = funded_wallet("payer", 100.0);
         let mut payee = funded_wallet("payee", 0.0);
-        let cond = EscrowCondition { description: "not done".to_string(), met: false, verified_at: None };
+        let cond = EscrowCondition {
+            description: "not done".to_string(),
+            met: false,
+            verified_at: None,
+        };
         let mut escrow = lock_escrow(&mut payer, 50.0, "payee", "job-2", vec![cond]).unwrap();
         assert!(release_escrow(&mut escrow, &mut payer, &mut payee).is_err());
     }

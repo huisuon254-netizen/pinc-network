@@ -31,7 +31,11 @@ pub fn select_storage_nodes(
         .collect();
 
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-    Ok(scored.into_iter().take(replication_factor).map(|(n, _)| n).collect())
+    Ok(scored
+        .into_iter()
+        .take(replication_factor)
+        .map(|(n, _)| n)
+        .collect())
 }
 
 /// Score a storage node for chunk placement
@@ -61,9 +65,10 @@ pub fn replication_health(
     chunks_with_healthy_replicas: usize,
     factor: usize,
 ) -> f64 {
-    if total_chunks == 0 { return 1.0; }
-    (chunks_with_healthy_replicas as f64 * factor as f64)
-        / (total_chunks as f64 * factor as f64)
+    if total_chunks == 0 {
+        return 1.0;
+    }
+    (chunks_with_healthy_replicas as f64 * factor as f64) / (total_chunks as f64 * factor as f64)
 }
 
 /// Return true if replication needs repair

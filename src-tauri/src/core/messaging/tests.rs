@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::core::messaging::{
-        encryption::{encrypt_message, decrypt_message, MAX_MESSAGE_BYTES},
+        encryption::{decrypt_message, encrypt_message, MAX_MESSAGE_BYTES},
         router::MessageRouter,
         types::{Message, MessageStatus, MessageType, OfflineMessageQueue},
     };
@@ -9,12 +9,19 @@ mod tests {
 
     fn mock_message(sender: &str, recipient: &str) -> Message {
         Message {
-            id: Uuid::new_v4().to_string(), conversation_id: "conv-1".to_string(),
-            sender_id: sender.to_string(), recipient_id: recipient.to_string(),
-            msg_type: MessageType::Text, content: b"hello".to_vec(),
-            content_hash: "abc".to_string(), status: MessageStatus::Sending,
-            sent_at: 1700000000, delivered_at: None, read_at: None,
-            reply_to: None, media_ref: None,
+            id: Uuid::new_v4().to_string(),
+            conversation_id: "conv-1".to_string(),
+            sender_id: sender.to_string(),
+            recipient_id: recipient.to_string(),
+            msg_type: MessageType::Text,
+            content: b"hello".to_vec(),
+            content_hash: "abc".to_string(),
+            status: MessageStatus::Sending,
+            sent_at: 1700000000,
+            delivered_at: None,
+            read_at: None,
+            reply_to: None,
+            media_ref: None,
         }
     }
 
@@ -76,7 +83,8 @@ mod tests {
 
     #[test]
     fn test_encrypt_produces_different_output_each_time() {
-        let k1 = [1u8; 32]; let k2 = [2u8; 32];
+        let k1 = [1u8; 32];
+        let k2 = [2u8; 32];
         let msg = b"same message";
         let enc1 = encrypt_message(msg, &k1, &k2).unwrap();
         let enc2 = encrypt_message(msg, &k1, &k2).unwrap();

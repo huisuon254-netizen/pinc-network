@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::core::database::connection::Database;
-use crate::core::games::types::{GameSession, GameSessionSummary, SessionState, now_secs};
 use crate::core::database::queries;
+use crate::core::games::types::{now_secs, GameSession, GameSessionSummary, SessionState};
 
 pub struct SessionManager {
     sessions: HashMap<String, GameSession>,
@@ -20,7 +20,8 @@ impl SessionManager {
         if let Ok(db_sessions) = queries::list_game_sessions(db) {
             for ds in db_sessions {
                 let players: Vec<String> = serde_json::from_str(&ds.player_ids).unwrap_or_default();
-                let scores: HashMap<String, u64> = serde_json::from_str(&ds.scores).unwrap_or_default();
+                let scores: HashMap<String, u64> =
+                    serde_json::from_str(&ds.scores).unwrap_or_default();
                 let state = match ds.status.as_str() {
                     "playing" => SessionState::Playing,
                     "finished" => SessionState::Finished,
@@ -52,11 +53,7 @@ impl SessionManager {
         max_players: u32,
         db: &Database,
     ) -> Result<GameSession, String> {
-        let session = GameSession::new(
-            game_id.to_string(),
-            host_id.to_string(),
-            max_players,
-        );
+        let session = GameSession::new(game_id.to_string(), host_id.to_string(), max_players);
 
         let db_session = queries::GameSession {
             id: session.id.clone(),
@@ -82,7 +79,9 @@ impl SessionManager {
         player_id: &str,
         db: &Database,
     ) -> Result<GameSession, String> {
-        let session = self.sessions.get_mut(session_id)
+        let session = self
+            .sessions
+            .get_mut(session_id)
             .ok_or_else(|| format!("Session '{}' not found", session_id))?;
 
         if session.state != SessionState::Waiting {
@@ -109,7 +108,9 @@ impl SessionManager {
         player_id: &str,
         db: &Database,
     ) -> Result<GameSession, String> {
-        let session = self.sessions.get_mut(session_id)
+        let session = self
+            .sessions
+            .get_mut(session_id)
             .ok_or_else(|| format!("Session '{}' not found", session_id))?;
 
         if !session.players.contains(&player_id.to_string()) {
@@ -136,7 +137,9 @@ impl SessionManager {
         host_id: &str,
         db: &Database,
     ) -> Result<GameSession, String> {
-        let session = self.sessions.get_mut(session_id)
+        let session = self
+            .sessions
+            .get_mut(session_id)
             .ok_or_else(|| format!("Session '{}' not found", session_id))?;
 
         if session.host_id != host_id {
@@ -165,7 +168,9 @@ impl SessionManager {
         score: u64,
         db: &Database,
     ) -> Result<GameSession, String> {
-        let session = self.sessions.get_mut(session_id)
+        let session = self
+            .sessions
+            .get_mut(session_id)
             .ok_or_else(|| format!("Session '{}' not found", session_id))?;
 
         if session.state != SessionState::Playing {
@@ -183,12 +188,10 @@ impl SessionManager {
         Ok(result)
     }
 
-    pub fn end_session(
-        &mut self,
-        session_id: &str,
-        db: &Database,
-    ) -> Result<GameSession, String> {
-        let session = self.sessions.get_mut(session_id)
+    pub fn end_session(&mut self, session_id: &str, db: &Database) -> Result<GameSession, String> {
+        let session = self
+            .sessions
+            .get_mut(session_id)
             .ok_or_else(|| format!("Session '{}' not found", session_id))?;
 
         if session.state != SessionState::Playing {
@@ -209,7 +212,8 @@ impl SessionManager {
     }
 
     pub fn list_active_sessions(&self) -> Vec<GameSessionSummary> {
-        self.sessions.values()
+        self.sessions
+            .values()
             .filter(|s| s.state == SessionState::Waiting || s.state == SessionState::Playing)
             .map(|s| s.summary())
             .collect()
@@ -220,7 +224,9 @@ impl SessionManager {
         if session.state != SessionState::Finished {
             return None;
         }
-        session.scores.iter()
+        session
+            .scores
+            .iter()
             .max_by_key(|(_, score)| *score)
             .map(|(player, _)| player.clone())
     }

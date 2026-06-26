@@ -52,12 +52,18 @@ impl BandwidthMonitor {
         (kbps_up, kbps_down)
     }
 
-    pub fn total_bytes_sent(&self) -> u64 { *self.bytes_sent.lock().unwrap() }
-    pub fn total_bytes_recv(&self) -> u64 { *self.bytes_recv.lock().unwrap() }
+    pub fn total_bytes_sent(&self) -> u64 {
+        *self.bytes_sent.lock().unwrap()
+    }
+    pub fn total_bytes_recv(&self) -> u64 {
+        *self.bytes_recv.lock().unwrap()
+    }
 }
 
 impl Default for BandwidthMonitor {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// Speed test payload size for calibration

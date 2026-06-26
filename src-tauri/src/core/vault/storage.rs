@@ -1,5 +1,5 @@
-use std::{fs, path::Path};
 use crate::core::vault::errors::VaultError;
+use std::{fs, path::Path};
 
 pub fn write_vault_file(path: &Path, blob: &[u8]) -> Result<(), VaultError> {
     if let Some(parent) = path.parent() {

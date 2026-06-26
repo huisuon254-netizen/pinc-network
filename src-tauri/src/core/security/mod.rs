@@ -1,6 +1,6 @@
-pub mod types;
 pub mod errors;
-pub mod scanner;
 pub mod kingsman;
+pub mod scanner;
 #[cfg(test)]
 mod tests;
+pub mod types;

@@ -51,7 +51,10 @@ pub async fn fetch_gd_games(
         .map_err(|e| format!("GameDistribution request failed: {}", e))?;
 
     if !response.status().is_success() {
-        return Err(format!("GameDistribution returned status: {}", response.status()));
+        return Err(format!(
+            "GameDistribution returned status: {}",
+            response.status()
+        ));
     }
 
     let feed: GdRssFeed = response
@@ -59,12 +62,19 @@ pub async fn fetch_gd_games(
         .await
         .map_err(|e| format!("GameDistribution JSON parse error: {}", e))?;
 
-    let games: Vec<Game> = feed.items.into_iter().map(|item| gd_item_to_game(item)).collect();
+    let games: Vec<Game> = feed
+        .items
+        .into_iter()
+        .map(|item| gd_item_to_game(item))
+        .collect();
 
     let filtered = if category == "all" || category.is_empty() {
         games
     } else {
-        games.into_iter().filter(|g| g.category.to_lowercase() == category).collect()
+        games
+            .into_iter()
+            .filter(|g| g.category.to_lowercase() == category)
+            .collect()
     };
 
     let start = ((page - 1) * per_page) as usize;

@@ -1,7 +1,7 @@
-use tauri::State;
 use crate::commands::AppState;
-use std::process::Command;
 use std::fs;
+use std::process::Command;
+use tauri::State;
 
 #[tauri::command]
 pub fn cmd_get_starteran_status(_state: State<'_, AppState>) -> Result<serde_json::Value, String> {
@@ -90,7 +90,11 @@ fn get_storage_info() -> (u64, u64) {
                 if parts.len() >= 5 {
                     let total: u64 = parts[1].parse().unwrap_or(0);
                     let used: u64 = parts[2].parse().unwrap_or(0);
-                    let pct = if total > 0 { (used as f64 / total as f64 * 100.0) as u64 } else { 0 };
+                    let pct = if total > 0 {
+                        (used as f64 / total as f64 * 100.0) as u64
+                    } else {
+                        0
+                    };
                     return (total / 1_073_741_824, pct);
                 }
             }
@@ -118,7 +122,7 @@ fn get_security_status() -> String {
         .and_then(|o| String::from_utf8(o.stdout).ok())
         .map(|s| !s.is_empty())
         .unwrap_or(false);
-    
+
     if entropy_ok && firewall_ok {
         "ok".to_string()
     } else {
@@ -134,7 +138,9 @@ fn get_security_status() -> String {
 }
 
 #[tauri::command]
-pub fn cmd_get_conversations(_state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_get_conversations(
+    _state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
 
@@ -149,7 +155,9 @@ pub fn cmd_get_communities(_state: State<'_, AppState>) -> Result<Vec<serde_json
 }
 
 #[tauri::command]
-pub fn cmd_get_status_updates(_state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_get_status_updates(
+    _state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
 
@@ -159,12 +167,17 @@ pub fn cmd_get_challenges(_state: State<'_, AppState>) -> Result<Vec<serde_json:
 }
 
 #[tauri::command]
-pub fn cmd_get_rankings(_state: State<'_, AppState>, _category: String) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_get_rankings(
+    _state: State<'_, AppState>,
+    _category: String,
+) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
 
 #[tauri::command]
-pub fn cmd_get_security_logs(_state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_get_security_logs(
+    _state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
 
@@ -174,7 +187,9 @@ pub fn cmd_get_devices(_state: State<'_, AppState>) -> Result<Vec<serde_json::Va
 }
 
 #[tauri::command]
-pub fn cmd_get_app_notifications(_state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_get_app_notifications(
+    _state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
 
@@ -222,7 +237,14 @@ pub fn cmd_jobs_create_job(
     deadline: String,
 ) -> Result<serde_json::Value, String> {
     let job_id = uuid::Uuid::new_v4().to_string();
-    log::info!("Job posted: {} ({}/{}) [{:.0}-{:.0} PINC]", title, category, subcategory, budget_min, budget_max);
+    log::info!(
+        "Job posted: {} ({}/{}) [{:.0}-{:.0} PINC]",
+        title,
+        category,
+        subcategory,
+        budget_min,
+        budget_max
+    );
     log::info!("Skills: {:?}, Deadline: {}", skills, deadline);
     Ok(serde_json::json!({
         "job_id": job_id,
@@ -245,7 +267,11 @@ pub fn cmd_jobs_apply_job(
     proposal: String,
 ) -> Result<serde_json::Value, String> {
     let application_id = uuid::Uuid::new_v4().to_string();
-    log::info!("Application submitted for job {} — {}", job_id, application_id);
+    log::info!(
+        "Application submitted for job {} — {}",
+        job_id,
+        application_id
+    );
     Ok(serde_json::json!({
         "application_id": application_id,
         "job_id": job_id,
@@ -291,7 +317,14 @@ pub fn cmd_jobs_complete_job(
 }
 
 #[tauri::command]
-pub fn cmd_create_challenge(_state: State<'_, AppState>, title: String, category: String, difficulty: String, reward_points: u32, description: String) -> Result<serde_json::Value, String> {
+pub fn cmd_create_challenge(
+    _state: State<'_, AppState>,
+    title: String,
+    category: String,
+    difficulty: String,
+    reward_points: u32,
+    description: String,
+) -> Result<serde_json::Value, String> {
     let challenge_id = uuid::Uuid::new_v4().to_string();
     log::info!("Challenge created: {} ({}/{})", title, category, difficulty);
     Ok(serde_json::json!({ "challenge_id": challenge_id, "status": "open" }))
@@ -310,14 +343,24 @@ pub fn cmd_add_contact(
         .map_err(|e| e.to_string())?
         .ok_or("No identity found".to_string())?;
 
-    let contact_username = crate::core::database::queries::search_identities_by_query(&db, &contact_node_id)
-        .ok()
-        .and_then(|mut v| v.into_iter().find(|i| i.node_id == contact_node_id).map(|i| i.username))
-        .unwrap_or_default();
+    let contact_username =
+        crate::core::database::queries::search_identities_by_query(&db, &contact_node_id)
+            .ok()
+            .and_then(|mut v| {
+                v.into_iter()
+                    .find(|i| i.node_id == contact_node_id)
+                    .map(|i| i.username)
+            })
+            .unwrap_or_default();
 
     let contact = crate::core::database::queries::insert_contact(
-        &db, &identity.node_id, &contact_node_id, &contact_username, &nickname,
-    ).map_err(|e| e.to_string())?;
+        &db,
+        &identity.node_id,
+        &contact_node_id,
+        &contact_username,
+        &nickname,
+    )
+    .map_err(|e| e.to_string())?;
 
     Ok(serde_json::json!({
         "id": contact.id,
@@ -338,14 +381,19 @@ pub fn cmd_list_contacts(state: State<'_, AppState>) -> Result<Vec<serde_json::V
     let contacts = crate::core::database::queries::list_contacts(&db, &identity.node_id)
         .map_err(|e| e.to_string())?;
 
-    Ok(contacts.into_iter().map(|c| serde_json::json!({
-        "id": c.id,
-        "contact_node_id": c.contact_node_id,
-        "contact_username": c.contact_username,
-        "nickname": c.nickname,
-        "status": c.status,
-        "created_at": c.created_at,
-    })).collect())
+    Ok(contacts
+        .into_iter()
+        .map(|c| {
+            serde_json::json!({
+                "id": c.id,
+                "contact_node_id": c.contact_node_id,
+                "contact_username": c.contact_username,
+                "nickname": c.nickname,
+                "status": c.status,
+                "created_at": c.created_at,
+            })
+        })
+        .collect())
 }
 
 #[tauri::command]
@@ -373,23 +421,30 @@ pub fn cmd_search_users(
     let identities = crate::core::database::queries::search_identities_by_query(&db, &query)
         .map_err(|e| e.to_string())?;
 
-    Ok(identities.into_iter().map(|i| {
-        let display_name = if i.username.is_empty() { i.node_id.clone() } else { i.username.clone() };
-        serde_json::json!({
-            "node_id": i.node_id,
-            "display_name": display_name,
-            "username": i.username,
-            "bio": serde_json::Value::Null,
-            "avatar_hash": serde_json::Value::Null,
-            "skills": [],
-            "badges": [],
-            "follower_count": 0,
-            "following_count": 0,
-            "post_count": 0,
-            "joined_at": i.created_at,
-            "verified": false,
+    Ok(identities
+        .into_iter()
+        .map(|i| {
+            let display_name = if i.username.is_empty() {
+                i.node_id.clone()
+            } else {
+                i.username.clone()
+            };
+            serde_json::json!({
+                "node_id": i.node_id,
+                "display_name": display_name,
+                "username": i.username,
+                "bio": serde_json::Value::Null,
+                "avatar_hash": serde_json::Value::Null,
+                "skills": [],
+                "badges": [],
+                "follower_count": 0,
+                "following_count": 0,
+                "post_count": 0,
+                "joined_at": i.created_at,
+                "verified": false,
+            })
         })
-    }).collect())
+        .collect())
 }
 
 // === OPENMAESTRO COMMANDS ===
@@ -492,7 +547,10 @@ pub fn cmd_list_rankings(filter: Option<String>) -> Result<Vec<serde_json::Value
 // === ZEROFLIPPER COMMANDS ===
 
 #[tauri::command]
-pub fn cmd_list_products(category: Option<String>, search: Option<String>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_list_products(
+    category: Option<String>,
+    search: Option<String>,
+) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![
         serde_json::json!({"id": "p-1", "name": "AI Customer Support Agent", "category": "AI Agents", "price": 149.99, "rating": 4.9, "seller": "NeuralForge", "type": "Template"}),
         serde_json::json!({"id": "p-2", "name": "SaaS Dashboard Kit", "category": "Dashboards", "price": 79.99, "rating": 4.8, "seller": "UIMasters", "type": "UI Kit"}),

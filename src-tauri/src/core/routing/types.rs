@@ -47,7 +47,13 @@ pub struct NatTraversalConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum NatType { Open, FullCone, RestrictedCone, PortRestricted, Symmetric }
+pub enum NatType {
+    Open,
+    FullCone,
+    RestrictedCone,
+    PortRestricted,
+    Symmetric,
+}
 
 impl Default for NatTraversalConfig {
     fn default() -> Self {

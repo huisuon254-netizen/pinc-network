@@ -3,9 +3,17 @@ mod tests {
     use crate::core::marketplace::{engine::*, types::*};
 
     fn mock_milestone(id: &str, amount: f64) -> Milestone {
-        Milestone { id: id.to_string(), job_id: "j1".to_string(), title: "M".to_string(),
-            description: "D".to_string(), amount, due_date: None,
-            completed: false, proof_hash: None, approved: false }
+        Milestone {
+            id: id.to_string(),
+            job_id: "j1".to_string(),
+            title: "M".to_string(),
+            description: "D".to_string(),
+            amount,
+            due_date: None,
+            completed: false,
+            proof_hash: None,
+            approved: false,
+        }
     }
 
     #[test]

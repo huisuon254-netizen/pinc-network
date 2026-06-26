@@ -48,19 +48,34 @@ impl ApiKeys {
         }
 
         // CoinGecko (crypto prices, no key needed but base URL)
-        keys.insert("coingecko_base_url".into(), "https://api.coingecko.com/api/v3".into());
+        keys.insert(
+            "coingecko_base_url".into(),
+            "https://api.coingecko.com/api/v3".into(),
+        );
 
         // Nominatim (geocoding, no key needed)
-        keys.insert("nominatim_base_url".into(), "https://nominatim.openstreetmap.org".into());
+        keys.insert(
+            "nominatim_base_url".into(),
+            "https://nominatim.openstreetmap.org".into(),
+        );
 
         // Open-Meteo (weather, no key needed)
-        keys.insert("openmeteo_base_url".into(), "https://api.open-meteo.com/v1".into());
+        keys.insert(
+            "openmeteo_base_url".into(),
+            "https://api.open-meteo.com/v1".into(),
+        );
 
         // WorldTimeAPI (time zones, no key needed)
-        keys.insert("worldtimeapi_base_url".into(), "https://worldtimeapi.org/api".into());
+        keys.insert(
+            "worldtimeapi_base_url".into(),
+            "https://worldtimeapi.org/api".into(),
+        );
 
         // REST Countries (country data, no key needed)
-        keys.insert("restcountries_base_url".into(), "https://restcountries.com/v3.1".into());
+        keys.insert(
+            "restcountries_base_url".into(),
+            "https://restcountries.com/v3.1".into(),
+        );
 
         Self { keys }
     }
@@ -70,7 +85,10 @@ impl ApiKeys {
     }
 
     pub fn get_or_default(&self, key: &str, default: &str) -> String {
-        self.keys.get(key).cloned().unwrap_or_else(|| default.to_string())
+        self.keys
+            .get(key)
+            .cloned()
+            .unwrap_or_else(|| default.to_string())
     }
 
     pub fn has_key(&self, key: &str) -> bool {
@@ -85,7 +103,11 @@ impl ApiKeys {
                 if value.is_empty() {
                     "Not configured".to_string()
                 } else {
-                    format!("{}...{}", &value[..4.min(value.len())], &value[value.len().saturating_sub(4)..])
+                    format!(
+                        "{}...{}",
+                        &value[..4.min(value.len())],
+                        &value[value.len().saturating_sub(4)..]
+                    )
                 }
             } else {
                 value.clone()
@@ -127,8 +149,7 @@ pub fn bootstrap_nodes() -> Vec<String> {
 /// Reads from the `PINC_SIGNALING_URL` env var if set,
 /// otherwise defaults to `ws://localhost:9001`.
 pub fn signaling_server_url() -> String {
-    std::env::var("PINC_SIGNALING_URL")
-        .unwrap_or_else(|_| "ws://localhost:9001".to_string())
+    std::env::var("PINC_SIGNALING_URL").unwrap_or_else(|_| "ws://localhost:9001".to_string())
 }
 
 /// Returns the list of STUN server URIs used for WebRTC ICE candidate gathering.

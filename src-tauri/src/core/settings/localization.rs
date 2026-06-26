@@ -32,13 +32,16 @@ impl LocalizationEngine {
     pub fn new() -> Self {
         let mut loaded = HashMap::new();
         // Load English by default
-        loaded.insert("en".to_string(), LanguagePack {
-            code: "en".to_string(),
-            name: "English".to_string(),
-            native_name: "English".to_string(),
-            rtl: false,
-            strings: HashMap::new(), // In production, this would load from a JSON file
-        });
+        loaded.insert(
+            "en".to_string(),
+            LanguagePack {
+                code: "en".to_string(),
+                name: "English".to_string(),
+                native_name: "English".to_string(),
+                rtl: false,
+                strings: HashMap::new(), // In production, this would load from a JSON file
+            },
+        );
 
         LocalizationEngine {
             current_lang: "en".to_string(),
@@ -53,17 +56,22 @@ impl LocalizationEngine {
     pub async fn download_pack(&mut self, code: &str) -> Result<(), String> {
         // Mocking P2P download logic
         tokio::time::sleep(std::time::Duration::from_millis(800)).await;
-        
-        let entry = DEFAULT_LANGUAGES.iter().find(|(c, _, _, _)| *c == code)
+
+        let entry = DEFAULT_LANGUAGES
+            .iter()
+            .find(|(c, _, _, _)| *c == code)
             .ok_or_else(|| format!("Language {} not found", code))?;
 
-        self.loaded_packs.insert(code.to_string(), LanguagePack {
-            code: code.to_string(),
-            name: entry.1.to_string(),
-            native_name: entry.2.to_string(),
-            rtl: entry.3,
-            strings: HashMap::new(),
-        });
+        self.loaded_packs.insert(
+            code.to_string(),
+            LanguagePack {
+                code: code.to_string(),
+                name: entry.1.to_string(),
+                native_name: entry.2.to_string(),
+                rtl: entry.3,
+                strings: HashMap::new(),
+            },
+        );
 
         Ok(())
     }

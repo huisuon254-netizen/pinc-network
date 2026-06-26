@@ -1,5 +1,5 @@
-use sha3::{Sha3_256, Digest};
 use serde::{Deserialize, Serialize};
+use sha3::{Digest, Sha3_256};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KingsmanStatus {
@@ -38,7 +38,11 @@ impl KingsmanEngine {
         KingsmanStatus {
             is_active: self.is_authenticated,
             permissions_level: if self.is_authenticated { 4 } else { 0 },
-            session_id: if self.is_authenticated { "KM-SESSION-ACTIVE".to_string() } else { "NONE".to_string() },
+            session_id: if self.is_authenticated {
+                "KM-SESSION-ACTIVE".to_string()
+            } else {
+                "NONE".to_string()
+            },
         }
     }
 }

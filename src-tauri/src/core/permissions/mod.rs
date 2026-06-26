@@ -1,5 +1,5 @@
-pub mod types;
 pub mod errors;
-pub mod validator;
 #[cfg(test)]
 mod tests;
+pub mod types;
+pub mod validator;

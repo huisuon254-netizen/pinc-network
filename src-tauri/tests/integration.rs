@@ -1,9 +1,17 @@
 use pinc_lib::core::{
+    crypto::{
+        cipher::{decrypt, encrypt},
+        nonce::{generate_nonce, validate_nonce},
+        types::NonceType,
+    },
     database::connection::open_test_db,
     identity::{generator::create_identity, validator::validate_identity},
-    crypto::{cipher::{encrypt, decrypt}, nonce::{generate_nonce, validate_nonce}, types::NonceType},
-    vault::{encryptor::{vault_encrypt, vault_decrypt}, chunker::{split_chunks, merge_chunks}, integrity::{compute_hash, verify_integrity}},
     startup::startup_check,
+    vault::{
+        chunker::{merge_chunks, split_chunks},
+        encryptor::{vault_decrypt, vault_encrypt},
+        integrity::{compute_hash, verify_integrity},
+    },
 };
 
 const KEY: [u8; 32] = [42u8; 32];
@@ -18,8 +26,8 @@ fn integration_create_and_reload_identity() {
     assert!(id.node_id.starts_with("PINC-"));
     validate_identity(&id).expect("identity must pass validation");
 
-    let loaded = pinc_lib::core::database::queries::load_identity(&db, &id.id)
-        .expect("must reload from DB");
+    let loaded =
+        pinc_lib::core::database::queries::load_identity(&db, &id.id).expect("must reload from DB");
     assert_eq!(loaded.id, id.id);
     assert_eq!(loaded.fingerprint, id.fingerprint);
 }
@@ -64,15 +72,21 @@ fn integration_vault_encrypt_chunk_verify_restore() {
     let chunks = split_chunks(&original);
     assert!(chunks.len() >= 1);
 
-    let encrypted: Vec<Vec<u8>> = chunks.iter()
+    let encrypted: Vec<Vec<u8>> = chunks
+        .iter()
         .map(|c| vault_encrypt(&key, &c.data).unwrap())
         .collect();
 
-    let decrypted_chunks: Vec<pinc_lib::core::vault::types::ChunkMeta> = encrypted.iter()
+    let decrypted_chunks: Vec<pinc_lib::core::vault::types::ChunkMeta> = encrypted
+        .iter()
         .enumerate()
         .map(|(i, blob)| {
             let data = vault_decrypt(&key, blob).unwrap();
-            pinc_lib::core::vault::types::ChunkMeta { index: i, hash: compute_hash(&data), data }
+            pinc_lib::core::vault::types::ChunkMeta {
+                index: i,
+                hash: compute_hash(&data),
+                data,
+            }
         })
         .collect();
 
@@ -98,7 +112,11 @@ fn integration_corruption_detected() {
 fn integration_startup_passes_on_healthy_db() {
     let db = open_test_db().unwrap();
     let report = startup_check(&db);
-    assert!(report.all_passed, "startup failed: {:?}", report.failed_component);
+    assert!(
+        report.all_passed,
+        "startup failed: {:?}",
+        report.failed_component
+    );
     assert_eq!(report.checks.len(), 6);
 }
 

@@ -1,9 +1,9 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-use uuid::Uuid;
 use crate::core::distributed::{
     errors::DistributedError,
     types::{StorageContract, StorageNode},
 };
+use std::time::{SystemTime, UNIX_EPOCH};
+use uuid::Uuid;
 
 pub const MIN_CONTRACT_DAYS: i64 = 1;
 pub const MAX_CONTRACT_DAYS: i64 = 365;
@@ -18,12 +18,15 @@ pub fn create_contract(
     duration_days: i64,
 ) -> Result<StorageContract, DistributedError> {
     if duration_days < MIN_CONTRACT_DAYS || duration_days > MAX_CONTRACT_DAYS {
-        return Err(DistributedError::ContractError(
-            format!("duration must be between {} and {} days", MIN_CONTRACT_DAYS, MAX_CONTRACT_DAYS)
-        ));
+        return Err(DistributedError::ContractError(format!(
+            "duration must be between {} and {} days",
+            MIN_CONTRACT_DAYS, MAX_CONTRACT_DAYS
+        )));
     }
     if bytes_allocated == 0 {
-        return Err(DistributedError::ContractError("bytes_allocated must be > 0".to_string()));
+        return Err(DistributedError::ContractError(
+            "bytes_allocated must be > 0".to_string(),
+        ));
     }
     let now = now_secs();
     Ok(StorageContract {
@@ -54,12 +57,9 @@ pub fn find_providers(
     bytes_needed: u64,
     max_price: f64,
 ) -> Vec<&StorageNode> {
-    nodes.iter()
-        .filter(|n| {
-            n.online
-                && n.free_space_bytes >= bytes_needed
-                && n.reputation >= 0.5
-        })
+    nodes
+        .iter()
+        .filter(|n| n.online && n.free_space_bytes >= bytes_needed && n.reputation >= 0.5)
         .collect()
 }
 

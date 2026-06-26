@@ -1,4 +1,7 @@
-use crate::core::{crypto::hash::sha256_hex, vault::types::{ChunkMeta, CHUNK_SIZE}};
+use crate::core::{
+    crypto::hash::sha256_hex,
+    vault::types::{ChunkMeta, CHUNK_SIZE},
+};
 
 pub fn split_chunks(data: &[u8]) -> Vec<ChunkMeta> {
     data.chunks(CHUNK_SIZE)

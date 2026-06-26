@@ -1,6 +1,6 @@
+use crate::core::network::{errors::NetworkError, types::HandshakePayload};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::core::network::{errors::NetworkError, types::HandshakePayload};
 
 pub const PINC_PROTOCOL_VERSION: &str = "PINC/3.0";
 
@@ -33,12 +33,15 @@ pub fn validate_handshake(payload: &HandshakePayload) -> Result<(), NetworkError
         return Err(NetworkError::HandshakeFailed("empty node_id".to_string()));
     }
     if payload.public_key.is_empty() {
-        return Err(NetworkError::HandshakeFailed("empty public_key".to_string()));
+        return Err(NetworkError::HandshakeFailed(
+            "empty public_key".to_string(),
+        ));
     }
     if !payload.version.starts_with("PINC/") {
-        return Err(NetworkError::HandshakeFailed(
-            format!("unknown protocol version: {}", payload.version),
-        ));
+        return Err(NetworkError::HandshakeFailed(format!(
+            "unknown protocol version: {}",
+            payload.version
+        )));
     }
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -63,7 +66,12 @@ pub fn deserialize_handshake(bytes: &[u8]) -> Result<HandshakePayload, NetworkEr
 }
 
 /// Build an ack response
-pub fn build_ack(node_id: &str, public_key: &str, accepted: bool, reason: Option<String>) -> HandshakeAck {
+pub fn build_ack(
+    node_id: &str,
+    public_key: &str,
+    accepted: bool,
+    reason: Option<String>,
+) -> HandshakeAck {
     HandshakeAck {
         accepted,
         node_id: node_id.to_string(),

@@ -1,10 +1,22 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum JobStatus { Open, InProgress, PendingReview, Completed, Disputed, Cancelled }
+pub enum JobStatus {
+    Open,
+    InProgress,
+    PendingReview,
+    Completed,
+    Disputed,
+    Cancelled,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum BidStatus { Pending, Accepted, Rejected, Withdrawn }
+pub enum BidStatus {
+    Pending,
+    Accepted,
+    Rejected,
+    Withdrawn,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Job {
@@ -75,7 +87,12 @@ pub struct Dispute {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum DisputeStatus { Open, UnderReview, Resolved, Escalated }
+pub enum DisputeStatus {
+    Open,
+    UnderReview,
+    Resolved,
+    Escalated,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProofOfWork {

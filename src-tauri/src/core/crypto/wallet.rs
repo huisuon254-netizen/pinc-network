@@ -1,8 +1,8 @@
 use ethers_core::types::{Address, U256};
 use ethers_signers::{coins_bip39::English, MnemonicBuilder, Signer};
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Wallet {
@@ -16,9 +16,10 @@ impl Wallet {
     /// Generates a new HD wallet and derives addresses for ETH, BNB, and TRON
     pub fn new_random() -> Result<Self, String> {
         // Generate random mnemonic (12 words)
-        let mnemonic = ethers_signers::coins_bip39::Mnemonic::<English>::new(&mut rand::thread_rng());
+        let mnemonic =
+            ethers_signers::coins_bip39::Mnemonic::<English>::new(&mut rand::thread_rng());
         let mnemonic_phrase = mnemonic.to_phrase();
-        
+
         Self::from_mnemonic(&mnemonic_phrase)
     }
 
@@ -46,7 +47,7 @@ impl Wallet {
             eth_address: format!("{:?}", eth_wallet.address()),
             bnb_address: format!("{:?}", eth_wallet.address()), // BSC is same as ETH
             // Convert to Tron Base58Check address format (mock implementation for simplicity, TRON uses different prefix usually)
-            tron_address: format!("{:?}", tron_wallet.address()), 
+            tron_address: format!("{:?}", tron_wallet.address()),
         })
     }
 }
@@ -113,10 +114,11 @@ impl DepositManager {
     pub fn generate_deposit_address(&mut self, user_id: &str) -> Result<String, String> {
         let wallet = Wallet::new_random()?;
         let address = wallet.eth_address.clone();
-        
-        self.address_to_user.insert(address.to_lowercase(), user_id.to_string());
+
+        self.address_to_user
+            .insert(address.to_lowercase(), user_id.to_string());
         // In reality, we would securely store the wallet mnemonic or private key in the DB or HSM
-        
+
         Ok(address)
     }
 
@@ -124,23 +126,27 @@ impl DepositManager {
     pub fn process_webhook(&mut self, payload: AlchemyWebhookPayload) -> Result<(), String> {
         for activity in payload.event.activity {
             let to_addr = activity.to_address.to_lowercase();
-            
+
             // Check if this is a deposit to one of our managed addresses
             if let Some(user_id) = self.address_to_user.get(&to_addr) {
                 // If it's USDT or USDC or ETH
                 if activity.asset == "USDT" || activity.asset == "USDC" || activity.asset == "ETH" {
                     log::info!(
-                        "Detected {} {} deposit to {} (tx: {}). Crediting user: {}", 
-                        activity.value, activity.asset, to_addr, activity.hash, user_id
+                        "Detected {} {} deposit to {} (tx: {}). Crediting user: {}",
+                        activity.value,
+                        activity.asset,
+                        to_addr,
+                        activity.hash,
+                        user_id
                     );
-                    
+
                     // Credit user's internal ledger balance
                     let balance = self.user_balances.entry(user_id.clone()).or_insert(0.0);
                     *balance += activity.value;
                 }
             }
         }
-        
+
         Ok(())
     }
 }

@@ -1,65 +1,64 @@
 #![allow(dead_code)]
+use rand::Rng;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tokio::sync::Mutex as AsyncMutex;
 use tauri::State;
+use tokio::sync::Mutex as AsyncMutex;
 use uuid::Uuid;
-use rand::Rng;
 
 use crate::{
     core::{
+        ai::ai_engine::{LlamaEngine, ModelCache, OnnxEngine, TtsEngine, WhisperEngine},
+        ai::moderation::moderate_content,
+        ai::routing::{recommend_route, PeerMetrics},
+        ai::types::{AiAgent, ImageSegmentation, LlamaParams, TtsParams},
         database::{
             connection::Database,
             queries::{
-                load_first_identity, identity_count,
-                get_settings_row, upsert_settings,
-                list_vault_files, insert_vault_file, delete_vault_file,
-                list_jobs, insert_job,
-                log_activity,
-                insert_post, list_posts,
-                insert_wager, list_wagers,
-                insert_tournament,
-                list_ai_agents,
-                list_storage_contracts,
-                list_transactions,
-                upsert_peer, load_peers, update_peer_last_seen, update_peer_online,
+                delete_vault_file, get_settings_row, identity_count, insert_job, insert_post,
+                insert_tournament, insert_vault_file, insert_wager, list_ai_agents, list_jobs,
+                list_posts, list_storage_contracts, list_transactions, list_vault_files,
+                list_wagers, load_first_identity, load_peers, log_activity, update_peer_last_seen,
+                update_peer_online, upsert_peer, upsert_settings,
             },
         },
+        distributed::types::StorageContract,
         identity::generator::create_identity,
         identity::recovery::recover_identity as recover_id,
-        network::{
-            types::{NetworkStatus, PeerInfo},
-            peer::PeerRegistry,
-            bandwidth::{BandwidthMonitor, measure_latency_ms},
-            discovery::{self, Discovery},
-            relay::RelayManager,
-            transport::{create_client_endpoint, connect_to_node, generate_node_cert},
-        },
-        p2p::p2p_network::P2PNetwork,
-        settings::types::PincSettings,
-        vault::types::VaultFileRecord,
         infrastructure::{
             nexus::{NexusEngine, SpeedTestResult},
-            rift::{RiftEngine, ServerListing, HardwareSpecs, RentalPeriod, ServerMetrics, RentalAgreement, RiftPayment, RiftPaymentStatus},
+            rift::{
+                HardwareSpecs, RentalAgreement, RentalPeriod, RiftEngine, RiftPayment,
+                RiftPaymentStatus, ServerListing, ServerMetrics,
+            },
         },
+        marketplace::{
+            engine::{create_job, submit_bid},
+            types::{Job, JobStatus},
+        },
+        messaging::{
+            router::MessageRouter,
+            types::{Message, MessageStatus, MessageType},
+        },
+        net_share::NetShareEngine,
+        network::{
+            bandwidth::{measure_latency_ms, BandwidthMonitor},
+            discovery::{self, Discovery},
+            peer::PeerRegistry,
+            relay::RelayManager,
+            transport::{connect_to_node, create_client_endpoint, generate_node_cert},
+            types::{NetworkStatus, PeerInfo},
+        },
+        p2p::p2p_network::P2PNetwork,
+        payment::types::{Transaction, TxStatus, TxType},
         security::kingsman::{KingsmanEngine, KingsmanStatus},
         settings::localization::LocalizationEngine,
-        marketplace::{types::{Job, JobStatus}, engine::{create_job, submit_bid}},
-        distributed::types::StorageContract,
-        messaging::{
-            types::{Message, MessageType, MessageStatus},
-            router::MessageRouter,
-        },
+        settings::types::PincSettings,
         social::types::{Post, PostType, Visibility},
-        wager::types::{Wager, Tournament, TournamentStatus},
-        payment::types::{Transaction, TxType, TxStatus},
-        ai::types::{AiAgent, LlamaParams, TtsParams, ImageSegmentation},
-        ai::ai_engine::{ModelCache, WhisperEngine, LlamaEngine, OnnxEngine, TtsEngine},
-        ai::moderation::moderate_content,
-        ai::routing::{recommend_route, PeerMetrics},
         telemetry::metrics::MetricsCollector,
-        net_share::NetShareEngine,
+        vault::types::VaultFileRecord,
+        wager::types::{Tournament, TournamentStatus, Wager},
     },
     startup::{startup_check, StartupReport},
 };
@@ -142,7 +141,9 @@ impl GhostOriginEngine {
 }
 
 impl Default for GhostOriginEngine {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 pub struct AppState {
@@ -202,16 +203,28 @@ pub async fn cmd_set_language(state: State<'_, AppState>, code: String) -> Resul
 
 #[tauri::command]
 pub fn cmd_get_ghost_origin_status(state: State<'_, AppState>) -> GhostOriginStatus {
-    state.ghost_origin.lock().map_err(|e| e.to_string()).unwrap().status()
+    state
+        .ghost_origin
+        .lock()
+        .map_err(|e| e.to_string())
+        .unwrap()
+        .status()
 }
 
 #[tauri::command]
 pub fn cmd_toggle_ghost_origin(state: State<'_, AppState>) -> Result<GhostOriginStatus, String> {
-    Ok(state.ghost_origin.lock().map_err(|e| e.to_string())?.toggle())
+    Ok(state
+        .ghost_origin
+        .lock()
+        .map_err(|e| e.to_string())?
+        .toggle())
 }
 
 #[tauri::command]
-pub fn cmd_set_ghost_origin_region(state: State<'_, AppState>, region: String) -> Result<GhostOriginStatus, String> {
+pub fn cmd_set_ghost_origin_region(
+    state: State<'_, AppState>,
+    region: String,
+) -> Result<GhostOriginStatus, String> {
     let region = region.trim().to_string();
     if region.is_empty() {
         return Err("Region is required".to_string());
@@ -227,7 +240,10 @@ pub fn cmd_set_ghost_origin_region(state: State<'_, AppState>, region: String) -
 }
 
 #[tauri::command]
-pub fn cmd_set_ghost_origin_hops(state: State<'_, AppState>, hops: u8) -> Result<GhostOriginStatus, String> {
+pub fn cmd_set_ghost_origin_hops(
+    state: State<'_, AppState>,
+    hops: u8,
+) -> Result<GhostOriginStatus, String> {
     if hops < 1 || hops > 7 {
         return Err("Hops must be between 1 and 7".to_string());
     }
@@ -256,7 +272,9 @@ pub async fn cmd_run_speed_test(state: State<'_, AppState>) -> Result<SpeedTestR
         let elapsed = 1.0_f64;
         ((bw.total_bytes_recv() as f64 * 8.0) / (elapsed * 1000.0)).max(0.0)
     });
-    let upload_kbps = measure_upload_kbps(&client).await.unwrap_or_else(|_| download_kbps * 0.35);
+    let upload_kbps = measure_upload_kbps(&client)
+        .await
+        .unwrap_or_else(|_| download_kbps * 0.35);
 
     Ok(SpeedTestResult {
         download_kbps,
@@ -285,7 +303,10 @@ async fn measure_public_jitter(client: &reqwest::Client) -> Result<u64, String> 
         samples.push(measure_public_latency(client).await?);
     }
     samples.sort_unstable();
-    Ok(samples.last().unwrap_or(&0).saturating_sub(*samples.first().unwrap_or(&0)))
+    Ok(samples
+        .last()
+        .unwrap_or(&0)
+        .saturating_sub(*samples.first().unwrap_or(&0)))
 }
 
 async fn measure_download_kbps(client: &reqwest::Client) -> Result<f64, String> {
@@ -344,14 +365,23 @@ pub fn cmd_create_server_listing(
 ) -> Result<ServerListing, String> {
     let mut rift = state.rift.lock().unwrap();
     let db = state.db.lock().unwrap();
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
-    
-    let specs = HardwareSpecs { cpu_cores: cpu, ram_gb: ram, storage_gb: storage, network_speed_mbps: speed };
-    let listing = rift.create_listing(&identity.node_id, &tier, price, specs).map_err(|e| e.to_string())?;
-    
-    crate::core::database::queries::insert_server_listing(&db, &listing).map_err(|e| e.to_string())?;
-    
+
+    let specs = HardwareSpecs {
+        cpu_cores: cpu,
+        ram_gb: ram,
+        storage_gb: storage,
+        network_speed_mbps: speed,
+    };
+    let listing = rift
+        .create_listing(&identity.node_id, &tier, price, specs)
+        .map_err(|e| e.to_string())?;
+
+    crate::core::database::queries::insert_server_listing(&db, &listing)
+        .map_err(|e| e.to_string())?;
+
     Ok(listing)
 }
 
@@ -364,21 +394,23 @@ pub fn cmd_rent_server(
 ) -> Result<RentalAgreement, String> {
     let mut rift = state.rift.lock().unwrap();
     let db = state.db.lock().unwrap();
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
-    
+
     let period_enum = match period.to_lowercase().as_str() {
         "daily" => RentalPeriod::Daily,
         "weekly" => RentalPeriod::Weekly,
         "monthly" => RentalPeriod::Monthly,
         "hourly" | _ => RentalPeriod::Hourly,
     };
-    
-    let rental = rift.rent_server(&server_id, &identity.node_id, period_enum, duration_hours)
+
+    let rental = rift
+        .rent_server(&server_id, &identity.node_id, period_enum, duration_hours)
         .map_err(|e| e.to_string())?;
-    
+
     crate::core::database::queries::insert_rental(&db, &rental).map_err(|e| e.to_string())?;
-    
+
     let mut payment = crate::core::database::queries::RiftPayment {
         id: Uuid::new_v4().to_string(),
         rental_id: rental.server_id.clone(),
@@ -389,13 +421,14 @@ pub fn cmd_rent_server(
         payment_type: "rental".to_string(),
         created_at: chrono::Utc::now().timestamp(),
     };
-    
+
     payment.status = crate::core::database::queries::RiftPaymentStatus::Completed;
-    crate::core::database::queries::insert_rental_payment(&db, &payment).map_err(|e| e.to_string())?;
-    
+    crate::core::database::queries::insert_rental_payment(&db, &payment)
+        .map_err(|e| e.to_string())?;
+
     let rental_id = rental.server_id.clone();
     let payment_id = payment.id.clone();
-    
+
     // Do the return synchronously since we already have the locks
     {
         let mut rift = state.rift.lock().map_err(|e| e.to_string())?;
@@ -403,17 +436,18 @@ pub fn cmd_rent_server(
     }
     {
         let db = state.db.lock().map_err(|e| e.to_string())?;
-        let _ = crate::core::database::queries::log_activity(&db, "rental_completed", &format!("Rental {} completed with payment {}", rental_id, payment_id));
+        let _ = crate::core::database::queries::log_activity(
+            &db,
+            "rental_completed",
+            &format!("Rental {} completed with payment {}", rental_id, payment_id),
+        );
     }
-    
+
     Ok(rental)
 }
 
 #[tauri::command]
-pub fn cmd_return_server(
-    state: State<'_, AppState>,
-    rental_id: String,
-) -> Result<(), String> {
+pub fn cmd_return_server(state: State<'_, AppState>, rental_id: String) -> Result<(), String> {
     let mut rift = state.rift.lock().unwrap();
     rift.return_server(&rental_id).map_err(|e| e.to_string())
 }
@@ -426,8 +460,10 @@ pub fn cmd_update_server_metrics(
 ) -> Result<(), String> {
     let mut rift = state.rift.lock().unwrap();
     let db = state.db.lock().unwrap();
-    rift.update_metrics(&server_id, metrics.clone()).map_err(|e| e.to_string())?;
-    crate::core::database::queries::insert_server_metric(&db, &metrics, &server_id).map_err(|e| e.to_string())?;
+    rift.update_metrics(&server_id, metrics.clone())
+        .map_err(|e| e.to_string())?;
+    crate::core::database::queries::insert_server_metric(&db, &metrics, &server_id)
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -441,7 +477,8 @@ pub async fn cmd_refund_escrow(
         .map_err(|e| e.to_string())?
         .ok_or_else(|| format!("Escrow '{}' not found", escrow_id))?;
 
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
 
     crate::core::payment::escrow::refund_escrow_db(
@@ -449,9 +486,18 @@ pub async fn cmd_refund_escrow(
         &escrow_id,
         &identity.node_id,
         escrow.amount,
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
 
-    log_activity(&db, "escrow_refund", &format!("Escrow {} refunded: {:.2} PINC to {}", escrow_id, escrow.amount, identity.node_id)).ok();
+    log_activity(
+        &db,
+        "escrow_refund",
+        &format!(
+            "Escrow {} refunded: {:.2} PINC to {}",
+            escrow_id, escrow.amount, identity.node_id
+        ),
+    )
+    .ok();
 
     Ok(serde_json::json!({
         "escrow_id": escrow_id,
@@ -466,7 +512,8 @@ pub fn cmd_get_active_rentals(state: State<'_, AppState>) -> Result<Vec<RentalAg
     let rift = state.rift.lock().unwrap();
     let mut rentals: Vec<RentalAgreement> = rift.get_active_rentals();
     let db = state.db.lock().unwrap();
-    let db_rentals = crate::core::database::queries::list_rentals(&db).map_err(|e| e.to_string())?;
+    let db_rentals =
+        crate::core::database::queries::list_rentals(&db).map_err(|e| e.to_string())?;
     for db_rental in db_rentals {
         if !rentals.iter().any(|r| r.server_id == db_rental.server_id) {
             rentals.push(db_rental);
@@ -487,21 +534,28 @@ pub fn cmd_get_marketplace_listings(state: State<'_, AppState>) -> Result<Vec<Jo
 pub fn cmd_get_marketplace_stats(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let db = state.db.lock().unwrap();
     let jobs = list_jobs(&db).map_err(|e| e.to_string())?;
-    
+
     let total_listings = jobs.len() as u64;
-    let active_jobs = jobs.iter().filter(|j| matches!(j.status, JobStatus::Open)).count() as u64;
-    let completed_jobs = jobs.iter().filter(|j| matches!(j.status, JobStatus::Completed)).count() as u64;
+    let active_jobs = jobs
+        .iter()
+        .filter(|j| matches!(j.status, JobStatus::Open))
+        .count() as u64;
+    let completed_jobs = jobs
+        .iter()
+        .filter(|j| matches!(j.status, JobStatus::Completed))
+        .count() as u64;
     let average_budget: f64 = if !jobs.is_empty() {
         jobs.iter().map(|j| j.budget).sum::<f64>() / jobs.len() as f64
     } else {
         0.0
     };
-    
-    let recent_listings: Vec<Job> = jobs.iter()
+
+    let recent_listings: Vec<Job> = jobs
+        .iter()
         .filter(|j| j.created_at > chrono::Utc::now().timestamp() - 86400 * 7)
         .cloned()
         .collect();
-    
+
     Ok(serde_json::json!({
         "total_listings": total_listings,
         "active_jobs": active_jobs,
@@ -520,14 +574,15 @@ pub fn cmd_create_job(
     budget: f64,
 ) -> Result<Job, String> {
     let db = state.db.lock().unwrap();
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
-    
+
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs() as i64;
-    
+
     let job = Job {
         id: format!("job-{}", uuid::Uuid::new_v4()),
         owner_id: identity.node_id,
@@ -544,7 +599,7 @@ pub fn cmd_create_job(
         applicant_count: 0,
         selected_worker: None,
     };
-    
+
     insert_job(&db, &job).map_err(|e| e.to_string())?;
     log_activity(&db, "job_created", &format!("Job '{}' created", job.title)).ok();
     Ok(job)
@@ -585,13 +640,22 @@ pub fn cmd_get_identity(state: State<'_, AppState>) -> Result<Option<IdentityRes
 }
 
 #[tauri::command]
-pub fn cmd_create_identity(state: State<'_, AppState>, master_key_hex: String, username: String) -> Result<IdentityResponse, String> {
+pub fn cmd_create_identity(
+    state: State<'_, AppState>,
+    master_key_hex: String,
+    username: String,
+) -> Result<IdentityResponse, String> {
     let db = state.db.lock().unwrap();
     let mut key = [0u8; 32];
     hex::decode_to_slice(master_key_hex, &mut key).map_err(|e| e.to_string())?;
-    
+
     let i = create_identity(&db, &key, &username).map_err(|e| e.to_string())?;
-    log_activity(&db, "identity_created", &format!("Node {} ({}) created", i.node_id, i.username)).ok();
+    log_activity(
+        &db,
+        "identity_created",
+        &format!("Node {} ({}) created", i.node_id, i.username),
+    )
+    .ok();
     Ok(IdentityResponse {
         id: i.id.clone(),
         node_id: i.node_id.clone(),
@@ -604,13 +668,23 @@ pub fn cmd_create_identity(state: State<'_, AppState>, master_key_hex: String, u
 }
 
 #[tauri::command]
-pub fn cmd_recover_identity(state: State<'_, AppState>, phrase: String, master_key_hex: String, username: String) -> Result<IdentityResponse, String> {
+pub fn cmd_recover_identity(
+    state: State<'_, AppState>,
+    phrase: String,
+    master_key_hex: String,
+    username: String,
+) -> Result<IdentityResponse, String> {
     let db = state.db.lock().unwrap();
     let mut key = [0u8; 32];
     hex::decode_to_slice(&master_key_hex, &mut key).map_err(|e| e.to_string())?;
-    
+
     let i = recover_id(&db, &phrase, &key, &username).map_err(|e| e.to_string())?;
-    log_activity(&db, "identity_recovered", &format!("Node {} recovered", i.node_id)).ok();
+    log_activity(
+        &db,
+        "identity_recovered",
+        &format!("Node {} recovered", i.node_id),
+    )
+    .ok();
     Ok(IdentityResponse {
         id: i.id.clone(),
         node_id: i.node_id.clone(),
@@ -633,7 +707,7 @@ pub fn cmd_get_node_status(state: State<'_, AppState>) -> serde_json::Value {
     let metrics = state.metrics.lock().unwrap();
     let snap = metrics.snapshot();
     let (up, down) = bw.current_kbps();
-    
+
     serde_json::json!({
         "online": true,
         "peer_count": peers.online_count(),
@@ -655,7 +729,10 @@ pub fn cmd_list_vault(state: State<'_, AppState>) -> Result<Vec<VaultFileRecord>
 }
 
 #[tauri::command]
-pub fn cmd_save_file(state: State<'_, AppState>, req: VaultFileRecord) -> Result<VaultFileRecord, String> {
+pub fn cmd_save_file(
+    state: State<'_, AppState>,
+    req: VaultFileRecord,
+) -> Result<VaultFileRecord, String> {
     let db = state.db.lock().unwrap();
     insert_vault_file(&db, &req).map_err(|e| e.to_string())?;
     log_activity(&db, "vault_upload", &format!("File '{}' saved", req.name)).ok();
@@ -681,7 +758,10 @@ pub fn cmd_get_settings(state: State<'_, AppState>) -> Result<PincSettings, Stri
 }
 
 #[tauri::command]
-pub fn cmd_update_settings(state: State<'_, AppState>, settings: PincSettings) -> Result<(), String> {
+pub fn cmd_update_settings(
+    state: State<'_, AppState>,
+    settings: PincSettings,
+) -> Result<(), String> {
     let json = serde_json::to_string(&settings).map_err(|e| e.to_string())?;
     let db = state.db.lock().unwrap();
     upsert_settings(&db, &json).map_err(|e| e.to_string())
@@ -739,22 +819,33 @@ pub async fn cmd_get_peers(state: State<'_, AppState>) -> Result<Vec<PeerInfo>, 
 }
 
 #[tauri::command]
-pub async fn cmd_connect_to_peer(state: State<'_, AppState>, peer_addr: String) -> Result<String, String> {
+pub async fn cmd_connect_to_peer(
+    state: State<'_, AppState>,
+    peer_addr: String,
+) -> Result<String, String> {
     let peer_info = state.p2p_network.connect_to_peer(&peer_addr).await?;
 
     let db = state.db.lock().map_err(|e| e.to_string())?;
     upsert_peer(&db, &peer_info).map_err(|e| e.to_string())?;
     drop(db);
 
-    state.metrics.lock().map_err(|e| e.to_string())?.inc_peer_conn();
+    state
+        .metrics
+        .lock()
+        .map_err(|e| e.to_string())?
+        .inc_peer_conn();
 
     log_activity(
         &*state.db.lock().map_err(|e| e.to_string())?,
         "peer_connected",
         &format!("Connected to peer at {}", peer_addr),
-    ).ok();
+    )
+    .ok();
 
-    Ok(format!("Connected to peer {} at {}", peer_info.id, peer_addr))
+    Ok(format!(
+        "Connected to peer {} at {}",
+        peer_info.id, peer_addr
+    ))
 }
 
 // ─── DISTRIBUTED STORAGE (Phase 4) ──────────────────────────────────────────
@@ -765,7 +856,7 @@ pub fn cmd_get_distributed_status(state: State<'_, AppState>) -> Result<serde_js
     let contracts = list_storage_contracts(&db).map_err(|e| e.to_string())?;
     let active_contracts = contracts.iter().filter(|c| c.active).count();
     let total_storage: u64 = contracts.iter().map(|c| c.bytes_allocated).sum();
-    
+
     Ok(serde_json::json!({
         "status": if active_contracts > 0 { "Active" } else { "Inactive" },
         "chunk_size_mb": 8,
@@ -777,7 +868,9 @@ pub fn cmd_get_distributed_status(state: State<'_, AppState>) -> Result<serde_js
 }
 
 #[tauri::command]
-pub fn cmd_get_storage_contracts(state: State<'_, AppState>) -> Result<Vec<StorageContract>, String> {
+pub fn cmd_get_storage_contracts(
+    state: State<'_, AppState>,
+) -> Result<Vec<StorageContract>, String> {
     let db = state.db.lock().unwrap();
     list_storage_contracts(&db).map_err(|e| e.to_string())
 }
@@ -787,7 +880,10 @@ pub fn cmd_repair_shards(state: State<'_, AppState>) -> Result<serde_json::Value
     let db = state.db.lock().unwrap();
     let contracts = list_storage_contracts(&db).map_err(|e| e.to_string())?;
     let active_contracts = contracts.iter().filter(|c| c.active).count();
-    log::info!("Distributed vault: repair triggered across {} active contracts", active_contracts);
+    log::info!(
+        "Distributed vault: repair triggered across {} active contracts",
+        active_contracts
+    );
     Ok(serde_json::json!({
         "repaired": true,
         "contracts_checked": active_contracts,
@@ -810,17 +906,18 @@ pub fn cmd_send_message(
     content: String,
 ) -> Result<Message, String> {
     let db = state.db.lock().unwrap();
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity".to_string())?;
-    
+
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs() as i64;
-    
+
     let content_bytes = content.as_bytes().to_vec();
     let content_hash = blake3::hash(&content_bytes).to_hex().to_string();
-    
+
     let msg = Message {
         id: format!("msg-{}", uuid::Uuid::new_v4()),
         conversation_id: format!("conv-{}", peer_id),
@@ -836,7 +933,7 @@ pub fn cmd_send_message(
         reply_to: None,
         media_ref: None,
     };
-    
+
     let mut router = state.message_router.lock().unwrap();
     router.route(msg.clone(), true).ok();
     let metrics = state.metrics.lock().unwrap();
@@ -884,41 +981,54 @@ pub fn cmd_get_wallet_balance(state: State<'_, AppState>) -> Result<serde_json::
 pub fn cmd_get_transactions(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
     let db = state.db.lock().unwrap();
     let txs = list_transactions(&db).map_err(|e| e.to_string())?;
-    let values: Vec<serde_json::Value> = txs.iter().map(|tx| {
-        serde_json::json!({
-            "id": tx.id,
-            "from_node": tx.from_node,
-            "to_node": tx.to_node,
-            "amount": tx.amount,
-            "currency": tx.currency,
-            "tx_type": format!("{:?}", tx.tx_type),
-            "status": format!("{:?}", tx.status),
-            "created_at": tx.created_at,
+    let values: Vec<serde_json::Value> = txs
+        .iter()
+        .map(|tx| {
+            serde_json::json!({
+                "id": tx.id,
+                "from_node": tx.from_node,
+                "to_node": tx.to_node,
+                "amount": tx.amount,
+                "currency": tx.currency,
+                "tx_type": format!("{:?}", tx.tx_type),
+                "status": format!("{:?}", tx.status),
+                "created_at": tx.created_at,
+            })
         })
-    }).collect();
+        .collect();
     Ok(values)
 }
 
 // ─── REPUTATION (Phase 8) ───────────────────────────────────────────────────
 
 #[tauri::command]
-pub fn cmd_get_reputation(state: State<'_, AppState>, node_id: String) -> Result<serde_json::Value, String> {
+pub fn cmd_get_reputation(
+    state: State<'_, AppState>,
+    node_id: String,
+) -> Result<serde_json::Value, String> {
     let db = state.db.lock().unwrap();
-    
-    let (relay_score, job_score, payment_score, total_score) = match crate::core::database::queries::get_reputation(&db, &node_id) {
-        Ok(Some((r, j, p, t))) => (r, j, p, t),
-        _ => {
-            let peers = state.peer_registry.lock().unwrap();
-            let peer = peers.get_peer(&node_id);
-            let trust = peer.map(|p| p.trust_score).unwrap_or(0.5);
-            (trust, 0.0, 0.0, trust)
-        }
-    };
-    
+
+    let (relay_score, job_score, payment_score, total_score) =
+        match crate::core::database::queries::get_reputation(&db, &node_id) {
+            Ok(Some((r, j, p, t))) => (r, j, p, t),
+            _ => {
+                let peers = state.peer_registry.lock().unwrap();
+                let peer = peers.get_peer(&node_id);
+                let trust = peer.map(|p| p.trust_score).unwrap_or(0.5);
+                (trust, 0.0, 0.0, trust)
+            }
+        };
+
     let uptime_score = relay_score;
     let dispute_score = 1.0 - payment_score.min(1.0);
-    let status = if total_score > 0.8 { "High-Trust" } else if total_score > 0.5 { "Medium-Trust" } else { "Low-Trust" };
-    
+    let status = if total_score > 0.8 {
+        "High-Trust"
+    } else if total_score > 0.5 {
+        "Medium-Trust"
+    } else {
+        "Low-Trust"
+    };
+
     Ok(serde_json::json!({
         "node_id": node_id,
         "relay_score": relay_score,
@@ -942,14 +1052,15 @@ pub fn cmd_get_social_feed(state: State<'_, AppState>) -> Result<Vec<Post>, Stri
 #[tauri::command]
 pub fn cmd_create_post(state: State<'_, AppState>, content: String) -> Result<Post, String> {
     let db = state.db.lock().unwrap();
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
-    
+
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs() as i64;
-    
+
     let post = Post {
         id: format!("post-{}", uuid::Uuid::new_v4()),
         author_id: identity.node_id,
@@ -965,9 +1076,14 @@ pub fn cmd_create_post(state: State<'_, AppState>, content: String) -> Result<Po
         edited_at: None,
         encrypted: false,
     };
-    
+
     insert_post(&db, &post).map_err(|e| e.to_string())?;
-    log_activity(&db, "post_created", &format!("Post '{}' created", &content[..content.len().min(50)])).ok();
+    log_activity(
+        &db,
+        "post_created",
+        &format!("Post '{}' created", &content[..content.len().min(50)]),
+    )
+    .ok();
     Ok(post)
 }
 
@@ -980,11 +1096,16 @@ pub fn cmd_get_wagers(state: State<'_, AppState>) -> Result<Vec<Wager>, String> 
 }
 
 #[tauri::command]
-pub fn cmd_create_wager(state: State<'_, AppState>, amount: f64, opponent: String) -> Result<Wager, String> {
+pub fn cmd_create_wager(
+    state: State<'_, AppState>,
+    amount: f64,
+    opponent: String,
+) -> Result<Wager, String> {
     let db = state.db.lock().unwrap();
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
-    
+
     let wager = crate::core::wager::engine::create_wager(
         &identity.node_id,
         &opponent,
@@ -992,8 +1113,9 @@ pub fn cmd_create_wager(state: State<'_, AppState>, amount: f64, opponent: Strin
         "standard",
         &format!("Wager between {} and {}", identity.node_id, opponent),
         Some(86400), // expires in 24h
-    ).map_err(|e| e.to_string())?;
-    
+    )
+    .map_err(|e| e.to_string())?;
+
     insert_wager(&db, &wager).map_err(|e| e.to_string())?;
     log_activity(&db, "wager_created", &format!("Wager {} created", wager.id)).ok();
     Ok(wager)
@@ -1008,42 +1130,59 @@ pub fn cmd_get_ai_agents(state: State<'_, AppState>) -> Result<Vec<AiAgent>, Str
 }
 
 #[tauri::command]
-pub async fn cmd_run_ai_inference(state: State<'_, AppState>, prompt: String) -> Result<serde_json::Value, String> {
+pub async fn cmd_run_ai_inference(
+    state: State<'_, AppState>,
+    prompt: String,
+) -> Result<serde_json::Value, String> {
     let (moderation, peer_metrics, routing, use_external_llm) = {
         let db = state.db.lock().unwrap();
-        
+
         let moderation = moderate_content(&format!("inf-{}", uuid::Uuid::new_v4()), &prompt);
-        
+
         let peers = state.peer_registry.lock().unwrap();
         let peer_list = peers.list_peers();
-        let peer_metrics: Vec<PeerMetrics> = peer_list.iter().map(|p| PeerMetrics {
-            node_id: p.id.clone(),
-            latency_ms: p.latency_ms,
-            bandwidth_kbps: 1000.0,
-            reliability: p.trust_score,
-            load: 0.3,
-        }).collect();
-        
+        let peer_metrics: Vec<PeerMetrics> = peer_list
+            .iter()
+            .map(|p| PeerMetrics {
+                node_id: p.id.clone(),
+                latency_ms: p.latency_ms,
+                bandwidth_kbps: 1000.0,
+                reliability: p.trust_score,
+                load: 0.3,
+            })
+            .collect();
+
         let routing = if let Some(identity) = load_first_identity(&db).ok().flatten() {
             if !peer_metrics.is_empty() {
                 recommend_route(&identity.node_id, "target", &peer_metrics)
-            } else { None }
-        } else { None };
-        
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         let settings = get_settings_row(&db).ok().flatten().unwrap_or_default();
         let use_external_llm = settings.contains("groq_api_key");
-        
+
         (moderation, peer_metrics, routing, use_external_llm)
     };
-    
+
     let llm_response = if use_external_llm {
-        call_groq_api(&prompt).await.unwrap_or_else(|_| "External LLM unavailable".to_string())
+        call_groq_api(&prompt)
+            .await
+            .unwrap_or_else(|_| "External LLM unavailable".to_string())
     } else {
-        format!("Local inference: analyzed {} chars, routing={}", 
-            prompt.len(), 
-            routing.as_ref().map(|r| r.recommended_relay.as_str()).unwrap_or_else(|| "none"))
+        format!(
+            "Local inference: analyzed {} chars, routing={}",
+            prompt.len(),
+            routing
+                .as_ref()
+                .map(|r| r.recommended_relay.as_str())
+                .unwrap_or_else(|| "none")
+        )
     };
-    
+
     let result = serde_json::json!({
         "request_id": format!("inf-{}", uuid::Uuid::new_v4()),
         "moderation": {
@@ -1062,10 +1201,15 @@ pub async fn cmd_run_ai_inference(state: State<'_, AppState>, prompt: String) ->
         "model_version": "pinc-ai-v1.0",
         "elapsed_ms": 42,
     });
-    
+
     {
         let db = state.db.lock().unwrap();
-        log_activity(&db, "ai_inference", &format!("Inference on prompt ({} chars)", prompt.len())).ok();
+        log_activity(
+            &db,
+            "ai_inference",
+            &format!("Inference on prompt ({} chars)", prompt.len()),
+        )
+        .ok();
     }
     Ok(result)
 }
@@ -1073,7 +1217,7 @@ pub async fn cmd_run_ai_inference(state: State<'_, AppState>, prompt: String) ->
 async fn call_groq_api(prompt: &str) -> Result<String, String> {
     let api_key = std::env::var("GROQ_API_KEY").map_err(|_| "GROQ_API_KEY not set")?;
     let client = reqwest::Client::new();
-    
+
     let response = client
         .post("https://api.groq.com/openai/v1/chat/completions")
         .header("Authorization", format!("Bearer {}", api_key))
@@ -1085,7 +1229,7 @@ async fn call_groq_api(prompt: &str) -> Result<String, String> {
         .send()
         .await
         .map_err(|e| e.to_string())?;
-    
+
     let json: serde_json::Value = response.json().await.map_err(|e| e.to_string())?;
     json["choices"][0]["message"]["content"]
         .as_str()
@@ -1097,7 +1241,8 @@ async fn call_groq_api(prompt: &str) -> Result<String, String> {
 
 // Model cache initialization
 fn init_model_cache() -> Arc<Mutex<ModelCache>> {
-    let cache_dir = std::env::var("PINC_MODEL_CACHE_DIR").unwrap_or_else(|_| "/tmp/pinc/models".to_string());
+    let cache_dir =
+        std::env::var("PINC_MODEL_CACHE_DIR").unwrap_or_else(|_| "/tmp/pinc/models".to_string());
     Arc::new(Mutex::new(ModelCache::new(cache_dir)))
 }
 
@@ -1108,14 +1253,18 @@ pub async fn cmd_whisper_transcribe(
 ) -> Result<String, String> {
     let cache = init_model_cache();
     let mut engine = WhisperEngine::new(cache);
-    
+
     let model_path = std::env::var("WHISPER_MODEL_PATH")
         .unwrap_or_else(|_| "models/ggml-base.en.bin".to_string());
-    
-    engine.load_model(&model_path).await
+
+    engine
+        .load_model(&model_path)
+        .await
         .map_err(|e| e.to_string())?;
-    
-    engine.transcribe(&audio_data).await
+
+    engine
+        .transcribe(&audio_data)
+        .await
         .map_err(|e| e.to_string())
 }
 
@@ -1127,8 +1276,10 @@ pub async fn cmd_llama_load_model(
 ) -> Result<String, String> {
     let cache = init_model_cache();
     let mut engine = LlamaEngine::new(cache);
-    
-    engine.load_model(&model_path, &params).await
+
+    engine
+        .load_model(&model_path, &params)
+        .await
         .map_err(|e| e.to_string())
 }
 
@@ -1141,8 +1292,10 @@ pub async fn cmd_llama_infer(
 ) -> Result<String, String> {
     let cache = init_model_cache();
     let mut engine = LlamaEngine::new(cache);
-    
-    engine.infer(&model_id, &prompt, &params).await
+
+    engine
+        .infer(&model_id, &prompt, &params)
+        .await
         .map_err(|e| e.to_string())
 }
 
@@ -1155,8 +1308,10 @@ pub async fn cmd_llama_generate(
 ) -> Result<String, String> {
     let cache = init_model_cache();
     let mut engine = LlamaEngine::new(cache);
-    
-    engine.generate(&model_id, &prompt, &params).await
+
+    engine
+        .generate(&model_id, &prompt, &params)
+        .await
         .map_err(|e| e.to_string())
 }
 
@@ -1167,8 +1322,10 @@ pub async fn cmd_llama_unload_model(
 ) -> Result<(), String> {
     let cache = init_model_cache();
     let mut engine = LlamaEngine::new(cache);
-    
-    engine.unload_model(&model_id).await
+
+    engine
+        .unload_model(&model_id)
+        .await
         .map_err(|e| e.to_string())
 }
 
@@ -1179,8 +1336,10 @@ pub async fn cmd_onnx_load_model(
 ) -> Result<String, String> {
     let cache = init_model_cache();
     let mut engine = OnnxEngine::new(cache);
-    
-    engine.load_model(&model_path).await
+
+    engine
+        .load_model(&model_path)
+        .await
         .map_err(|e| e.to_string())
 }
 
@@ -1192,8 +1351,10 @@ pub async fn cmd_onnx_segment_image(
 ) -> Result<ImageSegmentation, String> {
     let cache = init_model_cache();
     let engine = OnnxEngine::new(cache);
-    
-    engine.segment_image(&model_id, image_data).await
+
+    engine
+        .segment_image(&model_id, image_data)
+        .await
         .map_err(|e| e.to_string())
 }
 
@@ -1204,8 +1365,10 @@ pub async fn cmd_onnx_unload_model(
 ) -> Result<(), String> {
     let cache = init_model_cache();
     let mut engine = OnnxEngine::new(cache);
-    
-    engine.unload_model(&model_id).await
+
+    engine
+        .unload_model(&model_id)
+        .await
         .map_err(|e| e.to_string())
 }
 
@@ -1217,8 +1380,10 @@ pub async fn cmd_tts_create_voice_profile(
 ) -> Result<String, String> {
     let cache = init_model_cache();
     let mut engine = TtsEngine::new(cache);
-    
-    engine.create_voice_profile(&name, &audio_samples).await
+
+    engine
+        .create_voice_profile(&name, &audio_samples)
+        .await
         .map_err(|e| e.to_string())
 }
 
@@ -1231,8 +1396,10 @@ pub async fn cmd_tts_synthesize(
 ) -> Result<Vec<f32>, String> {
     let cache = init_model_cache();
     let mut engine = TtsEngine::new(cache);
-    
-    engine.synthesize(&profile_id, &text, &params).await
+
+    engine
+        .synthesize(&profile_id, &text, &params)
+        .await
         .map_err(|e| e.to_string())
 }
 
@@ -1242,7 +1409,7 @@ pub async fn cmd_get_model_cache_stats(
 ) -> Result<serde_json::Value, String> {
     let cache = init_model_cache();
     let cache_guard = cache.lock().unwrap();
-    
+
     Ok(serde_json::json!({
         "models_cached": cache_guard.models.lock().unwrap().len(),
         "total_size_bytes": cache_guard.models.lock().unwrap().iter()
@@ -1252,14 +1419,12 @@ pub async fn cmd_get_model_cache_stats(
 }
 
 #[tauri::command]
-pub async fn cmd_clear_model_cache(
-    state: State<'_, AppState>,
-) -> Result<(), String> {
+pub async fn cmd_clear_model_cache(state: State<'_, AppState>) -> Result<(), String> {
     let cache = init_model_cache();
     let mut cache_guard = cache.lock().unwrap();
     let mut models = cache_guard.models.lock().unwrap();
     models.clear();
-    
+
     Ok(())
 }
 
@@ -1278,7 +1443,7 @@ pub fn cmd_get_metrics(state: State<'_, AppState>) -> serde_json::Value {
 
 // ─── WEBRTC CALLS (Phase 16) ─────────────────────────────────────────────────
 
-use crate::core::p2p::signaling::{CallType, CallHistoryEntry};
+use crate::core::p2p::signaling::{CallHistoryEntry, CallType};
 
 #[tauri::command]
 pub async fn cmd_initiate_call(
@@ -1292,7 +1457,8 @@ pub async fn cmd_initiate_call(
     };
 
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let local_node_id = identity.node_id.clone();
     drop(db);
@@ -1326,8 +1492,12 @@ pub async fn cmd_initiate_call(
         log_activity(
             &db,
             "call_initiated",
-            &format!("{} initiated {} call to {}", local_node_id, call_type, peer_id),
-        ).ok();
+            &format!(
+                "{} initiated {} call to {}",
+                local_node_id, call_type, peer_id
+            ),
+        )
+        .ok();
     }
 
     let signaling_msg = serde_json::json!({
@@ -1340,7 +1510,12 @@ pub async fn cmd_initiate_call(
         "timestamp": now,
     });
 
-    log::info!("Call offer created for peer {} (type={}, id={})", peer_id, call_type, call_id);
+    log::info!(
+        "Call offer created for peer {} (type={}, id={})",
+        peer_id,
+        call_type,
+        call_id
+    );
 
     Ok(serde_json::json!({
         "call_id": call_id,
@@ -1360,7 +1535,8 @@ pub async fn cmd_answer_call(
     offer_sdp: String,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let local_node_id = identity.node_id.clone();
     drop(db);
@@ -1395,7 +1571,8 @@ pub async fn cmd_answer_call(
             &db,
             "call_answered",
             &format!("{} answered call from {}", local_node_id, peer_id),
-        ).ok();
+        )
+        .ok();
     }
 
     let signaling_msg = serde_json::json!({
@@ -1424,7 +1601,8 @@ pub async fn cmd_hang_up(
     peer_id: String,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let local_node_id = identity.node_id.clone();
     drop(db);
@@ -1446,7 +1624,8 @@ pub async fn cmd_hang_up(
             &db,
             "call_ended",
             &format!("{} ended call with {}", local_node_id, peer_id),
-        ).ok();
+        )
+        .ok();
     }
 
     let signaling_msg = serde_json::json!({
@@ -1467,9 +1646,7 @@ pub async fn cmd_hang_up(
 }
 
 #[tauri::command]
-pub async fn cmd_get_call_status(
-    state: State<'_, AppState>,
-) -> Result<serde_json::Value, String> {
+pub async fn cmd_get_call_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn_guard = db.conn.lock().map_err(|e| e.to_string())?;
 
@@ -1492,12 +1669,10 @@ pub async fn cmd_get_call_status(
                 "duration_secs": now - started_at,
             }))
         }
-        None => {
-            Ok(serde_json::json!({
-                "active": false,
-                "state": "Idle",
-            }))
-        }
+        None => Ok(serde_json::json!({
+            "active": false,
+            "state": "Idle",
+        })),
     }
 }
 
@@ -1508,9 +1683,12 @@ pub async fn cmd_websocket_broadcast(
     state: State<'_, AppState>,
     message: String,
 ) -> Result<(), String> {
-    let ws_arc = state.web_socket_server.as_ref().ok_or("WebSocket server not available")?;
+    let ws_arc = state
+        .web_socket_server
+        .as_ref()
+        .ok_or("WebSocket server not available")?;
     let ws = ws_arc.lock().await;
-    
+
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let identity = crate::core::database::queries::load_first_identity(&db)
         .map_err(|e| e.to_string())?
@@ -1526,14 +1704,16 @@ pub async fn cmd_websocket_broadcast(
             created_at: 0,
         });
     drop(db);
-    
+
     // Parse message to see if it has a specific target
     let target_node = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&message) {
-        json.get("to").and_then(|v| v.as_str()).map(|s| s.to_string())
+        json.get("to")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
     } else {
         None
     };
-    
+
     let ws_msg = crate::core::networking::WebSocketMessage {
         message_id: uuid::Uuid::new_v4().to_string(),
         message_type: "webrtc_signaling".to_string(),
@@ -1544,13 +1724,15 @@ pub async fn cmd_websocket_broadcast(
         signature: None,
         encrypted: false,
     };
-    
+
     if let Some(target) = target_node {
-        ws.send_to_peer(&target, ws_msg).unwrap_or_else(|e| log::warn!("Send failed: {}", e));
+        ws.send_to_peer(&target, ws_msg)
+            .unwrap_or_else(|e| log::warn!("Send failed: {}", e));
     } else {
-        ws.broadcast_message(ws_msg).unwrap_or_else(|e| log::warn!("Broadcast failed: {}", e));
+        ws.broadcast_message(ws_msg)
+            .unwrap_or_else(|e| log::warn!("Broadcast failed: {}", e));
     }
-    
+
     Ok(())
 }
 
@@ -1558,17 +1740,21 @@ pub async fn cmd_websocket_broadcast(
 pub async fn cmd_get_websocket_status(
     state: State<'_, AppState>,
 ) -> Result<serde_json::Value, String> {
-    let ws_arc = state.web_socket_server.as_ref().ok_or("WebSocket server not available")?;
+    let ws_arc = state
+        .web_socket_server
+        .as_ref()
+        .ok_or("WebSocket server not available")?;
     let ws = ws_arc.lock().await;
     let status = ws.get_status().map_err(|e| e.to_string())?;
     Ok(serde_json::to_value(status).map_err(|e| e.to_string())?)
 }
 
 #[tauri::command]
-pub async fn cmd_websocket_shutdown(
-    state: State<'_, AppState>,
-) -> Result<(), String> {
-    let ws_arc = state.web_socket_server.as_ref().ok_or("WebSocket server not available")?;
+pub async fn cmd_websocket_shutdown(state: State<'_, AppState>) -> Result<(), String> {
+    let ws_arc = state
+        .web_socket_server
+        .as_ref()
+        .ok_or("WebSocket server not available")?;
     let ws = ws_arc.lock().await;
     ws.shutdown().map_err(|e| e.to_string())?;
     Ok(())
@@ -1585,7 +1771,10 @@ pub fn is_admin_password(state: State<'_, AppState>, password: String) -> Result
 }
 
 #[tauri::command]
-pub fn validate_admin_access(state: State<'_, AppState>, password: String) -> Result<serde_json::Value, String> {
+pub fn validate_admin_access(
+    state: State<'_, AppState>,
+    password: String,
+) -> Result<serde_json::Value, String> {
     let mut kingsman = state.kingsman.lock().map_err(|e| e.to_string())?;
     let authenticated = kingsman.activate(&password);
     Ok(serde_json::json!({
@@ -1601,7 +1790,10 @@ pub fn cmd_apply_settings(state: State<'_, AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn cmd_reset_settings_section(state: State<'_, AppState>, section: String) -> Result<(), String> {
+pub fn cmd_reset_settings_section(
+    state: State<'_, AppState>,
+    section: String,
+) -> Result<(), String> {
     log::info!("Reset settings section: {}", section);
     Ok(())
 }
@@ -1627,16 +1819,14 @@ pub fn cmd_upload_file(
 ) -> Result<VaultFileRecord, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let vault_dir = &state.vault_dir;
-    let record = crate::core::vault::file_manager::upload_file(&db, vault_dir, &name, &data, encrypt)
-        .map_err(|e| e.to_string())?;
+    let record =
+        crate::core::vault::file_manager::upload_file(&db, vault_dir, &name, &data, encrypt)
+            .map_err(|e| e.to_string())?;
     Ok(record)
 }
 
 #[tauri::command]
-pub fn cmd_download_file(
-    state: State<'_, AppState>,
-    file_id: String,
-) -> Result<Vec<u8>, String> {
+pub fn cmd_download_file(state: State<'_, AppState>, file_id: String) -> Result<Vec<u8>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let vault_dir = &state.vault_dir;
     crate::core::vault::file_manager::download_file(&db, vault_dir, &file_id)
@@ -1646,7 +1836,8 @@ pub fn cmd_download_file(
 #[tauri::command]
 pub fn cmd_get_node_info(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let peers = state.peer_registry.lock().map_err(|e| e.to_string())?;
     Ok(serde_json::json!({
@@ -1671,7 +1862,10 @@ pub fn cmd_scan_network(state: State<'_, AppState>) -> Result<Vec<PeerInfo>, Str
 }
 
 #[tauri::command]
-pub fn cmd_get_server_metrics(state: State<'_, AppState>, server_id: String) -> Result<serde_json::Value, String> {
+pub fn cmd_get_server_metrics(
+    state: State<'_, AppState>,
+    server_id: String,
+) -> Result<serde_json::Value, String> {
     let rift = state.rift.lock().map_err(|e| e.to_string())?;
     match rift.get_listing(&server_id) {
         Some(listing) => Ok(serde_json::to_value(&listing.metrics).map_err(|e| e.to_string())?),
@@ -1686,7 +1880,8 @@ pub fn cmd_transfer_tokens(
     amount: f64,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let tx_id = Uuid::new_v4().to_string();
     let tx = Transaction {
@@ -1726,7 +1921,8 @@ pub fn cmd_get_wallet_history(state: State<'_, AppState>) -> Result<Vec<Transact
 #[tauri::command]
 pub fn cmd_faucet_request(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let tx_id = Uuid::new_v4().to_string();
     let tx = Transaction {
@@ -1755,7 +1951,8 @@ pub fn cmd_create_escrow(
     reason: String,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let escrow_id = Uuid::new_v4().to_string();
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
@@ -1767,16 +1964,14 @@ pub fn cmd_create_escrow(
 }
 
 #[tauri::command]
-pub fn cmd_release_escrow(
-    state: State<'_, AppState>,
-    escrow_id: String,
-) -> Result<(), String> {
+pub fn cmd_release_escrow(state: State<'_, AppState>, escrow_id: String) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
     conn.execute(
         "UPDATE escrow_holds SET status = 'released', released_at = ?1 WHERE id = ?2",
         rusqlite::params![chrono::Utc::now().timestamp(), escrow_id],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -1809,19 +2004,20 @@ pub fn cmd_update_wager(
     conn.execute(
         "UPDATE wagers SET status = ?1 WHERE id = ?2",
         rusqlite::params![status, wager_id],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn cmd_delete_wager(
-    state: State<'_, AppState>,
-    wager_id: String,
-) -> Result<(), String> {
+pub fn cmd_delete_wager(state: State<'_, AppState>, wager_id: String) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    conn.execute("DELETE FROM wagers WHERE id = ?1", rusqlite::params![wager_id])
-        .map_err(|e| e.to_string())?;
+    conn.execute(
+        "DELETE FROM wagers WHERE id = ?1",
+        rusqlite::params![wager_id],
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -1836,7 +2032,8 @@ pub fn cmd_settle_wager(
     conn.execute(
         "UPDATE wagers SET status = 'settled', winner_id = ?1 WHERE id = ?2",
         rusqlite::params![winner_id, wager_id],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -1849,7 +2046,8 @@ pub fn cmd_create_tournament(
     entry_fee: f64,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let tournament_id = Uuid::new_v4().to_string();
     let tournament = Tournament {
@@ -1868,7 +2066,8 @@ pub fn cmd_create_tournament(
         referee_ids: vec![],
         host_fee_pct: 0.0,
     };
-    crate::core::database::queries::insert_tournament(&db, &tournament).map_err(|e| e.to_string())?;
+    crate::core::database::queries::insert_tournament(&db, &tournament)
+        .map_err(|e| e.to_string())?;
     Ok(serde_json::json!({ "tournament_id": tournament_id, "status": "registration" }))
 }
 
@@ -1878,17 +2077,25 @@ pub fn cmd_join_tournament(
     tournament_id: String,
 ) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    let data: String = conn.query_row(
-        "SELECT data FROM tournaments WHERE id = ?1", rusqlite::params![tournament_id], |r| r.get(0),
-    ).map_err(|_| "Tournament not found".to_string())?;
+    let data: String = conn
+        .query_row(
+            "SELECT data FROM tournaments WHERE id = ?1",
+            rusqlite::params![tournament_id],
+            |r| r.get(0),
+        )
+        .map_err(|_| "Tournament not found".to_string())?;
     let mut tournament: Tournament = serde_json::from_str(&data).map_err(|e| e.to_string())?;
     tournament.participants.push(identity.node_id);
     let updated = serde_json::to_string(&tournament).map_err(|e| e.to_string())?;
-    conn.execute("UPDATE tournaments SET data = ?1 WHERE id = ?2", rusqlite::params![updated, tournament_id])
-        .map_err(|e| e.to_string())?;
+    conn.execute(
+        "UPDATE tournaments SET data = ?1 WHERE id = ?2",
+        rusqlite::params![updated, tournament_id],
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -1902,21 +2109,20 @@ pub fn cmd_start_tournament(
     conn.execute(
         "UPDATE tournaments SET status = 'active' WHERE id = ?1",
         rusqlite::params![tournament_id],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn cmd_end_tournament(
-    state: State<'_, AppState>,
-    tournament_id: String,
-) -> Result<(), String> {
+pub fn cmd_end_tournament(state: State<'_, AppState>, tournament_id: String) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
     conn.execute(
         "UPDATE tournaments SET status = 'completed' WHERE id = ?1",
         rusqlite::params![tournament_id],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -1924,9 +2130,11 @@ pub fn cmd_end_tournament(
 pub fn cmd_get_tournaments(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    let mut stmt = conn.prepare("SELECT data FROM tournaments ORDER BY created_at DESC")
+    let mut stmt = conn
+        .prepare("SELECT data FROM tournaments ORDER BY created_at DESC")
         .map_err(|e| e.to_string())?;
-    let rows = stmt.query_map([], |row| row.get::<_, String>(0))
+    let rows = stmt
+        .query_map([], |row| row.get::<_, String>(0))
         .map_err(|e| e.to_string())?;
     let mut tournaments = Vec::new();
     for row in rows {
@@ -1943,9 +2151,11 @@ pub fn cmd_get_tournaments(state: State<'_, AppState>) -> Result<Vec<serde_json:
 pub fn cmd_get_games(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    let mut stmt = conn.prepare("SELECT data FROM web_games ORDER BY created_at DESC")
+    let mut stmt = conn
+        .prepare("SELECT data FROM web_games ORDER BY created_at DESC")
         .map_err(|e| e.to_string())?;
-    let rows = stmt.query_map([], |row| row.get::<_, String>(0))
+    let rows = stmt
+        .query_map([], |row| row.get::<_, String>(0))
         .map_err(|e| e.to_string())?;
     let mut games = Vec::new();
     for row in rows {
@@ -1966,7 +2176,8 @@ pub fn cmd_save_game_progress(
     play_time_secs: u64,
 ) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
     conn.execute(
@@ -1982,7 +2193,8 @@ pub fn cmd_get_game_progress(
     game_id: String,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
     let result: Result<(u64, u64), _> = conn.query_row(
@@ -1991,17 +2203,18 @@ pub fn cmd_get_game_progress(
         |row| Ok((row.get(0)?, row.get(1)?)),
     );
     match result {
-        Ok((high_score, play_time)) => Ok(serde_json::json!({ "high_score": high_score, "play_time_secs": play_time })),
+        Ok((high_score, play_time)) => {
+            Ok(serde_json::json!({ "high_score": high_score, "play_time_secs": play_time }))
+        }
         Err(_) => Ok(serde_json::json!({ "high_score": 0, "play_time_secs": 0 })),
     }
 }
 
 #[tauri::command]
-pub fn cmd_get_user_game_stats(
-    state: State<'_, AppState>,
-) -> Result<serde_json::Value, String> {
+pub fn cmd_get_user_game_stats(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
 
@@ -2011,11 +2224,13 @@ pub fn cmd_get_user_game_stats(
         |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
     ).unwrap_or((0, 0, 0));
 
-    let games_count: u32 = conn.query_row(
-        "SELECT COUNT(*) FROM game_progress WHERE user_id = ?1",
-        rusqlite::params![identity.node_id],
-        |row| row.get(0),
-    ).unwrap_or(0);
+    let games_count: u32 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM game_progress WHERE user_id = ?1",
+            rusqlite::params![identity.node_id],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
 
     Ok(serde_json::json!({
         "total_high_scores": stats.0,
@@ -2032,7 +2247,8 @@ pub fn cmd_create_game_session(
     max_players: u32,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let session_id = Uuid::new_v4().to_string();
     let session = crate::core::database::queries::GameSession {
@@ -2046,31 +2262,33 @@ pub fn cmd_create_game_session(
         status: "waiting".to_string(),
         created_at: chrono::Utc::now().timestamp(),
     };
-    crate::core::database::queries::insert_game_session(&db, &session).map_err(|e| e.to_string())?;
+    crate::core::database::queries::insert_game_session(&db, &session)
+        .map_err(|e| e.to_string())?;
     Ok(serde_json::json!({ "session_id": session_id, "status": "waiting" }))
 }
 
 #[tauri::command]
-pub fn cmd_join_game_session(
-    state: State<'_, AppState>,
-    session_id: String,
-) -> Result<(), String> {
+pub fn cmd_join_game_session(state: State<'_, AppState>, session_id: String) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    let player_ids: String = conn.query_row(
-        "SELECT player_ids FROM game_sessions WHERE id = ?1",
-        rusqlite::params![session_id],
-        |row| row.get(0),
-    ).map_err(|_| "Session not found".to_string())?;
+    let player_ids: String = conn
+        .query_row(
+            "SELECT player_ids FROM game_sessions WHERE id = ?1",
+            rusqlite::params![session_id],
+            |row| row.get(0),
+        )
+        .map_err(|_| "Session not found".to_string())?;
     let mut players: Vec<String> = serde_json::from_str(&player_ids).unwrap_or_default();
     players.push(identity.node_id);
     let updated = serde_json::to_string(&players).map_err(|e| e.to_string())?;
     conn.execute(
         "UPDATE game_sessions SET player_ids = ?1 WHERE id = ?2",
         rusqlite::params![updated, session_id],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -2081,21 +2299,25 @@ pub fn cmd_submit_score(
     score: u64,
 ) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    let scores_str: String = conn.query_row(
-        "SELECT scores FROM game_sessions WHERE id = ?1",
-        rusqlite::params![session_id],
-        |row| row.get(0),
-    ).map_err(|_| "Session not found".to_string())?;
+    let scores_str: String = conn
+        .query_row(
+            "SELECT scores FROM game_sessions WHERE id = ?1",
+            rusqlite::params![session_id],
+            |row| row.get(0),
+        )
+        .map_err(|_| "Session not found".to_string())?;
     let mut scores: HashMap<String, u64> = serde_json::from_str(&scores_str).unwrap_or_default();
     scores.insert(identity.node_id, score);
     let updated = serde_json::to_string(&scores).map_err(|e| e.to_string())?;
     conn.execute(
         "UPDATE game_sessions SET scores = ?1 WHERE id = ?2",
         rusqlite::params![updated, session_id],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -2107,10 +2329,17 @@ pub fn cmd_arena_create_duel(
     stake_amount: f64,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let duel_id = Uuid::new_v4().to_string();
-    log::info!("Duel created: {} vs {} on {} for {} PINC", identity.node_id, opponent_id, game_id, stake_amount);
+    log::info!(
+        "Duel created: {} vs {} on {} for {} PINC",
+        identity.node_id,
+        opponent_id,
+        game_id,
+        stake_amount
+    );
     Ok(serde_json::json!({ "duel_id": duel_id, "status": "pending", "opponent": opponent_id }))
 }
 
@@ -2126,11 +2355,14 @@ pub fn cmd_validate_pairing_code(state: State<'_, AppState>, code: String) -> Re
 }
 
 #[tauri::command]
-pub fn cmd_generate_qr_png(_state: State<'_, AppState>, data: Option<String>) -> Result<String, String> {
+pub fn cmd_generate_qr_png(
+    _state: State<'_, AppState>,
+    data: Option<String>,
+) -> Result<String, String> {
     use base64::{engine::general_purpose, Engine as _};
     use image::{ImageBuffer, Rgba, RgbaImage};
-    use qrcode::QrCode;
     use qrcode::types::Color as QrColor;
+    use qrcode::QrCode;
 
     let payload = data.unwrap_or_else(|| "PINC".to_string());
     let code = QrCode::new(payload.as_bytes()).map_err(|e| e.to_string())?;
@@ -2165,7 +2397,10 @@ pub fn cmd_generate_qr_png(_state: State<'_, AppState>, data: Option<String>) ->
 }
 
 #[tauri::command]
-pub fn cmd_connect_with_code(state: State<'_, AppState>, code: String) -> Result<serde_json::Value, String> {
+pub fn cmd_connect_with_code(
+    state: State<'_, AppState>,
+    code: String,
+) -> Result<serde_json::Value, String> {
     if !code.starts_with("PINC-") {
         return Err("Invalid pairing code".to_string());
     }
@@ -2173,7 +2408,9 @@ pub fn cmd_connect_with_code(state: State<'_, AppState>, code: String) -> Result
 }
 
 #[tauri::command]
-pub fn cmd_get_shared_connections(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_get_shared_connections(
+    state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
 
@@ -2202,11 +2439,15 @@ pub fn cmd_create_net_store_listing(
     location: String,
 ) -> Result<serde_json::Value, String> {
     let listing_id = Uuid::new_v4().to_string();
-    Ok(serde_json::json!({ "listing_id": listing_id, "bandwidth_mbps": bandwidth_mbps, "price_per_gb": price_per_gb }))
+    Ok(
+        serde_json::json!({ "listing_id": listing_id, "bandwidth_mbps": bandwidth_mbps, "price_per_gb": price_per_gb }),
+    )
 }
 
 #[tauri::command]
-pub fn cmd_list_net_store_listings(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_list_net_store_listings(
+    state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
 
@@ -2269,18 +2510,24 @@ pub fn cmd_admin_list_users(state: State<'_, AppState>) -> Result<Vec<serde_json
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
     let mut stmt = conn.prepare("SELECT id, username, email, role, is_active, created_at FROM admin_users ORDER BY created_at DESC")
         .map_err(|e| e.to_string())?;
-    let rows = stmt.query_map([], |row| {
-        Ok(serde_json::json!({
-            "id": row.get::<_, String>(0)?,
-            "username": row.get::<_, String>(1)?,
-            "email": row.get::<_, Option<String>>(2)?,
-            "role": row.get::<_, String>(3)?,
-            "is_active": row.get::<_, bool>(4)?,
-            "created_at": row.get::<_, i64>(5)?,
-        }))
-    }).map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(serde_json::json!({
+                "id": row.get::<_, String>(0)?,
+                "username": row.get::<_, String>(1)?,
+                "email": row.get::<_, Option<String>>(2)?,
+                "role": row.get::<_, String>(3)?,
+                "is_active": row.get::<_, bool>(4)?,
+                "created_at": row.get::<_, i64>(5)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
     let mut users = Vec::new();
-    for row in rows { if let Ok(u) = row { users.push(u); } }
+    for row in rows {
+        if let Ok(u) = row {
+            users.push(u);
+        }
+    }
     Ok(users)
 }
 
@@ -2310,40 +2557,59 @@ pub fn cmd_admin_update_user(
 pub fn cmd_admin_delete_user(state: State<'_, AppState>, user_id: String) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    conn.execute("DELETE FROM admin_users WHERE id = ?1", rusqlite::params![user_id])
-        .map_err(|e| e.to_string())?;
+    conn.execute(
+        "DELETE FROM admin_users WHERE id = ?1",
+        rusqlite::params![user_id],
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn cmd_admin_toggle_user(state: State<'_, AppState>, user_id: String, active: bool) -> Result<(), String> {
+pub fn cmd_admin_toggle_user(
+    state: State<'_, AppState>,
+    user_id: String,
+    active: bool,
+) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    conn.execute("UPDATE admin_users SET is_active = ?1 WHERE id = ?2", rusqlite::params![active, user_id])
-        .map_err(|e| e.to_string())?;
+    conn.execute(
+        "UPDATE admin_users SET is_active = ?1 WHERE id = ?2",
+        rusqlite::params![active, user_id],
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn cmd_admin_list_logs(state: State<'_, AppState>, limit: Option<u32>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_admin_list_logs(
+    state: State<'_, AppState>,
+    limit: Option<u32>,
+) -> Result<Vec<serde_json::Value>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
     let limit = limit.unwrap_or(50);
     let mut stmt = conn.prepare(&format!(
         "SELECT id, admin_id, action, details, ip_address, created_at FROM admin_logs ORDER BY created_at DESC LIMIT {}", limit
     )).map_err(|e| e.to_string())?;
-    let rows = stmt.query_map([], |row| {
-        Ok(serde_json::json!({
-            "id": row.get::<_, String>(0)?,
-            "admin_id": row.get::<_, String>(1)?,
-            "action": row.get::<_, String>(2)?,
-            "details": row.get::<_, Option<String>>(3)?,
-            "ip_address": row.get::<_, Option<String>>(4)?,
-            "created_at": row.get::<_, i64>(5)?,
-        }))
-    }).map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(serde_json::json!({
+                "id": row.get::<_, String>(0)?,
+                "admin_id": row.get::<_, String>(1)?,
+                "action": row.get::<_, String>(2)?,
+                "details": row.get::<_, Option<String>>(3)?,
+                "ip_address": row.get::<_, Option<String>>(4)?,
+                "created_at": row.get::<_, i64>(5)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
     let mut logs = Vec::new();
-    for row in rows { if let Ok(l) = row { logs.push(l); } }
+    for row in rows {
+        if let Ok(l) = row {
+            logs.push(l);
+        }
+    }
     Ok(logs)
 }
 
@@ -2357,14 +2623,22 @@ pub fn cmd_admin_list_logs_filtered(
 }
 
 #[tauri::command]
-pub fn cmd_admin_list_config(state: State<'_, AppState>, category: Option<String>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_admin_list_config(
+    state: State<'_, AppState>,
+    category: Option<String>,
+) -> Result<Vec<serde_json::Value>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let configs = crate::core::database::queries::list_system_config(&db, category.as_deref())
         .map_err(|e| e.to_string())?;
-    Ok(configs.into_iter().map(|c| serde_json::json!({
-        "id": c.id, "key": c.config_key, "value": c.config_value,
-        "description": c.description, "category": c.category,
-    })).collect())
+    Ok(configs
+        .into_iter()
+        .map(|c| {
+            serde_json::json!({
+                "id": c.id, "key": c.config_key, "value": c.config_value,
+                "description": c.description, "category": c.category,
+            })
+        })
+        .collect())
 }
 
 #[tauri::command]
@@ -2383,8 +2657,11 @@ pub fn cmd_admin_update_config(
 pub fn cmd_admin_delete_config(state: State<'_, AppState>, key: String) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    conn.execute("DELETE FROM system_config WHERE config_key = ?1", rusqlite::params![key])
-        .map_err(|e| e.to_string())?;
+    conn.execute(
+        "DELETE FROM system_config WHERE config_key = ?1",
+        rusqlite::params![key],
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -2400,7 +2677,9 @@ pub fn cmd_admin_get_security(state: State<'_, AppState>) -> Result<serde_json::
 }
 
 #[tauri::command]
-pub fn cmd_admin_get_network_monitor(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+pub fn cmd_admin_get_network_monitor(
+    state: State<'_, AppState>,
+) -> Result<serde_json::Value, String> {
     let peers = state.peer_registry.lock().map_err(|e| e.to_string())?;
     let bw = state.bandwidth.lock().map_err(|e| e.to_string())?;
     let (up, down) = bw.current_kbps();
@@ -2435,12 +2714,16 @@ pub fn cmd_admin_reset_password(
 }
 
 #[tauri::command]
-pub fn cmd_admin_list_banned_peers(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_admin_list_banned_peers(
+    state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
     Ok(vec![])
 }
 
 #[tauri::command]
-pub fn cmd_admin_get_kingsman_config(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+pub fn cmd_admin_get_kingsman_config(
+    state: State<'_, AppState>,
+) -> Result<serde_json::Value, String> {
     let kingsman = state.kingsman.lock().map_err(|e| e.to_string())?;
     let status = kingsman.status();
     Ok(serde_json::json!({
@@ -2455,8 +2738,14 @@ pub fn cmd_admin_set_kingsman_master_hash(
     master_hash: String,
 ) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    crate::core::database::queries::update_system_config(&db, "kingsman_master_hash", &master_hash, Some("Kingsman master hash".to_string()), "security")
-        .map_err(|e| e.to_string())?;
+    crate::core::database::queries::update_system_config(
+        &db,
+        "kingsman_master_hash",
+        &master_hash,
+        Some("Kingsman master hash".to_string()),
+        "security",
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -2472,8 +2761,14 @@ pub fn cmd_admin_change_kingsman_master_hash(
     }
     drop(kingsman);
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    crate::core::database::queries::update_system_config(&db, "kingsman_master_hash", &new_hash, Some("Kingsman master hash".to_string()), "security")
-        .map_err(|e| e.to_string())?;
+    crate::core::database::queries::update_system_config(
+        &db,
+        "kingsman_master_hash",
+        &new_hash,
+        Some("Kingsman master hash".to_string()),
+        "security",
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -2496,10 +2791,18 @@ pub fn cmd_admin_login(
 pub fn cmd_admin_get_stats(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    let identity_count: u32 = conn.query_row("SELECT COUNT(*) FROM identities", [], |r| r.get(0)).unwrap_or(0);
-    let peer_count: u32 = conn.query_row("SELECT COUNT(*) FROM peers", [], |r| r.get(0)).unwrap_or(0);
-    let vault_count: u32 = conn.query_row("SELECT COUNT(*) FROM vault_files", [], |r| r.get(0)).unwrap_or(0);
-    let message_count: u32 = conn.query_row("SELECT COUNT(*) FROM messages", [], |r| r.get(0)).unwrap_or(0);
+    let identity_count: u32 = conn
+        .query_row("SELECT COUNT(*) FROM identities", [], |r| r.get(0))
+        .unwrap_or(0);
+    let peer_count: u32 = conn
+        .query_row("SELECT COUNT(*) FROM peers", [], |r| r.get(0))
+        .unwrap_or(0);
+    let vault_count: u32 = conn
+        .query_row("SELECT COUNT(*) FROM vault_files", [], |r| r.get(0))
+        .unwrap_or(0);
+    let message_count: u32 = conn
+        .query_row("SELECT COUNT(*) FROM messages", [], |r| r.get(0))
+        .unwrap_or(0);
     Ok(serde_json::json!({
         "identities": identity_count,
         "peers": peer_count,
@@ -2516,7 +2819,8 @@ pub fn cmd_resolve_game_session(
     result: String,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
 
@@ -2540,10 +2844,17 @@ pub fn cmd_resolve_game_session(
         conn.execute(
             "UPDATE game_sessions SET winner_id = ?1 WHERE id = ?2",
             rusqlite::params![wid, session_id],
-        ).map_err(|e| e.to_string())?;
+        )
+        .map_err(|e| e.to_string())?;
     }
 
-    log::info!("Game session {} resolved: {} (score: {}, result: {})", session_id, identity.node_id, score, result);
+    log::info!(
+        "Game session {} resolved: {} (score: {}, result: {})",
+        session_id,
+        identity.node_id,
+        score,
+        result
+    );
 
     let payout = match result.as_str() {
         "win" => 2.0,
@@ -2562,11 +2873,10 @@ pub fn cmd_resolve_game_session(
 }
 
 #[tauri::command]
-pub fn cmd_get_game_sessions(
-    state: State<'_, AppState>,
-) -> Result<Vec<serde_json::Value>, String> {
+pub fn cmd_get_game_sessions(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
 
@@ -2575,46 +2885,49 @@ pub fn cmd_get_game_sessions(
     ).map_err(|e| e.to_string())?;
 
     let pattern = format!("%{}%", identity.node_id);
-    let sessions = stmt.query_map(rusqlite::params![pattern], |row| {
-        let id: String = row.get(0)?;
-        let game_id: String = row.get(1)?;
-        let player_ids_str: String = row.get(2)?;
-        let wager_amount: f64 = row.get(3)?;
-        let start_time: i64 = row.get(4)?;
-        let end_time: Option<i64> = row.get(5)?;
-        let scores_str: String = row.get(6)?;
-        let status: String = row.get(7)?;
-        let winner_id: Option<String> = row.get(8)?;
-        let created_at: i64 = row.get(9)?;
+    let sessions = stmt
+        .query_map(rusqlite::params![pattern], |row| {
+            let id: String = row.get(0)?;
+            let game_id: String = row.get(1)?;
+            let player_ids_str: String = row.get(2)?;
+            let wager_amount: f64 = row.get(3)?;
+            let start_time: i64 = row.get(4)?;
+            let end_time: Option<i64> = row.get(5)?;
+            let scores_str: String = row.get(6)?;
+            let status: String = row.get(7)?;
+            let winner_id: Option<String> = row.get(8)?;
+            let created_at: i64 = row.get(9)?;
 
-        let player_ids: Vec<String> = serde_json::from_str(&player_ids_str).unwrap_or_default();
-        let scores: serde_json::Value = serde_json::from_str(&scores_str).unwrap_or(serde_json::json!({}));
+            let player_ids: Vec<String> = serde_json::from_str(&player_ids_str).unwrap_or_default();
+            let scores: serde_json::Value =
+                serde_json::from_str(&scores_str).unwrap_or(serde_json::json!({}));
 
-        let result = if status == "completed" {
-            if winner_id.as_deref() == Some(&identity.node_id) {
-                Some("win".to_string())
-            } else if winner_id.is_some() {
-                Some("loss".to_string())
+            let result = if status == "completed" {
+                if winner_id.as_deref() == Some(&identity.node_id) {
+                    Some("win".to_string())
+                } else if winner_id.is_some() {
+                    Some("loss".to_string())
+                } else {
+                    Some("draw".to_string())
+                }
             } else {
-                Some("draw".to_string())
-            }
-        } else {
-            None
-        };
+                None
+            };
 
-        Ok(serde_json::json!({
-            "session_id": id,
-            "game_id": game_id,
-            "player_ids": player_ids,
-            "bet_amount": wager_amount,
-            "status": status,
-            "scores": scores,
-            "winner_id": winner_id,
-            "result": result,
-            "started_at": start_time,
-            "ended_at": end_time,
-        }))
-    }).map_err(|e| e.to_string())?;
+            Ok(serde_json::json!({
+                "session_id": id,
+                "game_id": game_id,
+                "player_ids": player_ids,
+                "bet_amount": wager_amount,
+                "status": status,
+                "scores": scores,
+                "winner_id": winner_id,
+                "result": result,
+                "started_at": start_time,
+                "ended_at": end_time,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
 
     let mut result = Vec::new();
     for session in sessions {
@@ -2640,11 +2953,13 @@ pub fn cmd_get_leaderboard(
             "SELECT winner_id, COUNT(*) as wins FROM game_sessions WHERE winner_id IS NOT NULL AND status = 'completed' GROUP BY winner_id ORDER BY wins DESC LIMIT 20"
         ).map_err(|e| e.to_string())?;
 
-        let winners = stmt.query_map([], |row| {
-            let user_id: String = row.get(0)?;
-            let wins: u32 = row.get(1)?;
-            Ok((user_id, wins))
-        }).map_err(|e| e.to_string())?;
+        let winners = stmt
+            .query_map([], |row| {
+                let user_id: String = row.get(0)?;
+                let wins: u32 = row.get(1)?;
+                Ok((user_id, wins))
+            })
+            .map_err(|e| e.to_string())?;
 
         for (i, entry) in winners.enumerate() {
             if let Ok((user_id, wins)) = entry {
@@ -2673,7 +2988,8 @@ pub fn cmd_save_game_result(
     bet_amount: f64,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
 
@@ -2689,7 +3005,8 @@ pub fn cmd_save_game_result(
         status: "completed".to_string(),
         created_at: chrono::Utc::now().timestamp(),
     };
-    crate::core::database::queries::insert_game_session(&db, &session).map_err(|e| e.to_string())?;
+    crate::core::database::queries::insert_game_session(&db, &session)
+        .map_err(|e| e.to_string())?;
 
     let winner_id = if result == "win" {
         Some(identity.node_id.clone())
@@ -2700,10 +3017,18 @@ pub fn cmd_save_game_result(
         conn.execute(
             "UPDATE game_sessions SET winner_id = ?1 WHERE id = ?2",
             rusqlite::params![wid, session_id],
-        ).map_err(|e| e.to_string())?;
+        )
+        .map_err(|e| e.to_string())?;
     }
 
-    log::info!("Game result saved: {} ({}) score={} result={} bet={}", game_title, game_id, score, result, bet_amount);
+    log::info!(
+        "Game result saved: {} ({}) score={} result={} bet={}",
+        game_title,
+        game_id,
+        score,
+        result,
+        bet_amount
+    );
 
     let payout = match result.as_str() {
         "win" => bet_amount * 2.0,
@@ -2735,7 +3060,8 @@ pub fn cmd_save_game_result_with_progress(
     metadata: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
 
@@ -2751,13 +3077,16 @@ pub fn cmd_save_game_result_with_progress(
         status: "completed".to_string(),
         created_at: chrono::Utc::now().timestamp(),
     };
-    crate::core::database::queries::insert_game_session(&db, &session).map_err(|e| e.to_string())?;
+    crate::core::database::queries::insert_game_session(&db, &session)
+        .map_err(|e| e.to_string())?;
 
-    let current_high: u64 = conn.query_row(
-        "SELECT COALESCE(high_score, 0) FROM game_progress WHERE user_id = ?1 AND game_id = ?2",
-        rusqlite::params![identity.node_id, game_id],
-        |row| row.get(0),
-    ).unwrap_or(0);
+    let current_high: u64 = conn
+        .query_row(
+            "SELECT COALESCE(high_score, 0) FROM game_progress WHERE user_id = ?1 AND game_id = ?2",
+            rusqlite::params![identity.node_id, game_id],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
 
     if score > current_high {
         conn.execute(
@@ -2796,10 +3125,17 @@ pub fn cmd_save_game_result_with_progress(
         conn.execute(
             "UPDATE game_sessions SET winner_id = ?1 WHERE id = ?2",
             rusqlite::params![identity.node_id, session_id],
-        ).map_err(|e| e.to_string())?;
+        )
+        .map_err(|e| e.to_string())?;
     }
 
-    log::info!("Game result saved: {} score={} result={} play_time={}s", game_title, score, result, play_time_secs);
+    log::info!(
+        "Game result saved: {} score={} result={} play_time={}s",
+        game_title,
+        score,
+        result,
+        play_time_secs
+    );
 
     let payout = match result.as_str() {
         "win" => bet_amount * 2.0,
@@ -2822,7 +3158,8 @@ pub fn cmd_get_game_progress_all(
     state: State<'_, AppState>,
 ) -> Result<Vec<serde_json::Value>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    let identity = load_first_identity(&db).map_err(|e| e.to_string())?
+    let identity = load_first_identity(&db)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| "No identity found".to_string())?;
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
 
@@ -2830,28 +3167,32 @@ pub fn cmd_get_game_progress_all(
         "SELECT game_id, high_score, total_play_time_secs, games_played, last_played_at, level, metadata FROM game_progress WHERE user_id = ?1 ORDER BY last_played_at DESC"
     ).map_err(|e| e.to_string())?;
 
-    let progress = stmt.query_map(rusqlite::params![identity.node_id], |row| {
-        let game_id: String = row.get(0)?;
-        let high_score: u64 = row.get(1)?;
-        let total_play_time: u64 = row.get(2)?;
-        let games_played: u32 = row.get(3)?;
-        let last_played: i64 = row.get(4)?;
-        let level: Option<u32> = row.get(5)?;
-        let metadata: Option<String> = row.get(6)?;
-        Ok(serde_json::json!({
-            "game_id": game_id,
-            "high_score": high_score,
-            "total_play_time_secs": total_play_time,
-            "games_played": games_played,
-            "last_played_at": last_played,
-            "level": level,
-            "metadata": metadata,
-        }))
-    }).map_err(|e| e.to_string())?;
+    let progress = stmt
+        .query_map(rusqlite::params![identity.node_id], |row| {
+            let game_id: String = row.get(0)?;
+            let high_score: u64 = row.get(1)?;
+            let total_play_time: u64 = row.get(2)?;
+            let games_played: u32 = row.get(3)?;
+            let last_played: i64 = row.get(4)?;
+            let level: Option<u32> = row.get(5)?;
+            let metadata: Option<String> = row.get(6)?;
+            Ok(serde_json::json!({
+                "game_id": game_id,
+                "high_score": high_score,
+                "total_play_time_secs": total_play_time,
+                "games_played": games_played,
+                "last_played_at": last_played,
+                "level": level,
+                "metadata": metadata,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
 
     let mut result = Vec::new();
     for p in progress {
-        if let Ok(entry) = p { result.push(entry); }
+        if let Ok(entry) = p {
+            result.push(entry);
+        }
     }
     Ok(result)
 }

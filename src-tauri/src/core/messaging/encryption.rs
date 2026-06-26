@@ -1,5 +1,5 @@
-use x25519_dalek::{StaticSecret, PublicKey, SharedSecret};
 use crate::core::messaging::errors::MessagingError;
+use x25519_dalek::{PublicKey, SharedSecret, StaticSecret};
 
 pub const MAX_MESSAGE_BYTES: usize = 64 * 1024; // 64KB per message
 pub const MAX_MEDIA_BYTES: usize = 512 * 1024 * 1024; // 512MB for media
@@ -15,7 +15,10 @@ pub fn encrypt_message(
     recipient_public_key: &[u8; 32],
 ) -> Result<Vec<u8>, MessagingError> {
     if plaintext.len() > MAX_MESSAGE_BYTES {
-        return Err(MessagingError::TooLarge { size: plaintext.len(), max: MAX_MESSAGE_BYTES });
+        return Err(MessagingError::TooLarge {
+            size: plaintext.len(),
+            max: MAX_MESSAGE_BYTES,
+        });
     }
     let shared_secret = derive_shared_secret(sender_private_key, recipient_public_key);
     encrypt_with_secret(shared_secret.as_bytes(), plaintext)
@@ -40,22 +43,23 @@ pub fn decrypt_message(
 ///
 /// Produces a 32-byte shared secret that is identical for both parties:
 ///   a_priv.diffie_hellman(b_pub) == b_priv.diffie_hellman(a_pub)
-fn derive_shared_secret(
-    private_key: &[u8; 32],
-    public_key: &[u8; 32],
-) -> SharedSecret {
+fn derive_shared_secret(private_key: &[u8; 32], public_key: &[u8; 32]) -> SharedSecret {
     let secret = StaticSecret::from(*private_key);
     let pub_key = PublicKey::from(*public_key);
     secret.diffie_hellman(&pub_key)
 }
 
 fn encrypt_with_secret(key: &[u8; 32], data: &[u8]) -> Result<Vec<u8>, String> {
-    use chacha20poly1305::{aead::{Aead, KeyInit}, XChaCha20Poly1305, Key, XNonce};
+    use chacha20poly1305::{
+        aead::{Aead, KeyInit},
+        Key, XChaCha20Poly1305, XNonce,
+    };
     use rand::RngCore;
     let mut nonce_bytes = [0u8; 24];
     rand::thread_rng().fill_bytes(&mut nonce_bytes);
     let cipher = XChaCha20Poly1305::new(Key::from_slice(key));
-    let ct = cipher.encrypt(XNonce::from_slice(&nonce_bytes), data)
+    let ct = cipher
+        .encrypt(XNonce::from_slice(&nonce_bytes), data)
         .map_err(|e| e.to_string())?;
     let mut out = Vec::with_capacity(24 + ct.len());
     out.extend_from_slice(&nonce_bytes);
@@ -64,11 +68,18 @@ fn encrypt_with_secret(key: &[u8; 32], data: &[u8]) -> Result<Vec<u8>, String> {
 }
 
 fn decrypt_with_secret(key: &[u8; 32], data: &[u8]) -> Result<Vec<u8>, String> {
-    use chacha20poly1305::{aead::{Aead, KeyInit}, XChaCha20Poly1305, Key, XNonce};
-    if data.len() < 24 { return Err("ciphertext too short".to_string()); }
+    use chacha20poly1305::{
+        aead::{Aead, KeyInit},
+        Key, XChaCha20Poly1305, XNonce,
+    };
+    if data.len() < 24 {
+        return Err("ciphertext too short".to_string());
+    }
     let (nonce_bytes, ct) = data.split_at(24);
     let cipher = XChaCha20Poly1305::new(Key::from_slice(key));
-    cipher.decrypt(XNonce::from_slice(nonce_bytes), ct).map_err(|e| e.to_string())
+    cipher
+        .decrypt(XNonce::from_slice(nonce_bytes), ct)
+        .map_err(|e| e.to_string())
 }
 
 /// Generate a fresh X25519 keypair for messaging.

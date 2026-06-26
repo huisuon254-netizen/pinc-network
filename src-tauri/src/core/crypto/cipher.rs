@@ -1,12 +1,11 @@
-use chacha20poly1305::{
-    aead::{Aead, KeyInit},
-    ChaCha20Poly1305, XChaCha20Poly1305,
-    Key, Nonce, XNonce,
-};
 use crate::core::crypto::{
     errors::CryptoError,
     nonce::{generate_nonce, validate_nonce},
     types::NonceType,
+};
+use chacha20poly1305::{
+    aead::{Aead, KeyInit},
+    ChaCha20Poly1305, Key, Nonce, XChaCha20Poly1305, XNonce,
 };
 
 pub struct EncryptedData {
@@ -27,18 +26,23 @@ pub fn encrypt(
         NonceType::ChaCha12 => {
             let cipher = ChaCha20Poly1305::new(k);
             let n = Nonce::from_slice(&nonce_bytes);
-            cipher.encrypt(n, plaintext)
+            cipher
+                .encrypt(n, plaintext)
                 .map_err(|e| CryptoError::EncryptionFailed(e.to_string()))?
         }
         NonceType::XChaCha24 => {
             let cipher = XChaCha20Poly1305::new(k);
             let n = XNonce::from_slice(&nonce_bytes);
-            cipher.encrypt(n, plaintext)
+            cipher
+                .encrypt(n, plaintext)
                 .map_err(|e| CryptoError::EncryptionFailed(e.to_string()))?
         }
     };
 
-    Ok(EncryptedData { ciphertext, nonce: nonce_bytes })
+    Ok(EncryptedData {
+        ciphertext,
+        nonce: nonce_bytes,
+    })
 }
 
 pub fn decrypt(
@@ -53,13 +57,15 @@ pub fn decrypt(
         NonceType::ChaCha12 => {
             let cipher = ChaCha20Poly1305::new(k);
             let n = Nonce::from_slice(&data.nonce);
-            cipher.decrypt(n, data.ciphertext.as_ref())
+            cipher
+                .decrypt(n, data.ciphertext.as_ref())
                 .map_err(|_| CryptoError::DecryptionFailed)?
         }
         NonceType::XChaCha24 => {
             let cipher = XChaCha20Poly1305::new(k);
             let n = XNonce::from_slice(&data.nonce);
-            cipher.decrypt(n, data.ciphertext.as_ref())
+            cipher
+                .decrypt(n, data.ciphertext.as_ref())
                 .map_err(|_| CryptoError::DecryptionFailed)?
         }
     };

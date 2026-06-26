@@ -1,10 +1,15 @@
 #[cfg(test)]
 mod tests {
-    use crate::core::wager::{engine::*, types::{WagerOutcome, WagerStatus, MIN_REFEREES}};
+    use crate::core::wager::{
+        engine::*,
+        types::{WagerOutcome, WagerStatus, MIN_REFEREES},
+    };
 
     fn make_ready_wager() -> crate::core::wager::types::Wager {
         let mut w = create_wager("alice", "bob", 50.0, "chess", "1v1 chess", None).unwrap();
-        for i in 0..MIN_REFEREES { add_referee(&mut w, &format!("ref-{}", i)).unwrap(); }
+        for i in 0..MIN_REFEREES {
+            add_referee(&mut w, &format!("ref-{}", i)).unwrap();
+        }
         w
     }
 

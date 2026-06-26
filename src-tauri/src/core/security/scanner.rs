@@ -1,6 +1,6 @@
+use crate::core::security::types::{DdosProtection, SecurityEvent, SecurityEventType, Severity};
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
-use crate::core::security::types::{DdosProtection, SecurityEvent, SecurityEventType, Severity};
 
 pub struct RateLimiter {
     counts: std::collections::HashMap<String, (u64, i64)>,
@@ -9,13 +9,18 @@ pub struct RateLimiter {
 
 impl RateLimiter {
     pub fn new(limit_per_sec: u64) -> Self {
-        RateLimiter { counts: std::collections::HashMap::new(), limit_per_sec }
+        RateLimiter {
+            counts: std::collections::HashMap::new(),
+            limit_per_sec,
+        }
     }
 
     pub fn check(&mut self, peer_id: &str) -> bool {
         let now = now_secs();
         let entry = self.counts.entry(peer_id.to_string()).or_insert((0, now));
-        if now > entry.1 { *entry = (0, now); }
+        if now > entry.1 {
+            *entry = (0, now);
+        }
         entry.0 += 1;
         entry.0 <= self.limit_per_sec
     }
@@ -30,7 +35,9 @@ pub fn detect_ddos(
     ddos_cfg: &DdosProtection,
     source: &str,
 ) -> Option<SecurityEvent> {
-    if !ddos_cfg.enabled { return None; }
+    if !ddos_cfg.enabled {
+        return None;
+    }
     if requests_per_sec > ddos_cfg.block_threshold {
         return Some(SecurityEvent {
             id: Uuid::new_v4().to_string(),
@@ -67,5 +74,8 @@ pub fn scan_for_malware_patterns(data: &[u8]) -> (bool, Vec<String>) {
 }
 
 fn now_secs() -> i64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs() as i64
 }

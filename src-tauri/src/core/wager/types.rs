@@ -1,10 +1,24 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum WagerStatus { Pending, Accepted, InProgress, PendingVerification, Completed, Disputed, Cancelled, Expired }
+pub enum WagerStatus {
+    Pending,
+    Accepted,
+    InProgress,
+    PendingVerification,
+    Completed,
+    Disputed,
+    Cancelled,
+    Expired,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum WagerOutcome { ChallengerWins, OpponentWins, Draw, Cancelled }
+pub enum WagerOutcome {
+    ChallengerWins,
+    OpponentWins,
+    Draw,
+    Cancelled,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Wager {
@@ -45,7 +59,12 @@ pub struct Tournament {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum TournamentStatus { Registration, InProgress, Completed, Cancelled }
+pub enum TournamentStatus {
+    Registration,
+    InProgress,
+    Completed,
+    Cancelled,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TournamentMatch {
@@ -70,4 +89,4 @@ pub struct RefereeVote {
 
 pub const PLATFORM_FEE_PCT: f64 = 0.025; // 2.5%
 pub const MIN_REFEREES: usize = 3;
-pub const REFEREE_FEE_PCT: f64 = 0.01;   // 1% split among referees
+pub const REFEREE_FEE_PCT: f64 = 0.01; // 1% split among referees

@@ -153,16 +153,21 @@ impl From<AppError> for String {
 impl From<crate::core::crypto::errors::CryptoError> for AppError {
     fn from(e: crate::core::crypto::errors::CryptoError) -> Self {
         match e {
-            crate::core::crypto::errors::CryptoError::InvalidNonce { expected, got } =>
-                AppError::InvalidNonce { expected, got },
-            crate::core::crypto::errors::CryptoError::EncryptionFailed(m) =>
-                AppError::EncryptionFailed(m),
-            crate::core::crypto::errors::CryptoError::DecryptionFailed =>
-                AppError::DecryptionFailed,
-            crate::core::crypto::errors::CryptoError::KeyGenerationFailed(m) =>
-                AppError::KeyGenerationFailed(m),
-            crate::core::crypto::errors::CryptoError::InvalidKeyLength { expected, got } =>
-                AppError::InvalidKeyLength { expected, got },
+            crate::core::crypto::errors::CryptoError::InvalidNonce { expected, got } => {
+                AppError::InvalidNonce { expected, got }
+            }
+            crate::core::crypto::errors::CryptoError::EncryptionFailed(m) => {
+                AppError::EncryptionFailed(m)
+            }
+            crate::core::crypto::errors::CryptoError::DecryptionFailed => {
+                AppError::DecryptionFailed
+            }
+            crate::core::crypto::errors::CryptoError::KeyGenerationFailed(m) => {
+                AppError::KeyGenerationFailed(m)
+            }
+            crate::core::crypto::errors::CryptoError::InvalidKeyLength { expected, got } => {
+                AppError::InvalidKeyLength { expected, got }
+            }
         }
     }
 }

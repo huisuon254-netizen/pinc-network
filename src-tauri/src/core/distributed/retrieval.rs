@@ -1,9 +1,9 @@
-use std::time::Instant;
 use crate::core::distributed::{
+    chunker::{reassemble_chunks, verify_chunk_integrity},
     errors::DistributedError,
     types::{ChunkReplica, RetrievalResult},
-    chunker::{reassemble_chunks, verify_chunk_integrity},
 };
+use std::time::Instant;
 
 /// Find the best replica for a chunk (lowest latency, highest trust)
 pub fn select_best_replica<'a>(replicas: &'a [ChunkReplica]) -> Option<&'a ChunkReplica> {
@@ -18,7 +18,7 @@ pub fn fetch_chunk_from_replica(
     // Phase 4 implementation: use network transport to fetch chunk
     // For now returns stub error indicating transport required
     Err(DistributedError::NodeUnreachable(
-        "Phase 4: network transport required for distributed fetch".to_string()
+        "Phase 4: network transport required for distributed fetch".to_string(),
     ))
 }
 

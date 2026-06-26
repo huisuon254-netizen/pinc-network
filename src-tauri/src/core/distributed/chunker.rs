@@ -1,10 +1,10 @@
-use sha2::{Sha256, Digest};
 use crate::core::distributed::{
     errors::DistributedError,
     types::{DistributedChunk, CHUNK_SIZE_BYTES},
 };
-use uuid::Uuid;
+use sha2::{Digest, Sha256};
 use std::time::{SystemTime, UNIX_EPOCH};
+use uuid::Uuid;
 
 pub fn split_into_distributed_chunks(
     file_id: &str,
@@ -45,9 +45,11 @@ pub fn reassemble_chunks(
 
     let actual_hash = sha256_hex(&data);
     if actual_hash != expected_hash {
-        return Err(DistributedError::IntegrityFailed(
-            format!("expected {}, got {}", &expected_hash[..16], &actual_hash[..16])
-        ));
+        return Err(DistributedError::IntegrityFailed(format!(
+            "expected {}, got {}",
+            &expected_hash[..16],
+            &actual_hash[..16]
+        )));
     }
 
     Ok(data)

@@ -1,9 +1,9 @@
 use pinc_lib::core::{
+    crypto::{cipher::decrypt, cipher::EncryptedData, types::NonceType},
     database::connection::open_test_db,
-    vault::encryptor::vault_decrypt,
-    crypto::{cipher::EncryptedData, cipher::decrypt, types::NonceType},
     identity::{types::Identity, validator::validate_identity},
     startup::startup_check,
+    vault::encryptor::vault_decrypt,
 };
 
 #[test]
@@ -32,7 +32,10 @@ fn startup_report_check_names() {
 
 #[test]
 fn wrong_nonce_size_returns_error_not_panic() {
-    let bad = EncryptedData { nonce: vec![0u8; 8], ciphertext: vec![0u8; 32] };
+    let bad = EncryptedData {
+        nonce: vec![0u8; 8],
+        ciphertext: vec![0u8; 32],
+    };
     let result = decrypt(&[0u8; 32], &bad, NonceType::XChaCha24);
     assert!(result.is_err());
 }
@@ -48,10 +51,14 @@ fn corrupt_vault_blob_returns_error() {
 #[test]
 fn identity_with_empty_id_fails_validation() {
     let bad = Identity {
-        id: "".to_string(), node_id: "PINC-AA-0001".to_string(),
-        public_key: "k".to_string(), private_key_encrypted: "e".to_string(),
-        fingerprint: "f".to_string(), recovery_key_hash: "r".to_string(),
-        recovery_phrase_hash: "rp".to_string(), created_at: 1700000000,
+        id: "".to_string(),
+        node_id: "PINC-AA-0001".to_string(),
+        public_key: "k".to_string(),
+        private_key_encrypted: "e".to_string(),
+        fingerprint: "f".to_string(),
+        recovery_key_hash: "r".to_string(),
+        recovery_phrase_hash: "rp".to_string(),
+        created_at: 1700000000,
     };
     assert!(validate_identity(&bad).is_err());
 }
@@ -59,10 +66,14 @@ fn identity_with_empty_id_fails_validation() {
 #[test]
 fn identity_with_bad_node_id_fails_validation() {
     let bad = Identity {
-        id: "some-uuid".to_string(), node_id: "NOT-PINC-FORMAT".to_string(),
-        public_key: "k".to_string(), private_key_encrypted: "e".to_string(),
-        fingerprint: "f".to_string(), recovery_key_hash: "r".to_string(),
-        recovery_phrase_hash: "rp".to_string(), created_at: 1700000000,
+        id: "some-uuid".to_string(),
+        node_id: "NOT-PINC-FORMAT".to_string(),
+        public_key: "k".to_string(),
+        private_key_encrypted: "e".to_string(),
+        fingerprint: "f".to_string(),
+        recovery_key_hash: "r".to_string(),
+        recovery_phrase_hash: "rp".to_string(),
+        created_at: 1700000000,
     };
     assert!(validate_identity(&bad).is_err());
 }

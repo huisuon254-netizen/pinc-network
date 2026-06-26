@@ -1,15 +1,25 @@
 #[cfg(test)]
 mod tests {
     use crate::core::reputation::{
-        engine::{apply_review, apply_uptime, burn_account, record_dispute_result, recalculate_total},
-        types::{Review, ReviewCategory, ReputationScore},
+        engine::{
+            apply_review, apply_uptime, burn_account, recalculate_total, record_dispute_result,
+        },
+        types::{ReputationScore, Review, ReviewCategory},
     };
     use uuid::Uuid;
 
     fn mock_review(subject: &str, rating: f64, cat: ReviewCategory) -> Review {
-        Review { id: Uuid::new_v4().to_string(), reviewer_id: "reviewer".to_string(),
-            subject_id: subject.to_string(), rating, category: cat,
-            comment: None, reference_id: None, created_at: 0, verified: true }
+        Review {
+            id: Uuid::new_v4().to_string(),
+            reviewer_id: "reviewer".to_string(),
+            subject_id: subject.to_string(),
+            rating,
+            category: cat,
+            comment: None,
+            reference_id: None,
+            created_at: 0,
+            verified: true,
+        }
     }
 
     #[test]
@@ -31,7 +41,9 @@ mod tests {
     #[test]
     fn test_apply_negative_review() {
         let mut rep = ReputationScore::new("node-1");
-        for _ in 0..5 { apply_review(&mut rep, &mock_review("node-1", 1.0, ReviewCategory::Job)); }
+        for _ in 0..5 {
+            apply_review(&mut rep, &mock_review("node-1", 1.0, ReviewCategory::Job));
+        }
         assert!(rep.job_score < 0.5);
     }
 

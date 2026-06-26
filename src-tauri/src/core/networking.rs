@@ -167,11 +167,7 @@ impl WebSocketServer {
     }
 
     /// Send a message to a specific peer by its connection.
-    pub fn send_to_peer(
-        &self,
-        target_node: &str,
-        msg: WebSocketMessage,
-    ) -> Result<(), String> {
+    pub fn send_to_peer(&self, target_node: &str, msg: WebSocketMessage) -> Result<(), String> {
         let connections = self.connections.blocking_lock();
 
         let target_conn = connections
@@ -218,7 +214,11 @@ impl WebSocketServer {
         let mut connections = self.connections.lock().await;
         if let Some(mut conn) = connections.remove(connection_id) {
             conn.active = false;
-            log::info!("Removed connection {} for node {}", connection_id, conn.node_id);
+            log::info!(
+                "Removed connection {} for node {}",
+                connection_id,
+                conn.node_id
+            );
         }
     }
 }
@@ -319,7 +319,9 @@ async fn handle_connection(
         reason: None,
     };
     let response_bytes = serde_json::to_vec(&auth_response)?;
-    ws_sender.send(Message::Binary(response_bytes.into())).await?;
+    ws_sender
+        .send(Message::Binary(response_bytes.into()))
+        .await?;
 
     // Register connection
     {
@@ -378,11 +380,7 @@ async fn handle_connection(
                         route_message(&ws_msg, &handlers, &connections, &peer_registry).await;
                     }
                     Err(e) => {
-                        log::warn!(
-                            "Invalid message from {}: {}",
-                            auth.node_id,
-                            e
-                        );
+                        log::warn!("Invalid message from {}: {}", auth.node_id, e);
                     }
                 }
             }
@@ -415,7 +413,11 @@ async fn handle_connection(
         registry.mark_offline(&auth.node_id);
     }
 
-    log::info!("Connection closed for {} (conn {})", auth.node_id, connection_id);
+    log::info!(
+        "Connection closed for {} (conn {})",
+        auth.node_id,
+        connection_id
+    );
     Ok(())
 }
 
@@ -486,7 +488,11 @@ async fn route_message(
                 target_conn.connection_id
             );
         } else {
-            log::warn!("Target node {} not connected, dropping message {}", target, msg.message_id);
+            log::warn!(
+                "Target node {} not connected, dropping message {}",
+                target,
+                msg.message_id
+            );
         }
         return;
     }

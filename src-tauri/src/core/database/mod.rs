@@ -1,9 +1,9 @@
-pub mod types;
-pub mod errors;
 pub mod connection;
-pub mod schema;
+pub mod errors;
 pub mod migrations;
 pub mod queries;
-pub mod validator;
+pub mod schema;
 #[cfg(test)]
 mod tests;
+pub mod types;
+pub mod validator;

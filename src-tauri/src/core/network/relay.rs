@@ -1,9 +1,9 @@
+use crate::core::network::{errors::NetworkError, types::RelayRequest};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
     time::{SystemTime, UNIX_EPOCH},
 };
-use crate::core::network::{errors::NetworkError, types::RelayRequest};
 
 pub const DEFAULT_BANDWIDTH_CAP_KBPS: f64 = 10_000.0; // 10 Mbps default cap
 
@@ -48,8 +48,9 @@ impl RelayManager {
 
     pub fn record_relay(&self, session_id: &str, bytes: u64) -> Result<(), NetworkError> {
         let mut sessions = self.sessions.lock().unwrap();
-        let session = sessions.get_mut(session_id)
-            .ok_or_else(|| NetworkError::RelayFailed(format!("session {} not found", session_id)))?;
+        let session = sessions.get_mut(session_id).ok_or_else(|| {
+            NetworkError::RelayFailed(format!("session {} not found", session_id))
+        })?;
         session.bytes_relayed += bytes;
         *self.total_bytes_relayed.lock().unwrap() += bytes;
         Ok(())
@@ -67,7 +68,9 @@ impl RelayManager {
     }
 
     pub fn active_sessions(&self) -> Vec<RelaySession> {
-        self.sessions.lock().unwrap()
+        self.sessions
+            .lock()
+            .unwrap()
             .values()
             .filter(|s| s.active)
             .cloned()
@@ -97,7 +100,9 @@ pub fn validate_relay_request(req: &RelayRequest) -> Result<(), NetworkError> {
         return Err(NetworkError::RelayFailed("empty payload".to_string()));
     }
     if req.payload.len() > 16 * 1024 * 1024 {
-        return Err(NetworkError::RelayFailed("payload exceeds 16MB relay limit".to_string()));
+        return Err(NetworkError::RelayFailed(
+            "payload exceeds 16MB relay limit".to_string(),
+        ));
     }
     Ok(())
 }

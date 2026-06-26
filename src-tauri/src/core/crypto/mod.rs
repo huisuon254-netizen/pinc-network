@@ -1,10 +1,10 @@
-pub mod types;
-pub mod errors;
-pub mod nonce;
-pub mod keys;
 pub mod cipher;
+pub mod errors;
 pub mod hash;
-pub mod validator;
-pub mod wallet;
+pub mod keys;
+pub mod nonce;
 #[cfg(test)]
 mod tests;
+pub mod types;
+pub mod validator;
+pub mod wallet;

@@ -33,17 +33,40 @@ impl<'a> SystemConfigEngine<'a> {
         .map_err(|e| format!("Failed to set config: {}", e))
     }
 
-    pub fn list_config(&self, category: Option<&str>) -> Result<Vec<queries::SystemConfig>, String> {
+    pub fn list_config(
+        &self,
+        category: Option<&str>,
+    ) -> Result<Vec<queries::SystemConfig>, String> {
         queries::list_system_config(self.db, category)
             .map_err(|e| format!("Failed to list config: {}", e))
     }
 
     pub fn init_defaults(&self) -> Result<(), String> {
         let defaults: Vec<(&str, &str, &str, &str)> = vec![
-            ("platform_name", "PINC Network", "Platform display name", "system"),
-            ("max_upload_size_mb", "100", "Maximum file upload size in MB", "system"),
-            ("registration_enabled", "true", "Allow new user registrations", "system"),
-            ("maintenance_mode", "false", "Enable maintenance mode", "system"),
+            (
+                "platform_name",
+                "PINC Network",
+                "Platform display name",
+                "system",
+            ),
+            (
+                "max_upload_size_mb",
+                "100",
+                "Maximum file upload size in MB",
+                "system",
+            ),
+            (
+                "registration_enabled",
+                "true",
+                "Allow new user registrations",
+                "system",
+            ),
+            (
+                "maintenance_mode",
+                "false",
+                "Enable maintenance mode",
+                "system",
+            ),
         ];
 
         for (key, value, description, category) in defaults {

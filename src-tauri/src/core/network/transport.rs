@@ -1,7 +1,7 @@
-use std::{net::SocketAddr, sync::Arc};
-use quinn::{Endpoint, ServerConfig, ClientConfig, Connection};
-use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
 use crate::core::network::errors::NetworkError;
+use quinn::{ClientConfig, Connection, Endpoint, ServerConfig};
+use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
+use std::{net::SocketAddr, sync::Arc};
 
 /// Certificate material for a PINC node
 pub struct NodeCert {
@@ -37,8 +37,7 @@ pub fn create_server_endpoint(addr: SocketAddr, cert: NodeCert) -> Result<Endpoi
 
     let server_cfg = ServerConfig::with_crypto(Arc::new(quic_cfg));
 
-    Endpoint::server(server_cfg, addr)
-        .map_err(|e| NetworkError::BindFailed(e.to_string()))
+    Endpoint::server(server_cfg, addr).map_err(|e| NetworkError::BindFailed(e.to_string()))
 }
 
 /// Build a Quinn client endpoint (skip cert verification for P2P mesh)
@@ -94,34 +93,47 @@ pub async fn accept_connection(endpoint: &Endpoint) -> Option<Connection> {
 
 /// Send a framed message over a QUIC stream
 pub async fn send_message(conn: &Connection, msg: &[u8]) -> Result<(), NetworkError> {
-    let mut stream = conn.open_uni().await
+    let mut stream = conn
+        .open_uni()
+        .await
         .map_err(|e| NetworkError::SendFailed(e.to_string()))?;
 
     // Frame: 4-byte length prefix + payload
     let len = (msg.len() as u32).to_be_bytes();
-    stream.write_all(&len).await
+    stream
+        .write_all(&len)
+        .await
         .map_err(|e| NetworkError::SendFailed(e.to_string()))?;
-    stream.write_all(msg).await
+    stream
+        .write_all(msg)
+        .await
         .map_err(|e| NetworkError::SendFailed(e.to_string()))?;
-    stream.finish()
+    stream
+        .finish()
         .map_err(|e| NetworkError::SendFailed(e.to_string()))?;
     Ok(())
 }
 
 /// Receive a framed message from a QUIC stream
 pub async fn receive_message(conn: &Connection) -> Result<Vec<u8>, NetworkError> {
-    let mut stream = conn.accept_uni().await
+    let mut stream = conn
+        .accept_uni()
+        .await
         .map_err(|e| NetworkError::ReceiveFailed(e.to_string()))?;
 
     // Read 4-byte length prefix
     let mut len_buf = [0u8; 4];
-    stream.read_exact(&mut len_buf).await
+    stream
+        .read_exact(&mut len_buf)
+        .await
         .map_err(|e| NetworkError::ReceiveFailed(e.to_string()))?;
     let len = u32::from_be_bytes(len_buf) as usize;
 
     // Read payload
     let mut buf = vec![0u8; len];
-    stream.read_exact(&mut buf).await
+    stream
+        .read_exact(&mut buf)
+        .await
         .map_err(|e| NetworkError::ReceiveFailed(e.to_string()))?;
     Ok(buf)
 }

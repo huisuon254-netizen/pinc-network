@@ -1,7 +1,7 @@
-pub mod types;
-pub mod errors;
 pub mod encryption;
-pub mod router;
+pub mod errors;
 pub mod message_manager;
+pub mod router;
 #[cfg(test)]
 mod tests;
+pub mod types;

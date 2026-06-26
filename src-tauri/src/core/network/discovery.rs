@@ -1,5 +1,8 @@
-use std::net::{SocketAddr, IpAddr, Ipv4Addr};
-use crate::core::network::{errors::NetworkError, types::{DiscoveredPeer, PeerSource}};
+use crate::core::network::{
+    errors::NetworkError,
+    types::{DiscoveredPeer, PeerSource},
+};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 pub struct Discovery {
     bootstrap_nodes: Vec<String>,
@@ -29,8 +32,7 @@ impl Discovery {
     }
 
     pub fn parse_peer_announcement(data: &[u8]) -> Result<DiscoveredPeer, NetworkError> {
-        serde_json::from_slice(data)
-            .map_err(|e| NetworkError::DiscoveryFailed(e.to_string()))
+        serde_json::from_slice(data).map_err(|e| NetworkError::DiscoveryFailed(e.to_string()))
     }
 
     pub fn build_announcement(node_id: &str, public_key: &str, addr: &str) -> Vec<u8> {
@@ -55,7 +57,9 @@ impl Discovery {
 }
 
 impl Default for Discovery {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 pub fn parse_addr(s: &str) -> Result<SocketAddr, NetworkError> {
@@ -64,7 +68,7 @@ pub fn parse_addr(s: &str) -> Result<SocketAddr, NetworkError> {
 }
 
 pub fn dht_key_for_node(node_id: &str) -> Vec<u8> {
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     Sha256::digest(node_id.as_bytes()).to_vec()
 }
 

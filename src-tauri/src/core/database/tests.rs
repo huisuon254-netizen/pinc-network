@@ -8,7 +8,9 @@ mod tests {
 
     fn mock_id(id: &str) -> Identity {
         Identity {
-            id: id.to_string(), node_id: "1234567".to_string(), username: "test".to_string(),
+            id: id.to_string(),
+            node_id: "1234567".to_string(),
+            username: "test".to_string(),
             public_key: "cHVia2V5".to_string(),
             private_key_encrypted: "ZW5jcnlwdGVk".to_string(),
             fingerprint: "fp_abc123".to_string(),
@@ -18,8 +20,15 @@ mod tests {
         }
     }
 
-    #[test] fn test_db_opens() { assert!(open_test_db().is_ok()); }
-    #[test] fn test_schema_version_ok() { let db = open_test_db().unwrap(); assert!(check_schema_version(&db).is_ok()); }
+    #[test]
+    fn test_db_opens() {
+        assert!(open_test_db().is_ok());
+    }
+    #[test]
+    fn test_schema_version_ok() {
+        let db = open_test_db().unwrap();
+        assert!(check_schema_version(&db).is_ok());
+    }
 
     #[test]
     fn test_insert_and_load_identity() {
@@ -55,9 +64,12 @@ mod tests {
     fn test_vault_insert_and_list() {
         let db = open_test_db().unwrap();
         let rec = VaultFileRecord {
-            id: "vf-001".to_string(), name: "test.txt".to_string(),
-            hash: "abc".to_string(), encrypted: true,
-            size_bytes: 100, created_at: 1700000000,
+            id: "vf-001".to_string(),
+            name: "test.txt".to_string(),
+            hash: "abc".to_string(),
+            encrypted: true,
+            size_bytes: 100,
+            created_at: 1700000000,
         };
         insert_vault_file(&db, &rec).unwrap();
         let list = list_vault_files(&db).unwrap();

@@ -45,17 +45,15 @@ impl NetShareEngine {
         }
     }
 
-    pub fn generate_code(
-        &mut self,
-        node_id: &str,
-        address: &str,
-        public_key: &str,
-    ) -> PairingCode {
+    pub fn generate_code(&mut self, node_id: &str, address: &str, public_key: &str) -> PairingCode {
         let now = chrono::Utc::now().timestamp();
         let short_id: String = node_id.chars().take(8).collect();
         let part1 = &short_id[..4].to_uppercase();
         let part2 = &short_id[4..8].to_uppercase();
-        let suffix: String = Uuid::new_v4().to_string()[..4].to_uppercase().chars().collect();
+        let suffix: String = Uuid::new_v4().to_string()[..4]
+            .to_uppercase()
+            .chars()
+            .collect();
         let code = format!("PINC-{}-{}-{}", part1, part2, suffix);
 
         let pairing = PairingCode {
@@ -72,9 +70,9 @@ impl NetShareEngine {
     }
 
     pub fn validate_code(&self, code: &str) -> Option<&PairingCode> {
-        self.current_code.as_ref().filter(|c| {
-            c.code == code && chrono::Utc::now().timestamp() < c.expires_at
-        })
+        self.current_code
+            .as_ref()
+            .filter(|c| c.code == code && chrono::Utc::now().timestamp() < c.expires_at)
     }
 
     pub fn add_connection(&mut self, peer_node_id: &str, peer_address: &str) -> SharedConnection {

@@ -1,10 +1,24 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum MessageStatus { Sending, Sent, Delivered, Read, Failed }
+pub enum MessageStatus {
+    Sending,
+    Sent,
+    Delivered,
+    Read,
+    Failed,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum MessageType { Text, Image, File, Audio, Video, System, Encrypted }
+pub enum MessageType {
+    Text,
+    Image,
+    File,
+    Audio,
+    Video,
+    System,
+    Encrypted,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
@@ -13,7 +27,7 @@ pub struct Message {
     pub sender_id: String,
     pub recipient_id: String,
     pub msg_type: MessageType,
-    pub content: Vec<u8>,       // encrypted bytes
+    pub content: Vec<u8>, // encrypted bytes
     pub content_hash: String,
     pub status: MessageStatus,
     pub sent_at: i64,
@@ -48,10 +62,19 @@ pub struct CallSession {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum CallType { Voice, Video }
+pub enum CallType {
+    Voice,
+    Video,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum CallStatus { Ringing, Active, Ended, Missed, Rejected }
+pub enum CallStatus {
+    Ringing,
+    Active,
+    Ended,
+    Missed,
+    Rejected,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OfflineMessageQueue {
@@ -62,15 +85,23 @@ pub struct OfflineMessageQueue {
 
 impl OfflineMessageQueue {
     pub fn new(node_id: &str) -> Self {
-        OfflineMessageQueue { node_id: node_id.to_string(), queued_messages: Vec::new(), max_queue_size: 1000 }
+        OfflineMessageQueue {
+            node_id: node_id.to_string(),
+            queued_messages: Vec::new(),
+            max_queue_size: 1000,
+        }
     }
     pub fn enqueue(&mut self, msg: Message) -> bool {
-        if self.queued_messages.len() >= self.max_queue_size { return false; }
+        if self.queued_messages.len() >= self.max_queue_size {
+            return false;
+        }
         self.queued_messages.push(msg);
         true
     }
     pub fn drain(&mut self) -> Vec<Message> {
         std::mem::take(&mut self.queued_messages)
     }
-    pub fn len(&self) -> usize { self.queued_messages.len() }
+    pub fn len(&self) -> usize {
+        self.queued_messages.len()
+    }
 }

@@ -1,14 +1,17 @@
 #[cfg(test)]
 mod tests {
     use crate::core::ai::{
-        moderation::{moderate_content, detect_fake_work, detect_relay_abuse},
-        routing::{recommend_route, predict_bandwidth, relay_fitness_score, PeerMetrics},
+        moderation::{detect_fake_work, detect_relay_abuse, moderate_content},
+        routing::{predict_bandwidth, recommend_route, relay_fitness_score, PeerMetrics},
         types::{ModerationAction, ModerationCategory},
     };
 
     #[test]
     fn test_clean_content_allowed() {
-        let r = moderate_content("c1", "Here is my completed project with full documentation.");
+        let r = moderate_content(
+            "c1",
+            "Here is my completed project with full documentation.",
+        );
         assert!(!r.flagged);
         assert_eq!(r.action, ModerationAction::Allow);
     }
@@ -29,7 +32,11 @@ mod tests {
 
     #[test]
     fn test_legitimate_work_not_flagged() {
-        let (flagged, _) = detect_fake_work("Completed the full feature with unit tests and documentation", 5, 120);
+        let (flagged, _) = detect_fake_work(
+            "Completed the full feature with unit tests and documentation",
+            5,
+            120,
+        );
         assert!(!flagged);
     }
 
@@ -50,8 +57,20 @@ mod tests {
     #[test]
     fn test_route_recommendation() {
         let peers = vec![
-            PeerMetrics { node_id: "fast".to_string(), latency_ms: 10, bandwidth_kbps: 50_000.0, reliability: 0.99, load: 0.1 },
-            PeerMetrics { node_id: "slow".to_string(), latency_ms: 500, bandwidth_kbps: 1_000.0, reliability: 0.7, load: 0.8 },
+            PeerMetrics {
+                node_id: "fast".to_string(),
+                latency_ms: 10,
+                bandwidth_kbps: 50_000.0,
+                reliability: 0.99,
+                load: 0.1,
+            },
+            PeerMetrics {
+                node_id: "slow".to_string(),
+                latency_ms: 500,
+                bandwidth_kbps: 1_000.0,
+                reliability: 0.7,
+                load: 0.8,
+            },
         ];
         let rec = recommend_route("a", "b", &peers).unwrap();
         assert_eq!(rec.recommended_relay, "fast");

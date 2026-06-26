@@ -51,7 +51,11 @@ pub async fn fetch_gamepix_games(
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
-    let pp = if per_page == 0 { GAMEPIX_DEFAULT_PER_PAGE } else { per_page };
+    let pp = if per_page == 0 {
+        GAMEPIX_DEFAULT_PER_PAGE
+    } else {
+        per_page
+    };
 
     let url = format!(
         "{}?sid={}&pagination={}&page={}",
@@ -115,10 +119,16 @@ fn item_to_game(item: GamePixItem) -> crate::commands::Game {
         } else if !item.banner_image.is_empty() {
             item.banner_image
         } else {
-            format!("https://img.gamepix.com/games/{}/icon/{}.png?w=300", item.namespace, item.namespace)
+            format!(
+                "https://img.gamepix.com/games/{}/icon/{}.png?w=300",
+                item.namespace, item.namespace
+            )
         },
         url: if item.url.is_empty() {
-            format!("https://play.gamepix.com/{}/embed?sid={}", item.namespace, GAMEPIX_SID)
+            format!(
+                "https://play.gamepix.com/{}/embed?sid={}",
+                item.namespace, GAMEPIX_SID
+            )
         } else {
             item.url
         },

@@ -1,10 +1,25 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum TxType { Deposit, Withdrawal, EscrowLock, EscrowRelease, EscrowReturn, Transfer, Fee, Reward }
+pub enum TxType {
+    Deposit,
+    Withdrawal,
+    EscrowLock,
+    EscrowRelease,
+    EscrowReturn,
+    Transfer,
+    Fee,
+    Reward,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum TxStatus { Pending, Confirmed, Failed, Cancelled, Disputed }
+pub enum TxStatus {
+    Pending,
+    Confirmed,
+    Failed,
+    Cancelled,
+    Disputed,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
