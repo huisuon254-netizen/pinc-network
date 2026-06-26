@@ -64,6 +64,7 @@ jobs:
 
       - name: Build desktop app
         run: cargo tauri build --target ${{ matrix.target }}
+        timeout-minutes: 60
 
       - name: Upload Ubuntu artifact
         if: matrix.os == 'ubuntu-latest' && startsWith(github.ref, 'refs/tags/')
