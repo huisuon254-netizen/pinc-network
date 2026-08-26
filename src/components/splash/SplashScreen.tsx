@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../../store/appStore';
 import type { StartupCheck } from '../../types';
+import logoImg from '../../assets/brand/logo.jpg';
 
 type Phase = 'logo' | 'checks' | 'ready';
 
@@ -36,9 +37,11 @@ export default function SplashScreen() {
           animate={{ opacity: 1, scale: 1 }}
           style={{ textAlign: 'center', marginBottom: '3rem' }}
         >
-          <div style={{ fontSize: '3rem', fontWeight: 900, letterSpacing: '0.2em', color: 'var(--electric-blue)' }} className="glow-blue">
-            PINC
-          </div>
+          <img
+            src={logoImg}
+            alt="PINC"
+            style={{ width: 160, height: 160, borderRadius: 24, objectFit: 'cover', marginBottom: '1rem', boxShadow: '0 0 40px rgba(0,212,255,0.35)' }}
+          />
           <div style={{ fontSize: '0.7rem', letterSpacing: '0.4em', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
             PRIVATE INTELLIGENT NETWORK CORE
           </div>

@@ -1,0 +1,17 @@
+# PINC Platform - robots.txt
+# Allow all crawlers to index the site
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://pinc.network/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 10
+
+# Disallow private/admin paths (if any)
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+Disallow: /*.json$
+Disallow: /*.xml$

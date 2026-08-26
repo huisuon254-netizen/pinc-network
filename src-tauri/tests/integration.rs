@@ -1,29 +1,33 @@
-use pinc_lib::core::{
-    crypto::{
-        cipher::{decrypt, encrypt},
-        nonce::{generate_nonce, validate_nonce},
-        types::NonceType,
+use pinc_lib::{
+    core::{
+        crypto::{
+            cipher::{decrypt, encrypt},
+            nonce::{generate_nonce, validate_nonce},
+            types::NonceType,
+        },
+        database::connection::open_test_db,
+        identity::{generator::create_identity, validator::validate_identity},
+        vault::{
+            chunker::{merge_chunks, split_chunks},
+            encryptor::{vault_decrypt, vault_encrypt},
+            integrity::{compute_hash, verify_integrity},
+        },
     },
-    database::connection::open_test_db,
-    identity::{generator::create_identity, validator::validate_identity},
     startup::startup_check,
-    vault::{
-        chunker::{merge_chunks, split_chunks},
-        encryptor::{vault_decrypt, vault_encrypt},
-        integrity::{compute_hash, verify_integrity},
-    },
 };
 
-const KEY: [u8; 32] = [42u8; 32];
+const MASTER_KEY: &str = "test-master-key-42";
+const USERNAME: &str = "integration-user";
 
 // ── Identity lifecycle ───────────────────────────────────────────────────────
 
 #[test]
 fn integration_create_and_reload_identity() {
     let db = open_test_db().unwrap();
-    let id = create_identity(&db, &KEY).expect("identity must be created");
+    let id = create_identity(&db, MASTER_KEY, USERNAME).expect("identity must be created");
     assert!(!id.id.is_empty());
-    assert!(id.node_id.starts_with("PINC-"));
+    assert_eq!(id.node_id.len(), 7);
+    assert!(id.node_id.chars().all(|c| c.is_ascii_digit()));
     validate_identity(&id).expect("identity must pass validation");
 
     let loaded =
@@ -35,8 +39,8 @@ fn integration_create_and_reload_identity() {
 #[test]
 fn integration_two_identities_are_independent() {
     let db = open_test_db().unwrap();
-    let id1 = create_identity(&db, &KEY).unwrap();
-    let id2 = create_identity(&db, &KEY).unwrap();
+    let id1 = create_identity(&db, MASTER_KEY, USERNAME).unwrap();
+    let id2 = create_identity(&db, MASTER_KEY, USERNAME).unwrap();
     assert_ne!(id1.id, id2.id);
     assert_ne!(id1.public_key, id2.public_key);
     assert_ne!(id1.node_id, id2.node_id);
@@ -101,7 +105,8 @@ fn integration_corruption_detected() {
     let data = b"important file data";
     let hash = compute_hash(data);
     let mut blob = vault_encrypt(&key, data).unwrap();
-    blob[blob.len() - 1] ^= 0xFF;
+    let last = blob.len() - 1;
+    blob[last] ^= 0xFF;
     assert!(vault_decrypt(&key, &blob).is_err());
     assert!(verify_integrity(b"modified", &hash).is_err());
 }
@@ -125,7 +130,7 @@ fn integration_startup_passes_on_healthy_db() {
 #[test]
 fn integration_duplicate_identity_rejected() {
     let db = open_test_db().unwrap();
-    let id = create_identity(&db, &KEY).unwrap();
+    let id = create_identity(&db, MASTER_KEY, USERNAME).unwrap();
     let result = pinc_lib::core::database::queries::insert_identity(&db, &id);
     assert!(result.is_err(), "duplicate primary key must fail");
 }
@@ -135,8 +140,8 @@ fn integration_identity_count_accurate() {
     use pinc_lib::core::database::queries::identity_count;
     let db = open_test_db().unwrap();
     assert_eq!(identity_count(&db).unwrap(), 0);
-    create_identity(&db, &KEY).unwrap();
+    create_identity(&db, MASTER_KEY, USERNAME).unwrap();
     assert_eq!(identity_count(&db).unwrap(), 1);
-    create_identity(&db, &KEY).unwrap();
+    create_identity(&db, MASTER_KEY, USERNAME).unwrap();
     assert_eq!(identity_count(&db).unwrap(), 2);
 }

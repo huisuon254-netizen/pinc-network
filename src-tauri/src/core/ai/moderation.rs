@@ -42,9 +42,7 @@ pub fn moderate_content(content_id: &str, content: &str) -> ModerationResult {
     let flagged = confidence > 0.3;
     let action = if confidence > 0.8 {
         ModerationAction::Remove
-    } else if confidence > 0.5 {
-        ModerationAction::Warn
-    } else if flagged {
+    } else if (confidence > 0.5) || flagged {
         ModerationAction::Warn
     } else {
         ModerationAction::Allow

@@ -2,14 +2,17 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import App from './App';
+import AppErrorBoundary from './components/system/AppErrorBoundary';
 import './styles/globals.css';
 
 try {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-      <HashRouter>
-        <App />
-      </HashRouter>
+      <AppErrorBoundary>
+        <HashRouter>
+          <App />
+        </HashRouter>
+      </AppErrorBoundary>
     </React.StrictMode>
   );
 } catch (err) {

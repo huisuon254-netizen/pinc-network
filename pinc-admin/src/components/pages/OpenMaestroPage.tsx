@@ -1,14 +1,6 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { Trophy, Target, FileText, Swords, Plus } from 'lucide-react';
-
-const MOCK_CHALLENGES = [
-  { id: 1, title: 'Build a REST API in Rust', category: 'Coding', difficulty: 'Hard', reward: 500, participants: 23, status: 'active' },
-  { id: 2, title: 'UI Design Sprint', category: 'Design', difficulty: 'Medium', reward: 300, participants: 45, status: 'active' },
-  { id: 3, title: 'Smart Contract Audit', category: 'Security', difficulty: 'Hard', reward: 1000, participants: 12, status: 'active' },
-  { id: 4, title: 'Data Pipeline Challenge', category: 'Data', difficulty: 'Medium', reward: 400, participants: 31, status: 'completed' },
-  { id: 5, title: 'Mobile App Prototype', category: 'Development', difficulty: 'Easy', reward: 200, participants: 67, status: 'completed' },
-  { id: 6, title: 'Blockchain Consensus Puzzle', category: 'Coding', difficulty: 'Hard', reward: 750, participants: 8, status: 'active' },
-];
+import { useAdminStore } from '../../store/adminStore';
 
 const difficultyColor: Record<string, string> = {
   Easy: 'var(--neon-green)',
@@ -22,11 +14,19 @@ const statusColor: Record<string, string> = {
 };
 
 export default function OpenMaestroPage() {
-  const [challenges] = useState(MOCK_CHALLENGES);
+  const challenges = useAdminStore(s => s.challenges);
+  const loadChallenges = useAdminStore(s => s.loadChallenges);
+  const createChallenge = useAdminStore(s => s.createChallenge);
+
+  useEffect(() => { loadChallenges(); }, [loadChallenges]);
+
   const total = challenges.length;
   const active = challenges.filter(c => c.status === 'active').length;
-  const totalPosts = 124;
-  const activeDuels = 18;
+
+  const handleCreate = () => {
+    const title = window.prompt('Challenge title:');
+    if (title) createChallenge(title, 'Coding', 'Medium', 100);
+  };
 
   return (
     <div style={{ padding: '1.25rem', maxWidth: 1100 }}>
@@ -35,7 +35,7 @@ export default function OpenMaestroPage() {
           <h1 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>OPENMAESTRO Management</h1>
           <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: 2 }}>Challenges, duels, and problem posts</p>
         </div>
-        <button style={{
+        <button onClick={handleCreate} style={{
           display: 'flex', alignItems: 'center', gap: 5, padding: '0.4rem 0.75rem',
           background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.3)',
           borderRadius: 6, color: 'var(--accent-yellow)', cursor: 'pointer', fontSize: '0.65rem',
@@ -48,8 +48,8 @@ export default function OpenMaestroPage() {
         {[
           { label: 'TOTAL CHALLENGES', value: total, icon: <Trophy size={14} />, color: 'var(--accent-yellow)' },
           { label: 'ACTIVE CHALLENGES', value: active, icon: <Target size={14} />, color: 'var(--neon-green)' },
-          { label: 'TOTAL PROBLEM POSTS', value: totalPosts, icon: <FileText size={14} />, color: 'var(--neon-cyan)' },
-          { label: 'ACTIVE DUELS', value: activeDuels, icon: <Swords size={14} />, color: 'var(--accent-red)' },
+          { label: 'TOTAL PROBLEM POSTS', value: 0, icon: <FileText size={14} />, color: 'var(--neon-cyan)' },
+          { label: 'ACTIVE DUELS', value: 0, icon: <Swords size={14} />, color: 'var(--accent-red)' },
         ].map(s => (
           <div key={s.label} style={{
             background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8,

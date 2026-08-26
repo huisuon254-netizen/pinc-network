@@ -24,8 +24,8 @@ pub fn insert_identity(db: &Database, id: &Identity) -> Result<(), DatabaseError
     conn.execute(
         "INSERT INTO identities
          (id, node_id, username, public_key, private_key_encrypted, fingerprint,
-          recovery_key_hash, recovery_phrase_hash, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+          recovery_key_hash, recovery_phrase_hash, password_hash, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
         params![
             id.id,
             id.node_id,
@@ -35,10 +35,25 @@ pub fn insert_identity(db: &Database, id: &Identity) -> Result<(), DatabaseError
             id.fingerprint,
             id.recovery_key_hash,
             id.recovery_phrase_hash,
+            id.password_hash,
             id.created_at
         ],
     )
     .map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+
+    // Also register local node as active online peer in peers & node_status
+    let _ = conn.execute(
+        "INSERT INTO peers (id, address, public_key, last_seen, trust_score, relay_score, online)
+         VALUES (?1, '127.0.0.1:14029', ?2, ?3, 100.0, 100.0, 1)
+         ON CONFLICT(id) DO UPDATE SET online = 1, last_seen = ?3",
+        params![id.node_id, id.public_key, id.created_at],
+    );
+    let _ = conn.execute(
+        "INSERT INTO node_status (id, online, last_seen, peer_count)
+         VALUES (1, 1, ?1, 1)
+         ON CONFLICT(id) DO UPDATE SET online = 1, last_seen = ?1",
+        params![id.created_at],
+    );
     Ok(())
 }
 
@@ -46,7 +61,7 @@ pub fn load_identity(db: &Database, id: &str) -> Result<Identity, DatabaseError>
     let conn = db.conn.lock().map_err(|_| DatabaseError::LockFailed)?;
     conn.query_row(
         "SELECT id, node_id, COALESCE(username,''), public_key, private_key_encrypted, fingerprint,
-                recovery_key_hash, recovery_phrase_hash, created_at
+                recovery_key_hash, recovery_phrase_hash, password_hash, created_at
          FROM identities WHERE id = ?1",
         params![id],
         |row| {
@@ -59,7 +74,8 @@ pub fn load_identity(db: &Database, id: &str) -> Result<Identity, DatabaseError>
                 fingerprint: row.get(5)?,
                 recovery_key_hash: row.get(6)?,
                 recovery_phrase_hash: row.get(7)?,
-                created_at: row.get(8)?,
+                password_hash: row.get(8)?,
+                created_at: row.get(9)?,
             })
         },
     )
@@ -70,7 +86,7 @@ pub fn load_first_identity(db: &Database) -> Result<Option<Identity>, DatabaseEr
     let conn = db.conn.lock().map_err(|_| DatabaseError::LockFailed)?;
     let mut stmt = conn.prepare(
         "SELECT id, node_id, COALESCE(username,''), public_key, private_key_encrypted, fingerprint,
-                recovery_key_hash, recovery_phrase_hash, created_at
+                recovery_key_hash, recovery_phrase_hash, password_hash, created_at
          FROM identities ORDER BY created_at ASC LIMIT 1"
     ).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
     let mut rows = stmt
@@ -84,7 +100,8 @@ pub fn load_first_identity(db: &Database) -> Result<Option<Identity>, DatabaseEr
                 fingerprint: row.get(5)?,
                 recovery_key_hash: row.get(6)?,
                 recovery_phrase_hash: row.get(7)?,
-                created_at: row.get(8)?,
+                password_hash: row.get(8)?,
+                created_at: row.get(9)?,
             })
         })
         .map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
@@ -1554,8 +1571,31 @@ pub struct Contact {
     pub contact_node_id: String,
     pub contact_username: String,
     pub nickname: String,
+    pub service_name: String,
+    pub share_code: String,
     pub status: String,
     pub created_at: i64,
+}
+
+pub fn pinc_id_from_node_id(node_id: &str) -> String {
+    let digits: String = node_id.chars().filter(|c| c.is_ascii_digit()).collect();
+    if digits.len() >= 7 {
+        let five = &digits[..5];
+        let two = &digits[digits.len() - 2..];
+        format!("pinc-{}-{}", five, two)
+    } else if !digits.is_empty() {
+        format!("pinc-{}", digits)
+    } else {
+        format!("pinc-{}", node_id)
+    }
+}
+
+pub fn generate_starteran_share_code() -> String {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    let seg1: u32 = rng.gen_range(0..10000);
+    let seg2: u32 = rng.gen_range(0..10000);
+    format!("ERAN-{:04}-{:04}", seg1, seg2)
 }
 
 pub fn insert_contact(
@@ -1564,6 +1604,8 @@ pub fn insert_contact(
     contact_node_id: &str,
     contact_username: &str,
     nickname: &str,
+    service_name: &str,
+    share_code: &str,
 ) -> Result<Contact, DatabaseError> {
     let conn = db.conn.lock().map_err(|_| DatabaseError::LockFailed)?;
     let id = Uuid::new_v4().to_string();
@@ -1571,12 +1613,22 @@ pub fn insert_contact(
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs() as i64;
+    let svc = if service_name.is_empty() {
+        "General"
+    } else {
+        service_name
+    };
+    let code = if share_code.is_empty() {
+        ""
+    } else {
+        share_code
+    };
     conn.execute(
-        "INSERT INTO contacts (id, owner_node_id, contact_node_id, contact_username, nickname, status, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, 'accepted', ?6)
+        "INSERT INTO contacts (id, owner_node_id, contact_node_id, contact_username, nickname, service_name, share_code, status, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'accepted', ?8)
          ON CONFLICT(owner_node_id, contact_node_id) DO UPDATE SET
-         contact_username = excluded.contact_username, nickname = excluded.nickname",
-        params![id, owner_node_id, contact_node_id, contact_username, nickname, now],
+         contact_username = excluded.contact_username, nickname = excluded.nickname, service_name = excluded.service_name, share_code = excluded.share_code",
+        params![id, owner_node_id, contact_node_id, contact_username, nickname, svc, code, now],
     ).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
     Ok(Contact {
         id,
@@ -1584,6 +1636,8 @@ pub fn insert_contact(
         contact_node_id: contact_node_id.to_string(),
         contact_username: contact_username.to_string(),
         nickname: nickname.to_string(),
+        service_name: svc.to_string(),
+        share_code: code.to_string(),
         status: "accepted".to_string(),
         created_at: now,
     })
@@ -1592,7 +1646,7 @@ pub fn insert_contact(
 pub fn list_contacts(db: &Database, owner_node_id: &str) -> Result<Vec<Contact>, DatabaseError> {
     let conn = db.conn.lock().map_err(|_| DatabaseError::LockFailed)?;
     let mut stmt = conn.prepare(
-        "SELECT id, owner_node_id, contact_node_id, contact_username, nickname, status, created_at
+        "SELECT id, owner_node_id, contact_node_id, contact_username, nickname, COALESCE(service_name,'General'), COALESCE(share_code,''), status, created_at
          FROM contacts WHERE owner_node_id = ?1 ORDER BY created_at DESC"
     ).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
     let rows = stmt
@@ -1603,8 +1657,10 @@ pub fn list_contacts(db: &Database, owner_node_id: &str) -> Result<Vec<Contact>,
                 contact_node_id: row.get(2)?,
                 contact_username: row.get(3)?,
                 nickname: row.get(4)?,
-                status: row.get(5)?,
-                created_at: row.get(6)?,
+                service_name: row.get(5)?,
+                share_code: row.get(6)?,
+                status: row.get(7)?,
+                created_at: row.get(8)?,
             })
         })
         .map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
@@ -1634,7 +1690,7 @@ pub fn search_identities_by_query(
     let pattern = format!("%{}%", query);
     let mut stmt = conn.prepare(
         "SELECT id, node_id, COALESCE(username,''), public_key, private_key_encrypted, fingerprint,
-                recovery_key_hash, recovery_phrase_hash, created_at
+                recovery_key_hash, recovery_phrase_hash, password_hash, created_at
          FROM identities WHERE node_id LIKE ?1 OR username LIKE ?1 LIMIT 20"
     ).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
     let rows = stmt
@@ -1648,7 +1704,8 @@ pub fn search_identities_by_query(
                 fingerprint: row.get(5)?,
                 recovery_key_hash: row.get(6)?,
                 recovery_phrase_hash: row.get(7)?,
-                created_at: row.get(8)?,
+                password_hash: row.get(8)?,
+                created_at: row.get(9)?,
             })
         })
         .map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;

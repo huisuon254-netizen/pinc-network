@@ -12,7 +12,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 # Tauri
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["protocol-asset"] }
 
 # Async runtime
 tokio = { version = "1", features = ["full"] }
@@ -58,19 +58,18 @@ zstd = "0.13"
 # System info
 hostname = "0.3"
 num_cpus = "1"
+sysinfo = "0.30"
 chrono = { version = "0.4", features = ["serde"] }
-time = "=0.3.36"
+time = ">=0.3.47"
 
 # Network — Phase 3
 quinn = "0.11"
 rustls = { version = "0.23", features = ["ring"] }
 rcgen = "0.13"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "multipart"] }
-tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "multipart", "blocking"] }
+tokio-tungstenite = "0.26"
 futures-util = "0.3"
-
-# Vendored OpenSSL for Android cross-compilation
-openssl = { version = "0.10", features = ["vendored"] }
+async-trait = "0.1"
 
 # System directories
 dirs = "5"

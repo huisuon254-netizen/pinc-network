@@ -1,17 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Briefcase, DollarSign, Users, CheckCircle, AlertTriangle, Edit3, Trash2, Plus } from 'lucide-react';
-
-const MOCK_JOBS = [
-  { id: '1', title: 'Build PINC Mobile App', budget: 5000, status: 'open', applicants: 12, category: 'Development' },
-  { id: '2', title: 'UI/UX Design Sprint', budget: 2000, status: 'in_progress', applicants: 5, category: 'Design' },
-  { id: '3', title: 'Security Audit', budget: 3000, status: 'completed', applicants: 8, category: 'Security' },
-  { id: '4', title: 'Smart Contract Development', budget: 8000, status: 'open', applicants: 3, category: 'Blockchain' },
-  { id: '5', title: 'Content Writing', budget: 500, status: 'disputed', applicants: 15, category: 'Writing' },
-];
+import { useAdminStore } from '../../store/adminStore';
 
 export default function JobsAdminPage() {
+  const jobs = useAdminStore(s => s.jobs);
+  const loadJobs = useAdminStore(s => s.loadJobs);
+  const deleteJob = useAdminStore(s => s.deleteJob);
+  const editJob = useAdminStore(s => s.editJob);
+
+  useEffect(() => { loadJobs(); }, [loadJobs]);
+
   const [filter, setFilter] = useState<string>('all');
   const statuses = ['all', 'open', 'in_progress', 'completed', 'disputed'];
+
+  const handleEdit = (id: string, currentBudget: number) => {
+    const budget = window.prompt('Budget:', String(currentBudget));
+    if (budget) editJob(id, { budget: parseInt(budget) || currentBudget });
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this job?')) {
+      deleteJob(id);
+    }
+  };
 
   return (
     <div style={{ padding: '1.25rem', maxWidth: 1100 }}>
@@ -25,10 +36,10 @@ export default function JobsAdminPage() {
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginBottom: '1rem' }}>
         {[
-          { label: 'ACTIVE JOBS', value: MOCK_JOBS.filter(j => j.status === 'open').length, color: 'var(--neon-green)' },
-          { label: 'IN PROGRESS', value: MOCK_JOBS.filter(j => j.status === 'in_progress').length, color: 'var(--accent-blue)' },
-          { label: 'COMPLETED', value: MOCK_JOBS.filter(j => j.status === 'completed').length, color: 'var(--accent-purple)' },
-          { label: 'DISPUTED', value: MOCK_JOBS.filter(j => j.status === 'disputed').length, color: 'var(--accent-red)' },
+          { label: 'ACTIVE JOBS', value: jobs.filter(j => j.status === 'open').length, color: 'var(--neon-green)' },
+          { label: 'IN PROGRESS', value: jobs.filter(j => j.status === 'in_progress').length, color: 'var(--accent-blue)' },
+          { label: 'COMPLETED', value: jobs.filter(j => j.status === 'completed').length, color: 'var(--accent-purple)' },
+          { label: 'DISPUTED', value: jobs.filter(j => j.status === 'disputed').length, color: 'var(--accent-red)' },
         ].map(s => (
           <div key={s.label} style={{
             background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8,
@@ -67,7 +78,7 @@ export default function JobsAdminPage() {
             </tr>
           </thead>
           <tbody>
-            {MOCK_JOBS.filter(j => filter === 'all' || j.status === filter).map(j => (
+            {jobs.filter(j => filter === 'all' || j.status === filter).map(j => (
               <tr key={j.id} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-primary)', fontWeight: 600 }}>{j.title}</td>
                 <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-secondary)' }}>{j.category}</td>
@@ -82,8 +93,8 @@ export default function JobsAdminPage() {
                 </td>
                 <td style={{ padding: '0.5rem 0.75rem' }}>
                   <div style={{ display: 'flex', gap: 4 }}>
-                    <button style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-blue)', cursor: 'pointer', padding: 3 }}><Edit3 size={11} /></button>
-                    <button style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-red)', cursor: 'pointer', padding: 3 }}><Trash2 size={11} /></button>
+                    <button onClick={() => handleEdit(j.id, j.budget)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-blue)', cursor: 'pointer', padding: 3 }}><Edit3 size={11} /></button>
+                    <button onClick={() => handleDelete(j.id)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-red)', cursor: 'pointer', padding: 3 }}><Trash2 size={11} /></button>
                   </div>
                 </td>
               </tr>

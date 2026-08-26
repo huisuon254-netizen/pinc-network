@@ -18,6 +18,10 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import SuperAdminPage from './pages/SuperAdminPage';
 import OwnerDashboardPage from './pages/OwnerDashboardPage';
 import OpenMaestroPage from './pages/OpenMaestroPage';
+import FeesTransactionsPage from './pages/FeesTransactionsPage';
+import WalletManagementPage from './pages/WalletManagementPage';
+import PaymentSourcesPage from './pages/PaymentSourcesPage';
+import TransactionRecordsPage from './pages/TransactionRecordsPage';
 
 const PAGES: Record<AdminSection, React.FC> = {
   dashboard: DashboardPage,
@@ -37,6 +41,10 @@ const PAGES: Record<AdminSection, React.FC> = {
   superadmin: SuperAdminPage,
   owner: OwnerDashboardPage,
   openmaestro: OpenMaestroPage,
+  fees: FeesTransactionsPage,
+  wallets: WalletManagementPage,
+  payments: PaymentSourcesPage,
+  transactions: TransactionRecordsPage,
 };
 
 export default function AdminDashboard() {

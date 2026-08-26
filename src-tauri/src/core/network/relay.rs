@@ -17,6 +17,7 @@ pub struct RelaySession {
     pub active: bool,
 }
 
+#[derive(Clone)]
 pub struct RelayManager {
     sessions: Arc<Mutex<HashMap<String, RelaySession>>>,
     bandwidth_cap_kbps: f64,

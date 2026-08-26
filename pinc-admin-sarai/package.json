@@ -1,0 +1,46 @@
+{
+  "name": "pinc-admin-sarai",
+  "private": true,
+  "version": "3.0.0",
+  "type": "module",
+  "author": "PINC Platform — Powered by PINC",
+  "developer": "Powered by PINC Platform (https://pinc.network)",
+  "publisher": "PINC Platform",
+  "description": "SARAI Admin — All Balances. All Clients. Securely. — Powered by PINC Platform",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-fs": "^2.5.1",
+    "@tauri-apps/plugin-http": "^2.5.9",
+    "@tauri-apps/plugin-notification": "^2.3.3",
+    "@tauri-apps/plugin-shell": "^2.3.5",
+    "@solana/web3.js": "^1.98.0",
+    "ethers": "^6.13.4",
+    "framer-motion": "^11",
+    "lucide-react": "^0.383.0",
+    "qrcode.react": "^4.2.0",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-router": "^7.17.0",
+    "react-router-dom": "^6",
+    "viem": "^2.27.0",
+    "zustand": "^4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4",
+    "@tauri-apps/cli": "^2",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@vitejs/plugin-react": "^4",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vite": "^6"
+  }
+}

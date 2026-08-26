@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAdminStore } from '../../store/adminStore';
 import { ShieldCheck, AlertTriangle, Lock, UserX, Eye, RefreshCw } from 'lucide-react';
 
 export default function SecurityOpsPage() {
-  const { securityEvents, loadSecurityEvents } = useAdminStore();
-  useEffect(() => { loadSecurityEvents(); const t = setInterval(loadSecurityEvents, 10000); return () => clearInterval(t); }, []);
+  const { securityEvents, securityThreatStats, loadSecurityEvents, loadSecurityThreatStats } = useAdminStore();
 
-  const [stats] = useState({
-    failed_logins: 12, failed_recoveries: 3, device_link_attempts: 7,
-    bot_networks: 1, spam_networks: 2, fake_nodes: 0, fake_servers: 1,
-  });
+  useEffect(() => {
+    loadSecurityEvents();
+    loadSecurityThreatStats();
+    const t = setInterval(() => { loadSecurityEvents(); loadSecurityThreatStats(); }, 10000);
+    return () => clearInterval(t);
+  }, []);
 
   const sevColor = (s: string) => s === 'critical' ? 'var(--accent-red)' : s === 'high' ? 'var(--accent-orange)' : s === 'medium' ? 'var(--accent-yellow)' : 'var(--neon-green)';
 
@@ -20,7 +21,7 @@ export default function SecurityOpsPage() {
           <h1 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Security Operations Center</h1>
           <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: 2 }}>Threat monitoring and identity protection</p>
         </div>
-        <button onClick={loadSecurityEvents} style={{
+        <button onClick={() => { loadSecurityEvents(); loadSecurityThreatStats(); }} style={{
           display: 'flex', alignItems: 'center', gap: 5, padding: '0.4rem 0.75rem',
           background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
           borderRadius: 6, color: 'var(--accent-red)', cursor: 'pointer', fontSize: '0.65rem',
@@ -29,13 +30,12 @@ export default function SecurityOpsPage() {
         </button>
       </div>
 
-      {/* Identity Monitoring */}
       <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>IDENTITY MONITORING</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1rem' }}>
         {[
-          { label: 'FAILED LOGINS', value: stats.failed_logins, color: 'var(--accent-red)' },
-          { label: 'FAILED RECOVERIES', value: stats.failed_recoveries, color: 'var(--accent-orange)' },
-          { label: 'DEVICE LINK ATTEMPTS', value: stats.device_link_attempts, color: 'var(--accent-yellow)' },
+          { label: 'FAILED LOGINS', value: securityThreatStats.failed_logins, color: 'var(--accent-red)' },
+          { label: 'FAILED RECOVERIES', value: securityThreatStats.failed_recoveries, color: 'var(--accent-orange)' },
+          { label: 'DEVICE LINK ATTEMPTS', value: securityThreatStats.device_link_attempts, color: 'var(--accent-yellow)' },
         ].map(s => (
           <div key={s.label} style={{
             background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8,
@@ -47,14 +47,13 @@ export default function SecurityOpsPage() {
         ))}
       </div>
 
-      {/* Threat Monitoring */}
       <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>THREAT MONITORING</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginBottom: '1rem' }}>
         {[
-          { label: 'BOT NETWORKS', value: stats.bot_networks, color: 'var(--accent-red)' },
-          { label: 'SPAM NETWORKS', value: stats.spam_networks, color: 'var(--accent-orange)' },
-          { label: 'FAKE NODES', value: stats.fake_nodes, color: 'var(--accent-yellow)' },
-          { label: 'FAKE SERVERS', value: stats.fake_servers, color: 'var(--accent-purple)' },
+          { label: 'BOT NETWORKS', value: securityThreatStats.bot_networks, color: 'var(--accent-red)' },
+          { label: 'SPAM NETWORKS', value: securityThreatStats.spam_networks, color: 'var(--accent-orange)' },
+          { label: 'FAKE NODES', value: securityThreatStats.fake_nodes, color: 'var(--accent-yellow)' },
+          { label: 'FAKE SERVERS', value: securityThreatStats.fake_servers, color: 'var(--accent-purple)' },
         ].map(s => (
           <div key={s.label} style={{
             background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8,
@@ -66,7 +65,6 @@ export default function SecurityOpsPage() {
         ))}
       </div>
 
-      {/* Actions */}
       <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>QUICK ACTIONS</div>
       <div style={{ display: 'flex', gap: 6, marginBottom: '1rem' }}>
         {[
@@ -84,7 +82,6 @@ export default function SecurityOpsPage() {
         ))}
       </div>
 
-      {/* Events Log */}
       <div style={{
         background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8,
         overflow: 'hidden',

@@ -3,7 +3,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
 use crate::core::{
-    crypto::{cipher::encrypt, hash::sha256_hex, keys::generate_keypair, types::NonceType},
+    crypto::{
+        cipher::encrypt,
+        hash::{hash_password, sha256_hex},
+        keys::generate_keypair,
+        types::NonceType,
+    },
     database::{connection::Database, queries::insert_identity},
     identity::{
         errors::IdentityError, fingerprint::device_fingerprint, recovery::generate_recovery_hash,
@@ -13,7 +18,7 @@ use crate::core::{
 
 pub fn create_identity(
     db: &Database,
-    master_key: &[u8; 32],
+    master_key: &str,
     username: &str,
 ) -> Result<Identity, IdentityError> {
     let mut entropy = [0u8; 32];
@@ -26,7 +31,7 @@ pub fn create_identity(
 pub fn build_identity_from_phrase(
     db: &Database,
     mnemonic: &bip39::Mnemonic,
-    master_key: &[u8; 32],
+    master_key: &str,
     username: &str,
 ) -> Result<Identity, IdentityError> {
     // Step 1: Keypair
@@ -36,8 +41,10 @@ pub fn build_identity_from_phrase(
     // Step 2: Fingerprint
     let fp = device_fingerprint().map_err(|e| IdentityError::FingerprintFailed(e.to_string()))?;
 
-    // Step 3: Encrypt private key (XChaCha24 — 24-byte nonce, AEAD)
-    let enc = encrypt(master_key, &priv_bytes, NonceType::XChaCha24)
+    // Step 3: Encrypt private key (SHA256 hash of master_key as 32-byte key, XChaCha24)
+    use sha2::{Digest, Sha256};
+    let key: [u8; 32] = Sha256::digest(master_key.as_bytes()).into();
+    let enc = encrypt(&key, &priv_bytes, NonceType::XChaCha24)
         .map_err(|e| IdentityError::EncryptionFailed(e.to_string()))?;
     let mut blob = enc.nonce;
     blob.extend_from_slice(&enc.ciphertext);
@@ -63,6 +70,7 @@ pub fn build_identity_from_phrase(
     let recovery_key_hash = generate_recovery_hash(&id, &fp.hash);
     let phrase_str = mnemonic.to_string();
     let recovery_phrase_hash = sha256_hex(phrase_str.as_bytes());
+    let password_hash = hash_password(master_key).map_err(IdentityError::KeyGenerationFailed)?;
 
     let identity = Identity {
         id,
@@ -73,6 +81,7 @@ pub fn build_identity_from_phrase(
         fingerprint: fp.hash,
         recovery_key_hash,
         recovery_phrase_hash,
+        password_hash,
         created_at,
     };
 

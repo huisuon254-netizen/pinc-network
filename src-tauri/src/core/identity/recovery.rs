@@ -11,7 +11,7 @@ pub fn generate_recovery_hash(identity_id: &str, fingerprint_hash: &str) -> Stri
 pub fn recover_identity(
     db: &Database,
     phrase: &str,
-    master_key: &[u8; 32],
+    master_key: &str,
     username: &str,
 ) -> Result<Identity, IdentityError> {
     let mnemonic: bip39::Mnemonic = phrase

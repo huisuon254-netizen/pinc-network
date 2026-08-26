@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Key, RefreshCw, Eye, EyeOff, ArrowRight, Copy, Check } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
@@ -221,7 +221,13 @@ function generateSeedPhrase(wordCount = 12): string {
 }
 
 export default function LoginScreen() {
-  const { setScreen, setIdentity } = useAppStore();
+  const { setScreen, setIdentity, identity } = useAppStore();
+
+  useEffect(() => {
+    if (identity) {
+      setScreen('dashboard');
+    }
+  }, [identity, setScreen]);
   const [mode, setMode] = useState<Mode>('menu');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -233,24 +239,19 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [seedCopied, setSeedCopied] = useState(false);
 
-  const handleLogin = async () => {
+const handleLogin = async () => {
     if (!username || !password) { setError('Username and password required'); return; }
     setLoading(true);
     setError(null);
     try {
       if (window.__TAURI__) {
         const { invoke } = await import('@tauri-apps/api/core');
-        const hasIdentity = await invoke('cmd_has_identity');
-        if (hasIdentity) {
-          const id = await invoke('cmd_get_identity') as Identity;
-          setIdentity(id);
-        } else {
-          setError('No identity found. Please sign up first.');
-          setLoading(false);
-          return;
-        }
+        const id = await invoke('cmd_verify_login', { username, password }) as Identity;
+        setIdentity(id);
+        setScreen('dashboard');
+      } else {
+        setError('Tauri not available');
       }
-      setScreen('dashboard');
     } catch (e: any) {
       setError(e?.toString() || 'Login failed');
     }
@@ -300,8 +301,10 @@ export default function LoginScreen() {
         const { invoke } = await import('@tauri-apps/api/core');
         const identity = await invoke('cmd_recover_identity', { phrase, masterKey, username: username || 'user' }) as Identity;
         setIdentity(identity);
+        setScreen('dashboard');
+      } else {
+        setError('Tauri not available');
       }
-      setScreen('dashboard');
     } catch (e: any) {
       setError(e?.toString() || 'Recovery failed');
     }

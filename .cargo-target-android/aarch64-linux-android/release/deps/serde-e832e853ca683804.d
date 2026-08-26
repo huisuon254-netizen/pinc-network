@@ -1,0 +1,14 @@
+/home/rachael/pinc-network/.cargo-target-android/aarch64-linux-android/release/deps/serde-e832e853ca683804.d: /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/rachael/pinc-network/.cargo-target-android/aarch64-linux-android/release/build/serde-a1157954fb82dc3a/out/private.rs
+
+/home/rachael/pinc-network/.cargo-target-android/aarch64-linux-android/release/deps/libserde-e832e853ca683804.rlib: /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/rachael/pinc-network/.cargo-target-android/aarch64-linux-android/release/build/serde-a1157954fb82dc3a/out/private.rs
+
+/home/rachael/pinc-network/.cargo-target-android/aarch64-linux-android/release/deps/libserde-e832e853ca683804.rmeta: /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/rachael/pinc-network/.cargo-target-android/aarch64-linux-android/release/build/serde-a1157954fb82dc3a/out/private.rs
+
+/home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/home/rachael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/home/rachael/pinc-network/.cargo-target-android/aarch64-linux-android/release/build/serde-a1157954fb82dc3a/out/private.rs:
+
+# env-dep:OUT_DIR=/home/rachael/pinc-network/.cargo-target-android/aarch64-linux-android/release/build/serde-a1157954fb82dc3a/out

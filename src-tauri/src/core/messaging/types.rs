@@ -104,4 +104,7 @@ impl OfflineMessageQueue {
     pub fn len(&self) -> usize {
         self.queued_messages.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.queued_messages.is_empty()
+    }
 }

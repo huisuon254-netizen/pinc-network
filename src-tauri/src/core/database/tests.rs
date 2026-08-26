@@ -16,6 +16,7 @@ mod tests {
             fingerprint: "fp_abc123".to_string(),
             recovery_key_hash: "rkhash".to_string(),
             recovery_phrase_hash: "rphash".to_string(),
+            password_hash: "phash".to_string(),
             created_at: 1700000000,
         }
     }

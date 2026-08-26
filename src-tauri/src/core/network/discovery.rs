@@ -12,7 +12,11 @@ pub struct Discovery {
 impl Discovery {
     pub fn new() -> Self {
         Discovery {
-            bootstrap_nodes: Vec::new(),
+            bootstrap_nodes: vec![
+                "127.0.0.1:9000".to_string(),
+                "127.0.0.1:9001".to_string(),
+                "127.0.0.1:9002".to_string(),
+            ],
             known_peers: Vec::new(),
         }
     }

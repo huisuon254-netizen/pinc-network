@@ -1,0 +1,216 @@
+:root,
+body.theme-dark-cyber {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1a2035;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1c2540;
+  --bg-toolbar: #0d1322;
+  --border: #1e2a45;
+  --border-active: #2563eb;
+  --border-light: #2d3b5a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #0a0e1a;
+  --accent-primary: #2563eb;
+  --accent-secondary: #3b82f6;
+  --accent-cyan: #06b6d4;
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
+  --accent-yellow: #f59e0b;
+  --accent-purple: #8b5cf6;
+  --accent-orange: #f97316;
+  --accent-pink: #ec4899;
+  --neon-blue: #3b82f6;
+  --neon-cyan: #22d3ee;
+  --neon-green: #34d399;
+  --neon-red: #f87171;
+  --neon-yellow: #fbbf24;
+  --neon-purple: #a78bfa;
+  --glow-primary: 0 0 10px rgba(37, 99, 235, 0.3);
+  --glow-cyan: 0 0 10px rgba(6, 182, 212, 0.3);
+  --glow-green: 0 0 10px rgba(16, 185, 129, 0.3);
+  --glow-red: 0 0 10px rgba(239, 68, 68, 0.3);
+  --font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  --grid-line: rgba(37, 99, 235, 0.06);
+}
+
+body.theme-light-pro {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --bg-toolbar: #f8fafc;
+  --border: #e2e8f0;
+  --border-active: #059669;
+  --border-light: #cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+  --accent-primary: #059669;
+  --accent-secondary: #10b981;
+  --accent-cyan: #0891b2;
+  --accent-green: #059669;
+  --accent-red: #dc2626;
+  --accent-yellow: #d97706;
+  --accent-purple: #7c3aed;
+  --accent-orange: #ea580c;
+  --accent-pink: #db2777;
+  --neon-blue: #2563eb;
+  --neon-cyan: #0891b2;
+  --neon-green: #059669;
+  --neon-red: #dc2626;
+  --neon-yellow: #d97706;
+  --neon-purple: #7c3aed;
+  --glow-primary: 0 2px 8px rgba(5, 150, 105, 0.15);
+  --glow-cyan: 0 2px 8px rgba(8, 145, 178, 0.15);
+  --glow-green: 0 2px 8px rgba(5, 150, 105, 0.15);
+  --glow-red: 0 2px 8px rgba(220, 38, 38, 0.15);
+  --font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --grid-line: rgba(5, 150, 105, 0.05);
+}
+
+body.theme-matrix-green {
+  --bg-primary: #000000;
+  --bg-secondary: #050a05;
+  --bg-tertiary: #0a140a;
+  --bg-card: #030803;
+  --bg-card-hover: #0a1a0a;
+  --bg-toolbar: #030603;
+  --border: #0a3d1a;
+  --border-active: #00ff41;
+  --border-light: #14532d;
+  --text-primary: #00ff41;
+  --text-secondary: #00cc33;
+  --text-muted: #007a1f;
+  --text-inverse: #000000;
+  --accent-primary: #00ff41;
+  --accent-secondary: #00cc33;
+  --accent-cyan: #00ffaa;
+  --accent-green: #00ff41;
+  --accent-red: #ff0040;
+  --accent-yellow: #ccff00;
+  --accent-purple: #bf00ff;
+  --accent-orange: #ff8000;
+  --accent-pink: #ff00aa;
+  --neon-blue: #00aaff;
+  --neon-cyan: #00ffaa;
+  --neon-green: #00ff41;
+  --neon-red: #ff0040;
+  --neon-yellow: #ccff00;
+  --neon-purple: #bf00ff;
+  --glow-primary: 0 0 12px rgba(0, 255, 65, 0.5), 0 0 24px rgba(0, 255, 65, 0.25);
+  --glow-cyan: 0 0 12px rgba(0, 255, 170, 0.5);
+  --glow-green: 0 0 12px rgba(0, 255, 65, 0.5);
+  --glow-red: 0 0 12px rgba(255, 0, 64, 0.5);
+  --font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+  --grid-line: rgba(0, 255, 65, 0.08);
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a {
+  color: var(--accent-primary);
+}
+
+button {
+  font-family: var(--font-family);
+}
+
+input,
+select,
+textarea {
+  font-family: var(--font-family);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--border-active);
+  box-shadow: var(--glow-primary);
+}
+
+.btn {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-light);
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  border-color: var(--accent-primary);
+}
+
+.btn-primary:hover {
+  background: var(--accent-secondary);
+  border-color: var(--accent-secondary);
+  box-shadow: var(--glow-primary);
+}
+
+.btn-active {
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  border-color: var(--accent-primary);
+  box-shadow: var(--glow-primary);
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.card:hover {
+  border-color: var(--border-light);
+}
+
+.sidebar {
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+}
+
+.topbar {
+  background: var(--bg-toolbar);
+  border-bottom: 1px solid var(--border);
+}
+
+.toolbar {
+  background: var(--bg-toolbar);
+  border-bottom: 1px solid var(--border);
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+}

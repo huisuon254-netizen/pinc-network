@@ -32,7 +32,7 @@ mod tests {
 
     #[test]
     fn test_handshake_empty_node_id_fails() {
-        let mut h = build_handshake("", "pubkey");
+        let h = build_handshake("", "pubkey");
         assert!(validate_handshake(&h).is_err());
     }
 

@@ -1,14 +1,16 @@
 import {
   LayoutDashboard, Network, Server, Activity, MessageSquare,
   Wallet, Swords, Briefcase, Map, ShieldCheck, Crown, Bell,
-  BarChart3, Settings, Zap, Trophy, Target, LogOut, ChevronDown
+  BarChart3, Settings, Zap, Trophy, Target, LogOut, ChevronDown,
+  WalletCards, Receipt, CreditCard, SlidersHorizontal
 } from 'lucide-react';
 
 export type AdminSection =
   | 'dashboard' | 'network' | 'rentbit' | 'traffic' | 'treific'
   | 'sarai' | 'wagers' | 'challenges' | 'jobs' | 'globalmap'
   | 'security' | 'premium' | 'notifications' | 'analytics'
-  | 'superadmin' | 'owner' | 'openmaestro';
+  | 'superadmin' | 'owner' | 'openmaestro'
+  | 'fees' | 'wallets' | 'payments' | 'transactions';
 
 interface NavGroup {
   label: string;
@@ -21,7 +23,21 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={14} /> },
       { id: 'globalmap', label: 'Global Map', icon: <Map size={14} />, color: 'var(--neon-cyan)' },
-      { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={14} />, color: 'var(--neon-purple)' },
+      { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={14} />, color: 'var(--accent-purple)' },
+    ],
+  },
+  {
+    label: 'FINANCIAL',
+    items: [
+      { id: 'fees', label: 'Fees & Transactions', icon: <SlidersHorizontal size={14} />, color: 'var(--neon-cyan)' },
+      { id: 'transactions', label: 'Transaction Records', icon: <Receipt size={14} />, color: 'var(--accent-blue)' },
+      { id: 'payments', label: 'Payment Sources', icon: <CreditCard size={14} />, color: 'var(--neon-green)' },
+    ],
+  },
+  {
+    label: 'CRYPTO',
+    items: [
+      { id: 'wallets', label: 'Wallet Management', icon: <WalletCards size={14} />, color: 'var(--accent-yellow)' },
     ],
   },
   {

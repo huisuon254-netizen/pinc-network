@@ -24,4 +24,6 @@ pub enum NetworkError {
     BandwidthExceeded,
     #[error("Certificate error: {0}")]
     CertError(String),
+    #[error("Crypto error: {0}")]
+    CryptoFailed(String),
 }

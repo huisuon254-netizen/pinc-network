@@ -1,0 +1,36 @@
+{
+  "name": "PINC Platform",
+  "short_name": "PINC",
+  "description": "Decentralized Finance & Transactions — SARAI Wallet",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/images/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "utilities"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "SARAI Wallet",
+      "short_name": "SARAI",
+      "description": "Open SARAI Wallet",
+      "url": "/",
+      "icons": [{ "src": "/assets/images/logo.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Apps Download",
+      "short_name": "Apps",
+      "description": "Download SARAI for your platform",
+      "url": "/apps",
+      "icons": [{ "src": "/assets/images/logo.svg", "sizes": "192x192" }]
+    }
+  ]
+}

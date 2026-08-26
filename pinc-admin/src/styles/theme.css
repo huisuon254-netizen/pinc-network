@@ -5,10 +5,13 @@
   --bg-card: #141b2d;
   --bg-card-hover: #1c2540;
   --border: #1e2a45;
+  --border-light: #2a3a5c;
   --border-active: #2563eb;
   --text-primary: #e2e8f0;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
+  --text-inverse: #ffffff;
+  --accent-primary: #2563eb;
   --accent-blue: #2563eb;
   --accent-cyan: #06b6d4;
   --accent-green: #10b981;
@@ -23,10 +26,12 @@
   --neon-red: #f87171;
   --neon-yellow: #fbbf24;
   --neon-purple: #a78bfa;
+  --glow-primary: 0 0 12px rgba(37,99,235,0.4);
   --glow-blue: 0 0 10px rgba(37,99,235,0.3);
   --glow-cyan: 0 0 10px rgba(6,182,212,0.3);
   --glow-green: 0 0 10px rgba(16,185,129,0.3);
   --glow-red: 0 0 10px rgba(239,68,68,0.3);
+  --font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

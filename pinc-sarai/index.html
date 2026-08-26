@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" style="background:#0a0a0f">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/assets/images/logo.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/logo.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/images/logo.svg" />
+    <link rel="apple-touch-icon" href="/assets/images/logo.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="PINC Platform — Decentralized Finance & Transactions. SARAI Wallet: Multi-currency, cross-chain swaps, P2P trading, staking. Secure, open-source, audited." />
+    <meta name="author" content="PINC Platform" />
+    <meta name="theme-color" content="#0a0a0f" />
+    <meta name="keywords" content="pinc, decentralized, finance, wallet, sarai, platform, crypto, blockchain, defi, stablecoin, staking, p2p" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview-large, max-video-preview:-1" />
+    <link rel="preconnect" href="https://pinc.network" />
+    <link rel="preconnect" href="https://github.com" crossorigin />
+    <link rel="canonical" href="https://pinc.network/" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://pinc.network/" />
+    <meta property="og:title" content="PINC Platform — Decentralized Finance & Transactions" />
+    <meta property="og:description" content="SARAI Wallet: Multi-currency, cross-chain swaps, P2P trading, staking. Secure, open-source, audited." />
+    <meta property="og:image" content="https://pinc.network/assets/images/logo.svg" />
+    <meta property="og:site_name" content="PINC Platform" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://pinc.network/" />
+    <meta name="twitter:title" content="PINC Platform — Decentralized Finance & Transactions" />
+    <meta name="twitter:description" content="SARAI Wallet: Multi-currency, cross-chain swaps, P2P trading, staking. Secure, open-source, audited." />
+    <meta name="twitter:image" content="https://pinc.network/assets/images/logo.svg" />
+    <meta name="twitter:site" content="@PINCPlatform" />
+    
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "SARAI Wallet",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Android, Linux, Windows, macOS",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      },
+      "description": "Decentralized multi-currency wallet with cross-chain swaps, P2P trading, and staking.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "PINC Platform",
+        "url": "https://pinc.network"
+      }
+    }
+    </script>
+    
+    <title>PINC Platform — Decentralized Finance & Transactions</title>
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('sarai-theme');
+          var valid = ['dark-tech','cyber-wave','light-luxe','matrix-green'];
+          if (!t || valid.indexOf(t) === -1) {
+            try {
+              var raw = localStorage.getItem('pinc-settings');
+              if (raw) {
+                var p = JSON.parse(raw);
+                var st = p && p.state && p.state.settings && p.state.settings.appearance && p.state.settings.appearance.theme;
+                if (st && valid.indexOf(st) !== -1) t = st;
+              }
+            } catch(e) {}
+          }
+          if (!t || valid.indexOf(t) === -1) t = 'dark-tech';
+          document.documentElement.setAttribute('data-theme', t);
+          var bg = { 'dark-tech':'#0a0a0f', 'cyber-wave':'#080c1e', 'light-luxe':'#f5f5f7', 'matrix-green':'#0a1410' };
+          document.documentElement.style.background = bg[t] || '#0a0a0f';
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', bg[t] || '#0a0a0f');
+        } catch(e) {}
+      })();
+    </script>
+    <script>
+      window.onerror = function(msg, src, line, col, err) {
+        var el = document.getElementById('fatal-error');
+        if (el) { el.style.display='flex'; el.innerHTML='<div style="padding:2rem"><h2>SARAI — Render Error</h2><pre>'+msg+'\n'+src+':'+line+'</pre></div>'; }
+      };
+    </script>
+  </head>
+  <body style="margin:0;background:#0a0a0f">
+    <div id="fatal-error" style="display:none;position:fixed;inset:0;background:#0a0a0f;z-index:9999;align-items:center;justify-content:center;color:#ff4444"></div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <noscript style="color:#e2e8f0;padding:2rem;display:block">SARAI requires JavaScript — Powered by PINC Platform</noscript>
+  </body>
+</html>

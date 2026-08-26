@@ -6,9 +6,10 @@ import { useWebRTC, CallType } from './useWebRTC';
 interface CallPageProps {
   peerId: string;
   onEnd: () => void;
+  autoInitiate?: CallType;
 }
 
-export function CallPage({ peerId, onEnd }: CallPageProps) {
+export function CallPage({ peerId, onEnd, autoInitiate }: CallPageProps) {
   const {
     localStream,
     remoteStream,
@@ -52,6 +53,12 @@ export function CallPage({ peerId, onEnd }: CallPageProps) {
     }
     return () => clearInterval(interval);
   }, [isConnected]);
+
+  useEffect(() => {
+    if (autoInitiate && !isCalling && !isConnected && !isIncoming) {
+      initiateCall(autoInitiate);
+    }
+  }, []);
 
   const formatDuration = (seconds: number) => {
     const m = Math.floor(seconds / 60);

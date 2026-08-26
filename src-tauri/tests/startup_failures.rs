@@ -1,9 +1,11 @@
-use pinc_lib::core::{
-    crypto::{cipher::decrypt, cipher::EncryptedData, types::NonceType},
-    database::connection::open_test_db,
-    identity::{types::Identity, validator::validate_identity},
+use pinc_lib::{
+    core::{
+        crypto::{cipher::decrypt, cipher::EncryptedData, types::NonceType},
+        database::connection::open_test_db,
+        identity::{types::Identity, validator::validate_identity},
+        vault::encryptor::vault_decrypt,
+    },
     startup::startup_check,
-    vault::encryptor::vault_decrypt,
 };
 
 #[test]
@@ -58,6 +60,8 @@ fn identity_with_empty_id_fails_validation() {
         fingerprint: "f".to_string(),
         recovery_key_hash: "r".to_string(),
         recovery_phrase_hash: "rp".to_string(),
+        password_hash: "ph".to_string(),
+        username: "test".to_string(),
         created_at: 1700000000,
     };
     assert!(validate_identity(&bad).is_err());
@@ -73,6 +77,8 @@ fn identity_with_bad_node_id_fails_validation() {
         fingerprint: "f".to_string(),
         recovery_key_hash: "r".to_string(),
         recovery_phrase_hash: "rp".to_string(),
+        password_hash: "ph".to_string(),
+        username: "test".to_string(),
         created_at: 1700000000,
     };
     assert!(validate_identity(&bad).is_err());

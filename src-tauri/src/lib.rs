@@ -1,9 +1,14 @@
 #![allow(dead_code)]
 
+#[macro_use]
+mod log_macros;
 mod commands;
+pub mod config;
 pub mod core;
+pub mod engines;
 pub mod errors;
-mod startup;
+pub mod modules;
+pub mod startup;
 
 #[cfg(target_os = "android")]
 pub mod android;
@@ -28,6 +33,8 @@ pub fn run() {
         .format_timestamp_millis()
         .init();
 
+    let _ = config::secrets::validate_all();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_fs::init())
@@ -36,7 +43,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_deep_link::init())
-        .setup(|app| {
+        .setup(move |app| {
             let data_dir = app.path()
                 .app_data_dir()
                 .unwrap_or_else(|_| std::path::PathBuf::from("."));
@@ -98,6 +105,12 @@ pub fn run() {
                 Some(Arc::new(AsyncMutex::new(ws)))
             };
 
+            let node_id = core::database::queries::load_first_identity(&db)
+                .ok()
+                .flatten()
+                .map(|id| id.node_id)
+                .unwrap_or_else(|| "unknown".to_string());
+
             let db_arc = Arc::new(Mutex::new(db));
 
             app.manage(AppState {
@@ -117,6 +130,15 @@ pub fn run() {
                 p2p_network: Arc::new(core::p2p::P2PNetwork::new(p2p_registry)),
                 web_socket_server: web_socket_server.clone(),
                 vault_dir,
+                audit_log_engine: Arc::new(Mutex::new(engines::audit_log_engine::SqliteAuditLogEngine::new())),
+                starteran: Arc::new(Mutex::new(modules::starteran::StarteranEngine::new(
+                    &node_id,
+                    db_arc.clone(),
+                ))),
+                treific: Arc::new(Mutex::new(modules::treific::TreificEngine::new(
+                    &node_id,
+                    db_arc.clone(),
+                ))),
 
             });
 
@@ -166,6 +188,7 @@ pub fn run() {
             commands::cmd_get_identity,
             commands::cmd_create_identity,
             commands::cmd_recover_identity,
+            commands::cmd_verify_login,
             commands::cmd_get_node_status,
             commands::cmd_get_node_info,
             commands::cmd_list_vault,
@@ -179,6 +202,7 @@ pub fn run() {
             commands::cmd_reset_settings_section,
             commands::cmd_reset_all_settings,
             commands::cmd_apply_settings,
+            commands::cmd_get_mesh_analytics,
             commands::cmd_get_network_status,
             commands::cmd_get_peers,
             commands::cmd_get_nodes,
@@ -188,11 +212,8 @@ pub fn run() {
             commands::cmd_get_marketplace_stats,
             commands::cmd_get_messages,
             commands::cmd_send_message,
-            commands::cmd_get_wallet_balance,
-            commands::cmd_get_transactions,
             commands::cmd_transfer_tokens,
             commands::cmd_send_payment,
-            commands::cmd_get_wallet_history,
             commands::cmd_faucet_request,
             commands::cmd_create_escrow,
             commands::cmd_release_escrow,
@@ -210,8 +231,6 @@ pub fn run() {
             commands::cmd_join_tournament,
             commands::cmd_start_tournament,
             commands::cmd_end_tournament,
-            commands::cmd_get_tournaments,
-            commands::cmd_get_games,
             commands::cmd_save_game_progress,
             commands::cmd_get_game_progress,
             commands::cmd_get_user_game_stats,
@@ -305,7 +324,20 @@ pub fn run() {
             core::commands::cmd_add_contact,
             core::commands::cmd_list_contacts,
             core::commands::cmd_remove_contact,
+            core::commands::cmd_update_contact_service,
+            core::commands::cmd_generate_starteran_share_code,
+            core::commands::cmd_pinc_id_from_node_id,
             core::commands::cmd_search_users,
+            core::commands::cmd_get_forum_posts,
+            core::commands::cmd_create_forum_post,
+            core::commands::cmd_get_forum_comments,
+            core::commands::cmd_create_forum_comment,
+            core::commands::cmd_get_forum_profile,
+            core::commands::cmd_create_or_update_forum_profile,
+            core::commands::cmd_list_communities,
+            core::commands::cmd_create_community,
+            core::commands::cmd_join_community,
+            core::commands::cmd_leave_community,
             core::commands::cmd_list_challenges,
             core::commands::cmd_list_problems,
             core::commands::cmd_join_challenge,
@@ -313,6 +345,39 @@ pub fn run() {
             core::commands::cmd_list_rankings,
             core::commands::cmd_list_products,
             core::commands::cmd_buy_product,
+            core::commands::cmd_list_channels,
+            core::commands::cmd_create_channel,
+            core::commands::cmd_like_forum_post,
+            core::commands::cmd_jobs_create_job,
+            core::commands::cmd_jobs_apply_job,
+            core::commands::cmd_jobs_accept_application,
+            core::commands::cmd_jobs_reject_application,
+            core::commands::cmd_jobs_complete_job,
+            core::commands::cmd_get_my_jobs,
+            core::commands::cmd_get_jobs_stats,
+            core::commands::cmd_get_jobs_earnings,
+            core::commands::cmd_create_starteran_listing,
+            core::commands::cmd_list_starteran_listings,
+            core::commands::cmd_activate_starteran_sharing,
+
+            commands::cmd_logs_query,
+            commands::cmd_logs_export_csv,
+            commands::cmd_payment_trace,
+            commands::cmd_record_build_telemetry,
+            commands::cmd_get_build_telemetry,
+
+            modules::p2p_agents::commands::cmd_p2p_agent_list,
+            modules::p2p_agents::commands::cmd_p2p_agent_create,
+            modules::p2p_agents::commands::cmd_p2p_agent_update,
+            modules::p2p_agents::commands::cmd_p2p_agent_delete,
+            modules::p2p_agents::commands::cmd_p2p_agent_bind_channel,
+            modules::p2p_agents::commands::cmd_p2p_agent_unbind_channel,
+            modules::p2p_agents::commands::cmd_p2p_agent_bind_commlink,
+            modules::p2p_agents::commands::cmd_p2p_agent_unbind_commlink,
+            modules::p2p_agents::commands::cmd_p2p_agent_calc_quote,
+            modules::p2p_agents::commands::cmd_p2p_agent_initiate_deposit,
+            modules::p2p_agents::commands::cmd_p2p_agent_confirm_payment,
+            modules::p2p_agents::commands::cmd_p2p_agent_release_escrow,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PINC");

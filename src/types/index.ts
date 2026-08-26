@@ -224,7 +224,68 @@ export interface DeviceScanResult {
   security_status: string;
 }
 
-// ─── TREIFIC (Communication) ─────────────────────────────────────────────────
+// ─── CONTACTS ────────────────────────────────────────────────────────────────
+export interface Contact {
+  id: string;
+  contact_node_id: string;
+  contact_username: string;
+  nickname: string;
+  service_name: string;
+  share_code: string;
+  pinc_id: string;
+  status: string;
+  created_at: number;
+}
+
+// ─── FORUM (Anonymous public forum) ─────────────────────────────────────────
+export interface ForumPost {
+  id: string;
+  author_pinc_id: string;
+  display_name: string;
+  content: string;
+  post_type: string;
+  visibility: string;
+  like_count: number;
+  reply_count: number;
+  reply_to: string | null;
+  tags: string[];
+  encrypted: boolean;
+  created_at: number;
+  edited_at: number | null;
+}
+
+export interface ForumComment {
+  id: string;
+  post_id: string;
+  author_pinc_id: string;
+  display_name: string;
+  content: string;
+  like_count: number;
+  created_at: number;
+}
+
+export interface ForumProfile {
+  pinc_id: string;
+  handle: string;
+  display_name: string;
+  bio: string;
+  avatar_hash: string | null;
+  is_verified: boolean;
+  created_at: number;
+}
+
+// ─── COMMUNITIES ─────────────────────────────────────────────────────────────
+export interface Community {
+  id: string;
+  name: string;
+  type: 'public' | 'private' | 'gaming' | 'coding' | 'business';
+  member_ids: string[];
+  member_count: number;
+  description: string;
+  icon: string;
+  created_at: number;
+}
+
 export interface Conversation {
   id: string;
   name: string;

@@ -1,16 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAdminStore } from '../../store/adminStore';
 import { MessageSquare, Users, Hash, Trash2, Star, Ban, Eye } from 'lucide-react';
 
-const MOCK_COMMUNITIES = [
-  { id: '1', name: 'PINC General', members: 1247, activity: 'high', type: 'public' },
-  { id: '2', name: 'Dev Talk', members: 892, activity: 'medium', type: 'public' },
-  { id: '3', name: 'Marketplace', members: 2103, activity: 'high', type: 'public' },
-  { id: '4', name: 'Gaming Hub', members: 654, activity: 'low', type: 'public' },
-  { id: '5', name: 'Security Research', members: 234, activity: 'medium', type: 'private' },
-];
-
 export default function TreificAdminPage() {
+  const { treificCommunities, treificTrafficStats, loadTreificData, toggleCommunityFeature, freezeCommunity, removeCommunity } = useAdminStore();
   const [tab, setTab] = useState<'communities' | 'traffic'>('communities');
+
+  useEffect(() => {
+    loadTreificData();
+  }, []);
 
   return (
     <div style={{ padding: '1.25rem', maxWidth: 1100 }}>
@@ -45,7 +43,7 @@ export default function TreificAdminPage() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_COMMUNITIES.map(c => (
+              {treificCommunities.map(c => (
                 <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '0.5rem 0.75rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -64,9 +62,9 @@ export default function TreificAdminPage() {
                   <td style={{ padding: '0.5rem 0.75rem', color: c.type === 'private' ? 'var(--accent-yellow)' : 'var(--text-muted)', fontSize: '0.6rem' }}>{c.type}</td>
                   <td style={{ padding: '0.5rem 0.75rem' }}>
                     <div style={{ display: 'flex', gap: 4 }}>
-                      <button title="Feature" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-yellow)', cursor: 'pointer', padding: 3 }}><Star size={11} /></button>
-                      <button title="Freeze" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-blue)', cursor: 'pointer', padding: 3 }}><Ban size={11} /></button>
-                      <button title="Remove" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-red)', cursor: 'pointer', padding: 3 }}><Trash2 size={11} /></button>
+                      <button title="Feature" onClick={() => toggleCommunityFeature(c.id)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-yellow)', cursor: 'pointer', padding: 3 }}><Star size={11} /></button>
+                      <button title="Freeze" onClick={() => freezeCommunity(c.id)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-blue)', cursor: 'pointer', padding: 3 }}><Ban size={11} /></button>
+                      <button title="Remove" onClick={() => removeCommunity(c.id)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-red)', cursor: 'pointer', padding: 3 }}><Trash2 size={11} /></button>
                     </div>
                   </td>
                 </tr>
@@ -79,12 +77,12 @@ export default function TreificAdminPage() {
       {tab === 'traffic' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem' }}>
           {[
-            { label: 'MESSAGES/MIN', value: '1,247', color: 'var(--neon-cyan)' },
-            { label: 'VOICE ACTIVE', value: '23', color: 'var(--neon-green)' },
-            { label: 'VIDEO ACTIVE', value: '8', color: 'var(--accent-purple)' },
-            { label: 'FILE TRANSFERS', value: '15', color: 'var(--accent-orange)' },
-            { label: 'TOTAL DATA', value: '2.4 TB', color: 'var(--accent-yellow)' },
-            { label: 'ACTIVE CHATS', value: '892', color: 'var(--accent-blue)' },
+            { label: 'MESSAGES/MIN', value: treificTrafficStats.messages_per_minute.toLocaleString(), color: 'var(--neon-cyan)' },
+            { label: 'VOICE ACTIVE', value: String(treificTrafficStats.voice_active), color: 'var(--neon-green)' },
+            { label: 'VIDEO ACTIVE', value: String(treificTrafficStats.video_active), color: 'var(--accent-purple)' },
+            { label: 'FILE TRANSFERS', value: String(treificTrafficStats.file_transfers_active), color: 'var(--accent-orange)' },
+            { label: 'TOTAL DATA', value: `${treificTrafficStats.total_data_gb} GB`, color: 'var(--accent-yellow)' },
+            { label: 'ACTIVE CHATS', value: String(treificTrafficStats.active_chats), color: 'var(--accent-blue)' },
           ].map(s => (
             <div key={s.label} style={{
               background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8,

@@ -5,6 +5,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+#[derive(Clone)]
 pub struct PeerRegistry {
     peers: Arc<Mutex<HashMap<String, PeerInfo>>>,
 }

@@ -132,7 +132,7 @@ export function useWebRTC({ peerId, onCallEnd }: UseWebRTCProps) {
       
       await invoke('cmd_initiate_call', {
         peerId,
-        callType: type === 'Video' ? { Video: null } : { Voice: null },
+        callType: type.toLowerCase(),
         localOffer: offer.sdp
       });
     } catch (e) {
@@ -157,6 +157,7 @@ export function useWebRTC({ peerId, onCallEnd }: UseWebRTCProps) {
       
       await invoke('cmd_answer_call', {
         peerId,
+        offerSdp: storedOffer,
         remoteAnswer: answer.sdp
       });
       

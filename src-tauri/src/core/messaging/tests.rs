@@ -27,11 +27,13 @@ mod tests {
 
     #[test]
     fn test_encrypt_decrypt_roundtrip() {
-        let sender_key = [1u8; 32];
-        let recipient_key = [2u8; 32];
+        let (sender_priv, sender_pub) =
+            crate::core::messaging::encryption::generate_messaging_keypair();
+        let (recv_priv, recv_pub) =
+            crate::core::messaging::encryption::generate_messaging_keypair();
         let msg = b"hello secure world";
-        let enc = encrypt_message(msg, &sender_key, &recipient_key).unwrap();
-        let dec = decrypt_message(&enc, &recipient_key, &sender_key).unwrap();
+        let enc = encrypt_message(msg, &sender_priv, &recv_pub).unwrap();
+        let dec = decrypt_message(&enc, &recv_priv, &sender_pub).unwrap();
         assert_eq!(&dec, msg);
     }
 
@@ -83,11 +85,11 @@ mod tests {
 
     #[test]
     fn test_encrypt_produces_different_output_each_time() {
-        let k1 = [1u8; 32];
-        let k2 = [2u8; 32];
+        let (priv_a, pub_a) = crate::core::messaging::encryption::generate_messaging_keypair();
+        let (_, pub_b) = crate::core::messaging::encryption::generate_messaging_keypair();
         let msg = b"same message";
-        let enc1 = encrypt_message(msg, &k1, &k2).unwrap();
-        let enc2 = encrypt_message(msg, &k1, &k2).unwrap();
+        let enc1 = encrypt_message(msg, &priv_a, &pub_b).unwrap();
+        let enc2 = encrypt_message(msg, &priv_a, &pub_b).unwrap();
         assert_ne!(enc1, enc2); // nonce randomness
     }
 }

@@ -55,6 +55,15 @@ interface AppState {
   duels: DuelChallenge[];
   problems: ProblemPost[];
 
+  wagers: any[];
+  gameSessions: any[];
+  gameStats: any | null;
+  netShareStatus: any | null;
+  reputation: any | null;
+  aiAgents: any[];
+  leaderboard: any[];
+  homeLoading: boolean;
+
   refreshWallet: () => void;
   refreshStarteran: () => void;
   refreshRentbit: () => void;
@@ -64,6 +73,7 @@ interface AppState {
   refreshJobs: () => void;
   refreshOpenMaestro: () => void;
   refreshZeroFlipper: () => void;
+  refreshHomeStats: () => Promise<void>;
 
   refreshNodeStatus: () => void;
   refreshNetwork: () => void;
@@ -100,7 +110,7 @@ export const useAppStore = create<AppState>()(
       networkStatus: null,
       error: null,
 
-      activeTab: 'home',
+      activeTab: 'identity',
       setActiveTab: (tab) => set({ activeTab: tab }),
 
       role: 'user' as UserRole,
@@ -155,10 +165,23 @@ export const useAppStore = create<AppState>()(
       products: [],
       duels: [],
       problems: [],
+      wagers: [],
+      gameSessions: [],
+      gameStats: null,
+      netShareStatus: null,
+      reputation: null,
+      aiAgents: [],
+      leaderboard: [],
+      homeLoading: false,
 
       refreshWallet: async () => {
         try {
-          const balance = await invoke<WalletBalance>('cmd_get_wallet_balance');
+          const raw = await invoke<any>('cmd_get_wallet_balance');
+          const balance: WalletBalance = {
+            balance: raw.balance ?? 0,
+            pending: (raw.pending_deposits ?? 0) + (raw.pending_withdrawals ?? 0),
+            total_earned: raw.balance ?? 0,
+          };
           const txs = await invoke<Transaction[]>('cmd_get_transactions');
           set({ walletBalance: balance, transactions: txs });
         } catch {}
@@ -166,14 +189,14 @@ export const useAppStore = create<AppState>()(
 
       refreshStarteran: async () => {
         try {
-          const status = await invoke<StarteranStatus>('cmd_get_starteran_status');
+          const status = await invoke<any>('cmd_get_starteran_status');
           set({ starteranStatus: status });
         } catch {}
       },
 
       refreshRentbit: async () => {
         try {
-          const status = await invoke<RentbitStatus>('cmd_get_rentbit_status');
+          const status = await invoke<any>('cmd_get_rentbit_status');
           set({ rentbitStatus: status });
         } catch {}
       },
@@ -221,17 +244,96 @@ export const useAppStore = create<AppState>()(
 
       refreshZeroFlipper: async () => {
         try {
-          const products = await invoke<Product[]>('cmd_list_products').catch(() => []);
-          set({ products });
+          const [products, wagers, gameStats] = await Promise.all([
+            invoke<Product[]>('cmd_list_products').catch(() => []),
+            invoke<any[]>('cmd_get_wagers').catch(() => []),
+            invoke<any>('cmd_get_user_game_stats').catch(() => null),
+          ]);
+          set({ products, wagers, gameStats });
         } catch {}
       },
 
-      refreshNodeStatus: () => {},
-      refreshNetwork: () => {},
+      refreshHomeStats: async () => {
+        set({ homeLoading: true });
+        try {
+          const fetchedIdentity = await invoke<Identity>('cmd_get_identity').catch(() => null);
+
+          const [
+            walletRaw,
+            starteranStatus,
+            rentbitStatus,
+            conversations,
+            netShareStatus,
+          ] = await Promise.all([
+            invoke<any>('cmd_get_wallet_balance').catch(() => null),
+            invoke<any>('cmd_get_starteran_status').catch(() => null),
+            invoke<any>('cmd_get_rentbit_status').catch(() => null),
+            invoke<Conversation[]>('cmd_get_conversations').catch(() => []),
+            invoke<any>('cmd_get_net_share_status').catch(() => null),
+          ]);
+
+          const identity = fetchedIdentity !== null ? fetchedIdentity : get().identity;
+
+          let reputation: any = null;
+          if (identity?.node_id) {
+            reputation = await invoke<any>('cmd_get_reputation', { node_id: identity.node_id }).catch(() => null);
+          }
+
+          const walletBalance: WalletBalance | null = walletRaw
+            ? {
+                balance: walletRaw.balance ?? 0,
+                pending: (walletRaw.pending_deposits ?? 0) + (walletRaw.pending_withdrawals ?? 0),
+                total_earned: walletRaw.balance ?? 0,
+              }
+            : null;
+
+          set({
+            identity,
+            walletBalance,
+            starteranStatus,
+            rentbitStatus,
+            conversations: conversations || [],
+            netShareStatus,
+            reputation,
+            homeLoading: false,
+          });
+        } catch {
+          set({ homeLoading: false });
+        }
+      },
+
+      refreshNodeStatus: async () => {
+        try {
+          const status = await invoke<NodeStatus>('cmd_get_node_status');
+          set({ nodeStatus: status });
+        } catch {}
+      },
+      refreshNetwork: async () => {
+        try {
+          const ns = await invoke<NetworkStatus>('cmd_get_network_status');
+          set({ networkStatus: ns });
+        } catch {}
+      },
 
       initialize: () => {
-        setTimeout(() => {
-          set({ screen: 'login' });
+        setTimeout(async () => {
+          const state = get();
+          if (state.identity) {
+            set({ screen: 'dashboard', activeTab: 'identity' });
+            if (window.__TAURI__) {
+              try {
+                const existing = await invoke<Identity | null>('cmd_get_identity');
+                if (!existing && state.identity) {
+                  await invoke('cmd_create_identity', {
+                    masterKey: 'default_master_key',
+                    username: state.identity.username || 'QWEN',
+                  });
+                }
+              } catch {}
+            }
+          } else {
+            set({ screen: 'login' });
+          }
         }, 3000);
       },
     }),
@@ -240,7 +342,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         settings: state.settings,
         identity: state.identity,
-        screen: state.screen,
+        activeTab: state.activeTab,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<AppState>;
@@ -261,6 +363,11 @@ export const useAppStore = create<AppState>()(
             ai: { ...currentState.settings.ai, ...(persisted.settings.ai || {}) },
             backup: { ...currentState.settings.backup, ...(persisted.settings.backup || {}) },
           };
+        }
+        if (persisted?.identity) {
+          merged.screen = 'dashboard';
+        } else {
+          merged.screen = currentState.screen;
         }
         return merged;
       },

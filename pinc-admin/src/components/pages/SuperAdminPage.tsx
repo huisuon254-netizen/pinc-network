@@ -1,28 +1,18 @@
-import { useState } from 'react';
-import { Zap, Shield, Settings, ToggleLeft, ToggleRight, AlertTriangle, CheckCircle } from 'lucide-react';
-
-interface Feature {
-  id: string; name: string; enabled: boolean; description: string; requiresRestart: boolean;
-}
-
-const DEFAULT_FEATURES: Feature[] = [
-  { id: 'p2p_network', name: 'P2P Network', enabled: true, description: 'Peer-to-peer networking layer', requiresRestart: true },
-  { id: 'ghost_origin', name: 'Ghost Origin', enabled: true, description: 'Anonymous routing protection', requiresRestart: false },
-  { id: 'ai_agents', name: 'AI Agents', enabled: true, description: 'Machine learning inference', requiresRestart: true },
-  { id: 'wager_system', name: 'Wager System', enabled: true, description: 'Competitive gaming and betting', requiresRestart: false },
-  { id: 'rentbit_marketplace', name: 'RENTBIT Marketplace', enabled: true, description: 'Server rental marketplace', requiresRestart: false },
-  { id: 'starteran_sharing', name: 'STARTERAN Sharing', enabled: true, description: 'Bandwidth sharing network', requiresRestart: false },
-  { id: 'admin_panel', name: 'Admin Panel', enabled: true, description: 'This admin interface', requiresRestart: false },
-  { id: 'debug_mode', name: 'Debug Mode', enabled: false, description: 'Enable verbose logging', requiresRestart: false },
-];
+import { useState, useEffect } from 'react';
+import { useAdminStore } from '../../store/adminStore';
+import { Zap, Settings, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react';
 
 export default function SuperAdminPage() {
-  const [features, setFeatures] = useState(DEFAULT_FEATURES);
-  const [globalFees, setGlobalFees] = useState({ platform_fee: 2.5, escrow_fee: 2.5, listing_fee: 5.0 });
+  const { superAdminFeatures, globalFees, loadSuperAdminData, toggleFeature, applyGlobalChanges } = useAdminStore();
+  const [editableFees, setEditableFees] = useState(globalFees);
 
-  const toggleFeature = (id: string) => {
-    setFeatures(prev => prev.map(f => f.id === id ? { ...f, enabled: !f.enabled } : f));
-  };
+  useEffect(() => {
+    loadSuperAdminData();
+  }, []);
+
+  useEffect(() => {
+    setEditableFees(globalFees);
+  }, [globalFees]);
 
   return (
     <div style={{ padding: '1.25rem', maxWidth: 1100 }}>
@@ -31,7 +21,6 @@ export default function SuperAdminPage() {
         <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: 2 }}>Highest-level platform configuration</p>
       </div>
 
-      {/* Warning */}
       <div style={{
         background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)',
         borderRadius: 8, padding: '0.6rem 0.85rem', marginBottom: '1rem',
@@ -41,7 +30,6 @@ export default function SuperAdminPage() {
         <span style={{ fontSize: '0.65rem', color: 'var(--accent-red)' }}>Changes here affect the entire platform. All actions are logged.</span>
       </div>
 
-      {/* Feature Flags */}
       <div style={{
         background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8,
         padding: '1rem', marginBottom: '1rem',
@@ -50,7 +38,7 @@ export default function SuperAdminPage() {
           <Zap size={14} /> FEATURE FLAGS
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
-          {features.map(f => (
+          {superAdminFeatures.map(f => (
             <div key={f.id} style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '0.5rem 0.75rem',
               background: 'var(--bg-tertiary)', borderRadius: 6,
@@ -72,7 +60,6 @@ export default function SuperAdminPage() {
         </div>
       </div>
 
-      {/* Global Fee Configuration */}
       <div style={{
         background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8,
         padding: '1rem',
@@ -91,8 +78,8 @@ export default function SuperAdminPage() {
             }}>
               <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginBottom: 4 }}>{f.label}</div>
               <input type="number" step="0.1" min="0" max="50"
-                value={(globalFees as any)[f.key]}
-                onChange={e => setGlobalFees(prev => ({ ...prev, [f.key]: parseFloat(e.target.value) || 0 }))}
+                value={(editableFees as any)[f.key]}
+                onChange={e => setEditableFees(prev => ({ ...prev, [f.key]: parseFloat(e.target.value) || 0 }))}
                 style={{
                   width: '100%', padding: '0.4rem', background: 'var(--bg-secondary)',
                   border: '1px solid var(--border)', borderRadius: 4, color: 'var(--accent-yellow)',
@@ -101,7 +88,7 @@ export default function SuperAdminPage() {
             </div>
           ))}
         </div>
-        <button style={{
+        <button onClick={() => applyGlobalChanges(editableFees.platform_fee, editableFees.escrow_fee, editableFees.listing_fee)} style={{
           marginTop: '0.75rem', padding: '0.4rem 1rem', background: 'rgba(239,68,68,0.1)',
           border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, color: 'var(--accent-red)',
           cursor: 'pointer', fontSize: '0.65rem', fontWeight: 600,

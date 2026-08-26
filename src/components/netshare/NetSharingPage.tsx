@@ -7,6 +7,8 @@ import {
   Scan, X, RefreshCw, ArrowRight, Zap
 } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
+import { CallPage } from '../messages/CallPage';
+import netshareIcon from '../../assets/brand/netshare_icon.jpg';
 
 interface PairingCodeData {
   code: string;
@@ -68,7 +70,7 @@ export default function NetSharingPage() {
 
   useEffect(() => {
     loadConnections();
-    invoke<boolean>('cmd_get_net_share_status').then(s => setSharingActive(s)).catch(() => {});
+    invoke<{ sharing: boolean }>('cmd_get_net_share_status').then(s => setSharingActive(s.sharing)).catch(() => {});
   }, []);
 
   const generateCode = async () => {
@@ -100,9 +102,18 @@ export default function NetSharingPage() {
     setLoading(true);
     setError(null);
     try {
-      const conn = await invoke<SharedConnection>('cmd_connect_with_code', { code: codeInput.trim() });
-      setConnections(prev => [...prev, conn]);
-      setSelectedPeer(conn.peer_node_id);
+      const res = await invoke<{ connected: boolean; peer_id: string }>('cmd_connect_with_code', { code: codeInput.trim() });
+      if (!res.connected) { setError('Failed to connect'); setLoading(false); return; }
+      const fakeConn: SharedConnection = {
+        id: `conn-${Date.now()}`,
+        peer_node_id: res.peer_id,
+        peer_address: '',
+        connected_at: Math.floor(Date.now() / 1000),
+        messages_exchanged: 0,
+        active: true,
+      };
+      setConnections(prev => [...prev, fakeConn]);
+      setSelectedPeer(res.peer_id);
       setTab('chat');
       setCodeInput('');
       loadConnections();
@@ -114,10 +125,12 @@ export default function NetSharingPage() {
   };
 
   const disconnect = async (connId: string) => {
+    const conn = connections.find(c => c.id === connId);
+    if (!conn) return;
     try {
-      await invoke('cmd_disconnect_shared', { connectionId: connId });
+      await invoke('cmd_disconnect_shared', { peerId: conn.peer_node_id });
       setConnections(prev => prev.filter(c => c.id !== connId));
-      if (selectedPeer === connections.find(c => c.id === connId)?.peer_node_id) {
+      if (selectedPeer === conn.peer_node_id) {
         setSelectedPeer(null);
         setTab('connections');
       }
@@ -175,6 +188,11 @@ export default function NetSharingPage() {
       <div style={{ width: 260, borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>
+            <img
+              src={netshareIcon}
+              alt="Net Share"
+              style={{ width: 18, height: 18, borderRadius: 4, objectFit: 'cover', verticalAlign: 'middle', marginRight: 6 }}
+            />
             NET SHARING <span className="badge badge-info" style={{ marginLeft: 8 }}>PHASE 16</span>
           </div>
         </div>
@@ -245,7 +263,11 @@ export default function NetSharingPage() {
                     </div>
                   </div>
                   <button className={`pinc-btn ${sharingActive ? 'pinc-btn-danger' : 'pinc-btn-primary'}`}
-                    onClick={() => setSharingActive(!sharingActive)} style={{ fontSize: '0.72rem' }}>
+                    onClick={async () => {
+                      const next = !sharingActive;
+                      try { await invoke('cmd_toggle_net_share', { enabled: next }); setSharingActive(next); }
+                      catch (e) { setError(String(e)); }
+                    }} style={{ fontSize: '0.72rem' }}>
                     {sharingActive ? 'Stop' : 'Start'}
                   </button>
                 </div>
@@ -437,45 +459,14 @@ export default function NetSharingPage() {
 
               {/* Call overlay */}
               <AnimatePresence>
-                {callActive && (
-                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                    style={{
-                      position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)',
-                      background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12,
-                      padding: '2rem', textAlign: 'center', zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                      minWidth: 280,
-                    }}>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                      {callType === 'voice' ? 'VOICE CALL' : 'VIDEO CALL'}
-                    </div>
-                    <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: 'var(--neon-cyan)', marginBottom: '1rem' }}>
-                      {selectedPeer?.slice(0, 16)}...
-                    </div>
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      {callType === 'video' ? (
-                        <div style={{
-                          width: 200, height: 150, background: 'var(--bg-secondary)', borderRadius: 8,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          border: '1px solid var(--border)',
-                        }}>
-                          <Video size={32} style={{ color: 'var(--text-muted)' }} />
-                        </div>
-                      ) : (
-                        <div style={{
-                          width: 80, height: 80, borderRadius: '50%', background: 'var(--bg-secondary)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          margin: '0 auto', border: '2px solid var(--neon-green)',
-                        }}>
-                          <Phone size={24} style={{ color: 'var(--neon-green)' }} />
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-                      <button className="pinc-btn" style={{ background: 'rgba(255,68,68,0.2)', color: 'var(--neon-red)', borderColor: 'var(--neon-red)' }}
-                        onClick={endCall}>
-                        <X size={14} /> End Call
-                      </button>
-                    </div>
+                {callActive && selectedPeer && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#000' }}>
+                    <CallPage
+                      peerId={selectedPeer}
+                      onEnd={endCall}
+                      autoInitiate={callType === 'video' ? 'Video' : 'Voice'}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>

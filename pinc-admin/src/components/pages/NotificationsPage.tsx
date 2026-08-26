@@ -1,17 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, Send, Users, Crown, Server, Wifi, Plus } from 'lucide-react';
-
-interface Notification {
-  id: string; title: string; message: string; target: string; sent_at: string; status: string;
-}
-
-const MOCK_SENT: Notification[] = [
-  { id: '1', title: 'Scheduled Maintenance', message: 'Platform will be down for 30 minutes.', target: 'all', sent_at: '2026-06-25 14:00', status: 'delivered' },
-  { id: '2', title: 'New Tournament', message: 'Weekly tournament starts Friday!', target: 'all', sent_at: '2026-06-24 10:00', status: 'delivered' },
-  { id: '3', title: 'Security Update', message: 'Please update your recovery codes.', target: 'premium', sent_at: '2026-06-23 09:00', status: 'delivered' },
-];
+import { useAdminStore } from '../../store/adminStore';
 
 export default function NotificationsPage() {
+  const notificationHistory = useAdminStore(s => s.notificationHistory);
+  const loadNotificationHistory = useAdminStore(s => s.loadNotificationHistory);
+  const sendNotification = useAdminStore(s => s.sendNotification);
+
+  useEffect(() => { loadNotificationHistory(); }, [loadNotificationHistory]);
+
   const [showCompose, setShowCompose] = useState(false);
   const [newNotif, setNewNotif] = useState({ title: '', message: '', target: 'all' });
 
@@ -21,6 +18,13 @@ export default function NotificationsPage() {
     { value: 'hosts', label: 'RENTBIT Hosts', icon: <Server size={12} /> },
     { value: 'providers', label: 'STARTERAN Providers', icon: <Wifi size={12} /> },
   ];
+
+  const handleSend = async () => {
+    if (!newNotif.title || !newNotif.message) return;
+    await sendNotification(newNotif.title, newNotif.message, newNotif.target);
+    setNewNotif({ title: '', message: '', target: 'all' });
+    setShowCompose(false);
+  };
 
   return (
     <div style={{ padding: '1.25rem', maxWidth: 1100 }}>
@@ -67,7 +71,7 @@ export default function NotificationsPage() {
               </button>
             ))}
           </div>
-          <button style={{
+          <button onClick={handleSend} style={{
             padding: '0.4rem 1rem', background: 'var(--accent-blue)', border: 'none',
             borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 600,
             display: 'flex', alignItems: 'center', gap: 5,
@@ -85,7 +89,7 @@ export default function NotificationsPage() {
         <div style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid var(--border)', fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-primary)' }}>
           SENT NOTIFICATIONS
         </div>
-        {MOCK_SENT.map(n => (
+        {notificationHistory.map(n => (
           <div key={n.id} style={{
             padding: '0.6rem 0.75rem', borderBottom: '1px solid var(--border)',
           }}>

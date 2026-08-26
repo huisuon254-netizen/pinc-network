@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { invoke } from '@tauri-apps/api/core';
 import {
   Code2, Shield, Brain, Palette, Database, Server,
   AlertTriangle, Swords, Trophy, Terminal,
   Clock, Users, DollarSign, Target, Zap, Lock,
-  Globe, MapPin, Calendar, Star, ChevronRight,
-  Play, Trophy as TrophyIcon, Crown, Medal
+  Globe, MapPin, ChevronRight,
+  Play, Crown, Medal, Loader2, AlertCircle, Inbox
 } from 'lucide-react';
 
 interface Challenge {
@@ -31,11 +32,19 @@ interface ProblemMarketItem {
 interface DuelItem {
   id: number;
   type: string;
-  icon: React.ReactNode;
   players: number;
   entryFee: string;
   prizePool: string;
   description: string;
+}
+
+interface RankingItem {
+  rank: number;
+  name: string;
+  country: string;
+  score: number;
+  challenges_completed: number;
+  win_rate: number;
 }
 
 const tabs = [
@@ -51,129 +60,22 @@ const tabs = [
   { id: 'envs', label: 'Environments', icon: <Terminal size={18} /> },
 ];
 
-const codingChallenges: Challenge[] = [
-  { id: 1, title: 'RESTful API Design', category: 'API', difficulty: 'Medium', reward: '$250', participants: 128, timeLimit: '4h' },
-  { id: 2, title: 'Real-time Dashboard', category: 'Dashboard', difficulty: 'Hard', reward: '$500', participants: 89, timeLimit: '8h' },
-  { id: 3, title: 'Fix Memory Leak', category: 'Bug Fix', difficulty: 'Medium', reward: '$150', participants: 203, timeLimit: '2h' },
-  { id: 4, title: 'Optimize SQL Queries', category: 'Database', difficulty: 'Hard', reward: '$350', participants: 67, timeLimit: '5h' },
-  { id: 5, title: 'Concurrent Web Server', category: 'Rust', difficulty: 'Hard', reward: '$600', participants: 45, timeLimit: '10h' },
-  { id: 6, title: 'Component Library', category: 'React', difficulty: 'Medium', reward: '$300', participants: 156, timeLimit: '6h' },
-  { id: 7, title: 'Type-safe Forms', category: 'TypeScript', difficulty: 'Easy', reward: '$100', participants: 312, timeLimit: '2h' },
-  { id: 8, title: 'WebSocket Server', category: 'NodeJS', difficulty: 'Medium', reward: '$200', participants: 178, timeLimit: '4h' },
-  { id: 9, title: 'ERC-721 Marketplace', category: 'Blockchain', difficulty: 'Hard', reward: '$800', participants: 34, timeLimit: '12h' },
-  { id: 10, title: 'DeFi Staking Contract', category: 'Smart Contract', difficulty: 'Hard', reward: '$750', participants: 52, timeLimit: '10h' },
-  { id: 11, title: 'GraphQL Gateway', category: 'API', difficulty: 'Medium', reward: '$275', participants: 98, timeLimit: '5h' },
-  { id: 12, title: 'CLI Task Runner', category: 'NodeJS', difficulty: 'Easy', reward: '$125', participants: 245, timeLimit: '3h' },
-];
+const categoryTabMap: Record<string, string> = {
+  coding: 'Coding',
+  cyber: 'Security',
+  ai: 'AI',
+  design: 'Design',
+  data: 'Data',
+  infra: 'Infrastructure',
+};
 
-const cyberChallenges: Challenge[] = [
-  { id: 1, title: 'Web Exploitation CTF', category: 'CTF', difficulty: 'Medium', reward: '$300', participants: 234, timeLimit: '6h' },
-  { id: 2, title: 'Binary Crackme', category: 'Reverse Engineering', difficulty: 'Hard', reward: '$450', participants: 87, timeLimit: '8h' },
-  { id: 3, title: 'Analyze Malware Sample', category: 'Malware Analysis', difficulty: 'Hard', reward: '$500', participants: 56, timeLimit: '10h' },
-  { id: 4, title: 'OSINT Investigation', category: 'OSINT', difficulty: 'Medium', reward: '$200', participants: 178, timeLimit: '4h' },
-  { id: 5, title: 'Memory Forensics', category: 'Forensics', difficulty: 'Hard', reward: '$400', participants: 67, timeLimit: '6h' },
-  { id: 6, title: 'Packet Analysis', category: 'Network Security', difficulty: 'Medium', reward: '$250', participants: 145, timeLimit: '5h' },
-  { id: 7, title: 'Web App Pentest', category: 'Pen Testing', difficulty: 'Medium', reward: '$350', participants: 112, timeLimit: '7h' },
-  { id: 8, title: 'RSA Challenge', category: 'Cryptography', difficulty: 'Hard', reward: '$550', participants: 43, timeLimit: '8h' },
-  { id: 9, title: 'APT Detection', category: 'Threat Hunting', difficulty: 'Hard', reward: '$600', participants: 38, timeLimit: '12h' },
-  { id: 10, title: 'Incident Response', category: 'Incident Response', difficulty: 'Medium', reward: '$300', participants: 89, timeLimit: '4h' },
-  { id: 11, title: 'Steganography Puzzle', category: 'Forensics', difficulty: 'Easy', reward: '$150', participants: 267, timeLimit: '3h' },
-  { id: 12, title: 'Buffer Overflow', category: 'Reverse Engineering', difficulty: 'Hard', reward: '$475', participants: 54, timeLimit: '6h' },
-];
-
-const aiChallenges: Challenge[] = [
-  { id: 1, title: 'Customer Service Bot', category: 'Chatbot', difficulty: 'Medium', reward: '$300', participants: 156, timeLimit: '6h' },
-  { id: 2, title: 'Fine-tune LLaMA', category: 'Fine Tune Model', difficulty: 'Hard', reward: '$500', participants: 78, timeLimit: '10h' },
-  { id: 3, title: 'Prompt Engineering', category: 'Prompt Engineering', difficulty: 'Easy', reward: '$150', participants: 345, timeLimit: '3h' },
-  { id: 4, title: 'Autonomous Agent', category: 'AI Agent', difficulty: 'Hard', reward: '$600', participants: 45, timeLimit: '12h' },
-  { id: 5, title: 'Workflow Automation', category: 'AI Automation', difficulty: 'Medium', reward: '$250', participants: 189, timeLimit: '5h' },
-  { id: 6, title: 'RAG Pipeline', category: 'RAG Systems', difficulty: 'Hard', reward: '$450', participants: 67, timeLimit: '8h' },
-  { id: 7, title: 'Object Detection', category: 'Computer Vision', difficulty: 'Hard', reward: '$550', participants: 54, timeLimit: '10h' },
-  { id: 8, title: 'Speech-to-Text', category: 'Speech Recognition', difficulty: 'Medium', reward: '$350', participants: 98, timeLimit: '7h' },
-  { id: 9, title: 'Image Classifier', category: 'Computer Vision', difficulty: 'Medium', reward: '$275', participants: 123, timeLimit: '5h' },
-  { id: 10, title: 'Sentiment Analyzer', category: 'NLP', difficulty: 'Easy', reward: '$175', participants: 234, timeLimit: '3h' },
-  { id: 11, title: 'Multi-Agent System', category: 'AI Agent', difficulty: 'Hard', reward: '$700', participants: 34, timeLimit: '14h' },
-  { id: 12, title: 'Embeddings Search', category: 'RAG Systems', difficulty: 'Medium', reward: '$300', participants: 87, timeLimit: '6h' },
-];
-
-const designChallenges: Challenge[] = [
-  { id: 1, title: 'Tech Startup Logo', category: 'Logo', difficulty: 'Medium', reward: '$200', participants: 234, timeLimit: '4h' },
-  { id: 2, title: 'Mobile App UI Kit', category: 'UI', difficulty: 'Hard', reward: '$450', participants: 89, timeLimit: '8h' },
-  { id: 3, title: 'E-commerce UX Audit', category: 'UX', difficulty: 'Medium', reward: '$300', participants: 112, timeLimit: '6h' },
-  { id: 4, title: 'SaaS Dashboard', category: 'App', difficulty: 'Hard', reward: '$500', participants: 67, timeLimit: '10h' },
-  { id: 5, title: 'Product Visualization', category: '3D Modeling', difficulty: 'Hard', reward: '$600', participants: 34, timeLimit: '12h' },
-  { id: 6, title: 'Logo Animation', category: 'Animation', difficulty: 'Medium', reward: '$250', participants: 145, timeLimit: '5h' },
-  { id: 7, title: 'Brand Identity System', category: 'Branding', difficulty: 'Hard', reward: '$400', participants: 56, timeLimit: '8h' },
-  { id: 8, title: 'Product Design Sprint', category: 'Product Design', difficulty: 'Medium', reward: '$350', participants: 78, timeLimit: '7h' },
-  { id: 9, title: 'Icon Set Creation', category: 'UI', difficulty: 'Easy', reward: '$150', participants: 289, timeLimit: '3h' },
-  { id: 10, title: 'Landing Page Redesign', category: 'UX', difficulty: 'Medium', reward: '$225', participants: 167, timeLimit: '5h' },
-  { id: 11, title: 'Motion Graphics', category: 'Animation', difficulty: 'Hard', reward: '$500', participants: 43, timeLimit: '9h' },
-  { id: 12, title: 'Mobile App Mockup', category: 'App', difficulty: 'Easy', reward: '$175', participants: 198, timeLimit: '4h' },
-];
-
-const dataChallenges: Challenge[] = [
-  { id: 1, title: 'Clean Messy Dataset', category: 'Data Cleaning', difficulty: 'Medium', reward: '$200', participants: 189, timeLimit: '5h' },
-  { id: 2, title: 'Sales Dashboard', category: 'Visualization', difficulty: 'Medium', reward: '$275', participants: 134, timeLimit: '6h' },
-  { id: 3, title: 'Customer Analytics', category: 'Analytics', difficulty: 'Hard', reward: '$400', participants: 67, timeLimit: '8h' },
-  { id: 4, title: 'Predictive Model', category: 'Machine Learning', difficulty: 'Hard', reward: '$550', participants: 45, timeLimit: '10h' },
-  { id: 5, title: 'Demand Forecasting', category: 'Forecasting', difficulty: 'Medium', reward: '$300', participants: 89, timeLimit: '7h' },
-  { id: 6, title: 'Market Research', category: 'Research', difficulty: 'Medium', reward: '$225', participants: 156, timeLimit: '5h' },
-  { id: 7, title: 'Time Series Analysis', category: 'Machine Learning', difficulty: 'Hard', reward: '$450', participants: 56, timeLimit: '9h' },
-  { id: 8, title: 'AB Test Analysis', category: 'Analytics', difficulty: 'Easy', reward: '$150', participants: 234, timeLimit: '3h' },
-  { id: 9, title: 'Data Pipeline Build', category: 'Data Cleaning', difficulty: 'Hard', reward: '$500', participants: 43, timeLimit: '10h' },
-  { id: 10, title: 'Geospatial Viz', category: 'Visualization', difficulty: 'Medium', reward: '$275', participants: 112, timeLimit: '6h' },
-  { id: 11, title: 'Churn Prediction', category: 'Machine Learning', difficulty: 'Medium', reward: '$350', participants: 78, timeLimit: '7h' },
-  { id: 12, title: 'Report Automation', category: 'Analytics', difficulty: 'Easy', reward: '$125', participants: 289, timeLimit: '3h' },
-];
-
-const infraChallenges: Challenge[] = [
-  { id: 1, title: 'Restore Web Server', category: 'Server Recovery', difficulty: 'Hard', reward: '$500', participants: 56, timeLimit: '4h' },
-  { id: 2, title: 'Database Restore', category: 'Database Recovery', difficulty: 'Hard', reward: '$600', participants: 34, timeLimit: '6h' },
-  { id: 3, title: 'Speed Optimization', category: 'Site Optimization', difficulty: 'Medium', reward: '$300', participants: 123, timeLimit: '5h' },
-  { id: 4, title: 'Load Balancer Setup', category: 'Load Balancing', difficulty: 'Medium', reward: '$350', participants: 89, timeLimit: '6h' },
-  { id: 5, title: 'K8s Cluster Deploy', category: 'Kubernetes', difficulty: 'Hard', reward: '$550', participants: 45, timeLimit: '8h' },
-  { id: 6, title: 'Docker Compose Stack', category: 'Docker', difficulty: 'Medium', reward: '$250', participants: 167, timeLimit: '4h' },
-  { id: 7, title: 'Linux Server Hardening', category: 'Linux Admin', difficulty: 'Medium', reward: '$300', participants: 98, timeLimit: '5h' },
-  { id: 8, title: 'CI/CD Pipeline', category: 'Docker', difficulty: 'Medium', reward: '$275', participants: 134, timeLimit: '5h' },
-  { id: 9, title: 'Disaster Recovery', category: 'Server Recovery', difficulty: 'Hard', reward: '$700', participants: 28, timeLimit: '10h' },
-  { id: 10, title: 'K8s Service Mesh', category: 'Kubernetes', difficulty: 'Hard', reward: '$600', participants: 34, timeLimit: '9h' },
-  { id: 11, title: 'Nginx Configuration', category: 'Linux Admin', difficulty: 'Easy', reward: '$150', participants: 245, timeLimit: '3h' },
-  { id: 12, title: 'Auto-scaling Setup', category: 'Load Balancing', difficulty: 'Hard', reward: '$450', participants: 56, timeLimit: '7h' },
-];
-
-const problemMarket: ProblemMarketItem[] = [
-  { id: 1, company: 'FinTech Corp', problem: 'Payment processing downtime - critical', reward: '$1,000', status: 'Critical', timeRemaining: '2h 15m', category: 'Backend' },
-  { id: 2, company: 'HealthTech Inc', problem: 'Patient data sync failure', reward: '$750', status: 'Urgent', timeRemaining: '4h 30m', category: 'Database' },
-  { id: 3, company: 'E-Shop Global', problem: 'Checkout cart bug - losing sales', reward: '$500', status: 'Urgent', timeRemaining: '6h', category: 'Frontend' },
-  { id: 4, company: 'CryptoWallet', problem: 'Transaction validation stuck', reward: '$1,000', status: 'Critical', timeRemaining: '1h 45m', category: 'Blockchain' },
-  { id: 5, company: 'SaaS Platform', problem: 'API rate limiting not working', reward: '$400', status: 'Open', timeRemaining: '12h', category: 'API' },
-  { id: 6, company: 'GameStudio', problem: 'Multiplayer latency issues', reward: '$600', status: 'Urgent', timeRemaining: '5h', category: 'Networking' },
-  { id: 7, company: 'DataLake Corp', problem: 'ETL pipeline corrupted', reward: '$800', status: 'Critical', timeRemaining: '3h', category: 'Data' },
-  { id: 8, company: 'MobileFirst', problem: 'iOS crash on startup', reward: '$350', status: 'Open', timeRemaining: '18h', category: 'Mobile' },
-  { id: 9, company: 'CloudHost', problem: 'Server memory leak', reward: '$500', status: 'Urgent', timeRemaining: '7h', category: 'Infrastructure' },
-  { id: 10, company: 'AI Startup', problem: 'Model inference too slow', reward: '$450', status: 'Open', timeRemaining: '24h', category: 'AI/ML' },
-];
-
-const duels: DuelItem[] = [
-  { id: 1, type: 'Coding Duel', icon: <Code2 size={24} />, players: 1247, entryFee: '$5', prizePool: '$10', description: 'Race to solve coding problems. First to finish wins.' },
-  { id: 2, type: 'Chess Duel', icon: <Target size={24} />, players: 856, entryFee: '$5', prizePool: '$10', description: 'Classic chess with time controls. Best of 3 games.' },
-  { id: 3, type: 'AI Duel', icon: <Brain size={24} />, players: 623, entryFee: '$5', prizePool: '$10', description: 'Build the best AI model for a given task.' },
-  { id: 4, type: 'Security Duel', icon: <Lock size={24} />, players: 445, entryFee: '$5', prizePool: '$10', description: 'Hack and defend in this cyber battle.' },
-  { id: 5, type: 'Design Duel', icon: <Palette size={24} />, players: 389, entryFee: '$5', prizePool: '$10', description: 'Create the best design in limited time.' },
-];
-
-const rankings = [
-  { rank: 1, name: 'Sarah Chen', country: 'US', score: 12450, challenges: 89, avatar: 'SC' },
-  { rank: 2, name: 'Akira Tanaka', country: 'JP', score: 11890, challenges: 76, avatar: 'AT' },
-  { rank: 3, name: 'Pierre Dupont', country: 'FR', score: 11230, challenges: 82, avatar: 'PD' },
-  { rank: 4, name: 'Maria Garcia', country: 'ES', score: 10870, challenges: 71, avatar: 'MG' },
-  { rank: 5, name: 'Alex Petrov', country: 'RU', score: 10450, challenges: 68, avatar: 'AP' },
-  { rank: 6, name: 'Priya Sharma', country: 'IN', score: 10120, challenges: 65, avatar: 'PS' },
-  { rank: 7, name: 'John Wilson', country: 'UK', score: 9890, challenges: 62, avatar: 'JW' },
-  { rank: 8, name: 'Lisa Mueller', country: 'DE', score: 9560, challenges: 59, avatar: 'LM' },
-  { rank: 9, name: 'Carlos Ruiz', country: 'MX', score: 9230, challenges: 55, avatar: 'CR' },
-  { rank: 10, name: 'Emma Johnson', country: 'AU', score: 8970, challenges: 52, avatar: 'EJ' },
-];
+const duelIcons: Record<string, React.ReactNode> = {
+  'Coding Duel': <Code2 size={24} />,
+  'Chess Duel': <Target size={24} />,
+  'AI Duel': <Brain size={24} />,
+  'Security Duel': <Lock size={24} />,
+  'Design Duel': <Palette size={24} />,
+};
 
 const environments = [
   { category: 'Linux', items: ['Ubuntu 22.04', 'Fedora 38', 'Debian 12', 'Arch Linux'], icon: <Terminal size={20} />, color: '#f59e0b' },
@@ -194,320 +96,592 @@ const statusColor: Record<string, string> = {
   Critical: '#ef4444',
 };
 
+function formatNumber(n: number): string {
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
+}
+
+function EmptyState({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+      <div style={{
+        width: 64, height: 64, borderRadius: '50%',
+        background: 'rgba(168,85,247,0.06)', border: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        margin: '0 auto 1.5rem', color: 'var(--text-muted)',
+      }}>
+        {icon}
+      </div>
+      <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{title}</div>
+      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: '320px', margin: '0 auto', lineHeight: 1.6 }}>
+        {description}
+      </div>
+    </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '4rem 0' }}>
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+        style={{ color: 'var(--accent-purple)' }}
+      >
+        <Loader2 size={36} />
+      </motion.div>
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+      <div style={{
+        width: 64, height: 64, borderRadius: '50%',
+        background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        margin: '0 auto 1.5rem', color: '#ef4444',
+      }}>
+        <AlertCircle size={28} />
+      </div>
+      <div style={{ fontSize: '0.9rem', color: '#ef4444', marginBottom: '0.5rem' }}>Failed to load data</div>
+      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>
+        {message}
+      </div>
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={onRetry}
+        style={{
+          background: 'var(--accent-purple)',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '8px',
+          padding: '10px 20px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: 600,
+        }}
+      >
+        Try Again
+      </motion.button>
+    </div>
+  );
+}
+
+function parseRewardValue(reward: string | number | undefined | null): number {
+  if (reward == null) return 0;
+  if (typeof reward === 'number') return reward;
+  const cleaned = reward.replace(/[$,]/g, '');
+  const val = parseFloat(cleaned);
+  return isNaN(val) ? 0 : val;
+}
+
 const OpenMaestroPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('coding');
   const [rankingFilter, setRankingFilter] = useState('Global');
 
-  const renderChallengeCards = (challenges: Challenge[]) => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-      {challenges.map((challenge, index) => (
-        <motion.div
-          key={challenge.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05 }}
-          style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border)',
-            borderRadius: '12px',
-            padding: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600 }}>{challenge.title}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>{challenge.category}</div>
-            </div>
-            <span style={{
-              background: difficultyColor[challenge.difficulty] + '20',
-              color: difficultyColor[challenge.difficulty],
-              padding: '4px 10px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 600,
-            }}>
-              {challenge.difficulty}
-            </span>
-          </div>
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-green)', fontSize: '13px' }}>
-              <DollarSign size={14} /> {challenge.reward}
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '13px' }}>
-              <Users size={14} /> {challenge.participants}
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '13px' }}>
-              <Clock size={14} /> {challenge.timeLimit}
-            </span>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+  const [codingChallenges, setCodingChallenges] = useState<Challenge[]>([]);
+  const [cyberChallenges, setCyberChallenges] = useState<Challenge[]>([]);
+  const [aiChallenges, setAiChallenges] = useState<Challenge[]>([]);
+  const [designChallenges, setDesignChallenges] = useState<Challenge[]>([]);
+  const [dataChallenges, setDataChallenges] = useState<Challenge[]>([]);
+  const [infraChallenges, setInfraChallenges] = useState<Challenge[]>([]);
+  const [problemMarket, setProblemMarket] = useState<ProblemMarketItem[]>([]);
+  const [duels, setDuels] = useState<DuelItem[]>([]);
+  const [rankings, setRankings] = useState<RankingItem[]>([]);
+
+  const [loadingChallenges, setLoadingChallenges] = useState<Record<string, boolean>>({});
+  const [loadingMarket, setLoadingMarket] = useState(false);
+  const [loadingDuels, setLoadingDuels] = useState(false);
+  const [loadingRankings, setLoadingRankings] = useState(false);
+
+  const [errorChallenges, setErrorChallenges] = useState<Record<string, string | null>>({});
+  const [errorMarket, setErrorMarket] = useState<string | null>(null);
+  const [errorDuels, setErrorDuels] = useState<string | null>(null);
+  const [errorRankings, setErrorRankings] = useState<string | null>(null);
+
+  const challengeTabs = ['coding', 'cyber', 'ai', 'design', 'data', 'infra'];
+
+  const loadChallenges = async (tabId: string) => {
+    const categoryName = categoryTabMap[tabId];
+    if (!categoryName) return;
+    setLoadingChallenges(prev => ({ ...prev, [tabId]: true }));
+    setErrorChallenges(prev => ({ ...prev, [tabId]: null }));
+    try {
+      const data = await invoke<any[]>('cmd_list_challenges', { category: categoryName });
+      const setter: Record<string, React.Dispatch<React.SetStateAction<Challenge[]>>> = {
+        coding: setCodingChallenges,
+        cyber: setCyberChallenges,
+        ai: setAiChallenges,
+        design: setDesignChallenges,
+        data: setDataChallenges,
+        infra: setInfraChallenges,
+      };
+      setter[tabId]?.(data as Challenge[]);
+    } catch (e: any) {
+      setErrorChallenges(prev => ({ ...prev, [tabId]: e.message || String(e) }));
+    } finally {
+      setLoadingChallenges(prev => ({ ...prev, [tabId]: false }));
+    }
+  };
+
+  const loadMarket = async () => {
+    setLoadingMarket(true);
+    setErrorMarket(null);
+    try {
+      const data = await invoke<any[]>('cmd_list_problems');
+      setProblemMarket(data as ProblemMarketItem[]);
+    } catch (e: any) {
+      setErrorMarket(e.message || String(e));
+    } finally {
+      setLoadingMarket(false);
+    }
+  };
+
+  const loadDuels = async () => {
+    setLoadingDuels(true);
+    setErrorDuels(null);
+    try {
+      const data = await invoke<any[]>('cmd_list_duels');
+      setDuels(data as DuelItem[]);
+    } catch (e: any) {
+      setErrorDuels(e.message || String(e));
+    } finally {
+      setLoadingDuels(false);
+    }
+  };
+
+  const loadRankings = async () => {
+    setLoadingRankings(true);
+    setErrorRankings(null);
+    try {
+      const data = await invoke<any[]>('cmd_list_rankings', { filter: rankingFilter });
+      setRankings(data as RankingItem[]);
+    } catch (e: any) {
+      setErrorRankings(e.message || String(e));
+    } finally {
+      setLoadingRankings(false);
+    }
+  };
+
+  useEffect(() => {
+    challengeTabs.forEach(tab => loadChallenges(tab));
+    loadMarket();
+    loadDuels();
+    loadRankings();
+  }, []);
+
+  useEffect(() => {
+    loadRankings();
+  }, [rankingFilter]);
+
+  const getAllChallenges = useMemo(() => {
+    const all = [
+      ...codingChallenges,
+      ...cyberChallenges,
+      ...aiChallenges,
+      ...designChallenges,
+      ...dataChallenges,
+      ...infraChallenges,
+    ];
+    return all;
+  }, [codingChallenges, cyberChallenges, aiChallenges, designChallenges, dataChallenges, infraChallenges]);
+
+  const headerStats = useMemo(() => {
+    const totalChallenges = getAllChallenges.length;
+    const totalCompetitors = rankings.reduce((s, r) => s + 1, 0);
+    const totalRewards = getAllChallenges.reduce((sum, c) => sum + parseRewardValue(c.reward), 0);
+    return { totalChallenges, totalCompetitors, totalRewards };
+  }, [getAllChallenges, rankings]);
+
+  const getChallengesForTab = (tabId: string): Challenge[] => {
+    const map: Record<string, Challenge[]> = {
+      coding: codingChallenges,
+      cyber: cyberChallenges,
+      ai: aiChallenges,
+      design: designChallenges,
+      data: dataChallenges,
+      infra: infraChallenges,
+    };
+    return map[tabId] || [];
+  };
+
+  const isChallengesLoading = (tabId: string): boolean => loadingChallenges[tabId] || false;
+  const getChallengeError = (tabId: string): string | null => errorChallenges[tabId] || null;
+
+  const renderChallengeCards = (tabId: string) => {
+    const challenges = getChallengesForTab(tabId);
+    const isLoading = isChallengesLoading(tabId);
+    const err = getChallengeError(tabId);
+
+    if (isLoading) return <Spinner />;
+    if (err) return <ErrorState message={err} onRetry={() => loadChallenges(tabId)} />;
+    if (challenges.length === 0) {
+      return (
+        <EmptyState
+          icon={<Inbox size={28} />}
+          title="No challenges available"
+          description="There are no challenges in this category right now. Check back later."
+        />
+      );
+    }
+
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+        {challenges.map((challenge, index) => (
+          <motion.div
+            key={challenge.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
             style={{
-              background: 'var(--accent-blue)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '10px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 600,
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: '12px',
+              padding: '20px',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              marginTop: 'auto',
+              flexDirection: 'column',
+              gap: '12px',
             }}
           >
-            <Play size={16} /> Join Challenge
-          </motion.button>
-        </motion.div>
-      ))}
-    </div>
-  );
-
-  const renderProblemMarket = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {problemMarket.map((item, index) => (
-        <motion.div
-          key={item.id}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: index * 0.05 }}
-          style={{
-            background: 'var(--bg-secondary)',
-            border: `1px solid ${statusColor[item.status]}40`,
-            borderLeft: `4px solid ${statusColor[item.status]}`,
-            borderRadius: '12px',
-            padding: '20px',
-            display: 'grid',
-            gridTemplateColumns: '1fr auto',
-            gap: '16px',
-            alignItems: 'center',
-          }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <AlertTriangle size={18} style={{ color: statusColor[item.status] }} />
-              <span style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600 }}>{item.problem}</span>
-            </div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-              Posted by: <span style={{ color: 'var(--text-primary)' }}>{item.company}</span> · {item.category}
-            </div>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600 }}>{challenge.title}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>{challenge.category}</div>
+              </div>
               <span style={{
-                background: statusColor[item.status] + '20',
-                color: statusColor[item.status],
-                padding: '3px 10px',
+                background: difficultyColor[challenge.difficulty] + '20',
+                color: difficultyColor[challenge.difficulty],
+                padding: '4px 10px',
                 borderRadius: '6px',
                 fontSize: '12px',
                 fontWeight: 600,
               }}>
-                {item.status}
+                {challenge.difficulty}
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-green)', fontSize: '14px', fontWeight: 600 }}>
-                <DollarSign size={14} /> {item.reward}
+            </div>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-green)', fontSize: '13px' }}>
+                <DollarSign size={14} /> {challenge.reward}
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                <Clock size={14} /> {item.timeRemaining} left
+                <Users size={14} /> {challenge.participants}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                <Clock size={14} /> {challenge.timeLimit}
               </span>
             </div>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                background: 'var(--accent-blue)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                marginTop: 'auto',
+              }}
+            >
+              <Play size={16} /> Join Challenge
+            </motion.button>
+          </motion.div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderProblemMarket = () => {
+    if (loadingMarket) return <Spinner />;
+    if (errorMarket) return <ErrorState message={errorMarket} onRetry={loadMarket} />;
+    if (problemMarket.length === 0) {
+      return (
+        <EmptyState
+          icon={<AlertTriangle size={28} />}
+          title="No problems available"
+          description="The problem market is currently empty. New problems will appear here as they are posted."
+        />
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {problemMarket.map((item, index) => (
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
             style={{
-              background: statusColor[item.status],
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '12px 24px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 600,
-              whiteSpace: 'nowrap',
+              background: 'var(--bg-secondary)',
+              border: `1px solid ${statusColor[item.status]}40`,
+              borderLeft: `4px solid ${statusColor[item.status]}`,
+              borderRadius: '12px',
+              padding: '20px',
+              display: 'grid',
+              gridTemplateColumns: '1fr auto',
+              gap: '16px',
+              alignItems: 'center',
             }}
           >
-            Solve Now
-          </motion.button>
-        </motion.div>
-      ))}
-    </div>
-  );
-
-  const renderDuels = () => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-      {duels.map((duel, index) => (
-        <motion.div
-          key={duel.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.08 }}
-          style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border)',
-            borderRadius: '12px',
-            padding: '24px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '3px',
-            background: 'linear-gradient(90deg, var(--accent-red), var(--accent-purple))',
-          }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: 'var(--accent-purple)20',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent-purple)',
-            }}>
-              {duel.icon}
-            </div>
-            <div>
-              <div style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 600 }}>{duel.type}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{duel.players.toLocaleString()} players</div>
-            </div>
-          </div>
-          <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{duel.description}</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Entry</div>
-                <div style={{ color: 'var(--accent-yellow)', fontSize: '16px', fontWeight: 600 }}>{duel.entryFee}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <AlertTriangle size={18} style={{ color: statusColor[item.status] }} />
+                <span style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600 }}>{item.problem}</span>
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Prize</div>
-                <div style={{ color: 'var(--accent-green)', fontSize: '16px', fontWeight: 600 }}>{duel.prizePool}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                Posted by: <span style={{ color: 'var(--text-primary)' }}>{item.company}</span> · {item.category}
+              </div>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                <span style={{
+                  background: statusColor[item.status] + '20',
+                  color: statusColor[item.status],
+                  padding: '3px 10px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}>
+                  {item.status}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-green)', fontSize: '14px', fontWeight: 600 }}>
+                  <DollarSign size={14} /> {item.reward}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                  <Clock size={14} /> {item.timeRemaining} left
+                </span>
               </div>
             </div>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               style={{
-                background: 'var(--accent-red)',
+                background: statusColor[item.status],
                 color: '#fff',
                 border: 'none',
                 borderRadius: '8px',
-                padding: '10px 20px',
+                padding: '12px 24px',
                 cursor: 'pointer',
                 fontSize: '14px',
                 fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
+                whiteSpace: 'nowrap',
               }}
             >
-              <Swords size={16} /> Challenge
+              Solve Now
             </motion.button>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  );
-
-  const renderRankings = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        {['Global', 'Country', 'Regional', 'Monthly', 'All Time'].map(filter => (
-          <button
-            key={filter}
-            onClick={() => setRankingFilter(filter)}
-            style={{
-              background: rankingFilter === filter ? 'var(--accent-purple)' : 'var(--bg-secondary)',
-              color: rankingFilter === filter ? '#fff' : 'var(--text-muted)',
-              border: '1px solid var(--border)',
-              borderRadius: '8px',
-              padding: '8px 16px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 500,
-              transition: 'all 0.2s',
-            }}
-          >
-            {filter}
-          </button>
+          </motion.div>
         ))}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {rankings.map((user, index) => (
+    );
+  };
+
+  const renderDuels = () => {
+    if (loadingDuels) return <Spinner />;
+    if (errorDuels) return <ErrorState message={errorDuels} onRetry={loadDuels} />;
+    if (duels.length === 0) {
+      return (
+        <EmptyState
+          icon={<Swords size={28} />}
+          title="No duels available"
+          description="There are no active duels right now. Check back later for new challenges."
+        />
+      );
+    }
+
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+        {duels.map((duel, index) => (
           <motion.div
-            key={user.rank}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.04 }}
+            key={duel.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.08 }}
             style={{
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border)',
               borderRadius: '12px',
-              padding: '16px 20px',
-              display: 'grid',
-              gridTemplateColumns: '60px 1fr 120px 120px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
               gap: '16px',
-              alignItems: 'center',
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '4px',
-            }}>
-              {user.rank === 1 ? <Crown size={20} style={{ color: '#f59e0b' }} /> :
-               user.rank === 2 ? <Medal size={20} style={{ color: '#94a3b8' }} /> :
-               user.rank === 3 ? <Medal size={20} style={{ color: '#cd7f32' }} /> :
-               <span style={{ color: 'var(--text-muted)', fontSize: '18px', fontWeight: 600 }}>#{user.rank}</span>}
-            </div>
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '3px',
+              background: 'linear-gradient(90deg, var(--accent-red), var(--accent-purple))',
+            }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
                 background: 'var(--accent-purple)20',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'var(--accent-purple)',
-                fontSize: '14px',
-                fontWeight: 600,
               }}>
-                {user.avatar}
+                {duelIcons[duel.type] || <Swords size={24} />}
               </div>
               <div>
-                <div style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 600 }}>{user.name}</div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <MapPin size={12} /> {user.country}
-                </div>
+                <div style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 600 }}>{duel.type}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{duel.players.toLocaleString()} players</div>
               </div>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ color: 'var(--accent-green)', fontSize: '16px', fontWeight: 600 }}>{user.score.toLocaleString()}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>points</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ color: 'var(--text-primary)', fontSize: '14px' }}>{user.challenges}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>challenges</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{duel.description}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Entry</div>
+                  <div style={{ color: 'var(--accent-yellow)', fontSize: '16px', fontWeight: 600 }}>{duel.entryFee}</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Prize</div>
+                  <div style={{ color: 'var(--accent-green)', fontSize: '16px', fontWeight: 600 }}>{duel.prizePool}</div>
+                </div>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  background: 'var(--accent-red)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Swords size={16} /> Challenge
+              </motion.button>
             </div>
           </motion.div>
         ))}
       </div>
-    </div>
-  );
+    );
+  };
+
+  const renderRankings = () => {
+    if (loadingRankings) return <Spinner />;
+    if (errorRankings) return <ErrorState message={errorRankings} onRetry={loadRankings} />;
+    if (rankings.length === 0) {
+      return (
+        <EmptyState
+          icon={<Trophy size={28} />}
+          title="No rankings available"
+          description="Rankings data is not available yet. Participate in challenges to appear on the leaderboard."
+        />
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {['Global', 'Country', 'Regional', 'Monthly', 'All Time'].map(filter => (
+            <button
+              key={filter}
+              onClick={() => setRankingFilter(filter)}
+              style={{
+                background: rankingFilter === filter ? 'var(--accent-purple)' : 'var(--bg-secondary)',
+                color: rankingFilter === filter ? '#fff' : 'var(--text-muted)',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: 500,
+                transition: 'all 0.2s',
+              }}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {rankings.map((user, index) => (
+            <motion.div
+              key={user.rank}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.04 }}
+              style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                display: 'grid',
+                gridTemplateColumns: '60px 1fr 120px 120px',
+                gap: '16px',
+                alignItems: 'center',
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+              }}>
+                {user.rank === 1 ? <Crown size={20} style={{ color: '#f59e0b' }} /> :
+                 user.rank === 2 ? <Medal size={20} style={{ color: '#94a3b8' }} /> :
+                 user.rank === 3 ? <Medal size={20} style={{ color: '#cd7f32' }} /> :
+                 <span style={{ color: 'var(--text-muted)', fontSize: '18px', fontWeight: 600 }}>#{user.rank}</span>}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: 'var(--accent-purple)20',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--accent-purple)',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                }}>
+                  {user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 600 }}>{user.name}</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <MapPin size={12} /> {user.country}
+                  </div>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: 'var(--accent-green)', fontSize: '16px', fontWeight: 600 }}>{user.score.toLocaleString()}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>points</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: 'var(--text-primary)', fontSize: '14px' }}>{user.challenges_completed}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>challenges</div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const renderEnvironments = () => (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
@@ -569,12 +743,13 @@ const OpenMaestroPage: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'coding': return renderChallengeCards(codingChallenges);
-      case 'cyber': return renderChallengeCards(cyberChallenges);
-      case 'ai': return renderChallengeCards(aiChallenges);
-      case 'design': return renderChallengeCards(designChallenges);
-      case 'data': return renderChallengeCards(dataChallenges);
-      case 'infra': return renderChallengeCards(infraChallenges);
+      case 'coding':
+      case 'cyber':
+      case 'ai':
+      case 'design':
+      case 'data':
+      case 'infra':
+        return renderChallengeCards(activeTab);
       case 'market': return renderProblemMarket();
       case 'duels': return renderDuels();
       case 'rankings': return renderRankings();
@@ -639,23 +814,17 @@ const OpenMaestroPage: React.FC = () => {
           display: 'flex',
           gap: '24px',
           marginTop: '20px',
+          flexWrap: 'wrap',
         }}>
-          {[
-            { icon: <Zap size={16} />, label: '12,450 Active Challenges', color: 'var(--accent-yellow)' },
-            { icon: <Users size={16} />, label: '89,234 Competitors', color: 'var(--accent-blue)' },
-            { icon: <DollarSign size={16} />, label: '$2.4M Total Rewards', color: 'var(--accent-green)' },
-          ].map(stat => (
-            <div key={stat.label} style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              color: stat.color,
-              fontSize: '14px',
-              fontWeight: 500,
-            }}>
-              {stat.icon} {stat.label}
-            </div>
-          ))}
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-yellow)', fontSize: '14px', fontWeight: 500 }}>
+            <Zap size={16} /> {formatNumber(headerStats.totalChallenges)} Active Challenges
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-blue)', fontSize: '14px', fontWeight: 500 }}>
+            <Users size={16} /> {formatNumber(headerStats.totalCompetitors)} Competitors
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-green)', fontSize: '14px', fontWeight: 500 }}>
+            <DollarSign size={16} /> ${formatNumber(headerStats.totalRewards)} Total Rewards
+          </span>
         </div>
       </motion.div>
 
@@ -695,14 +864,17 @@ const OpenMaestroPage: React.FC = () => {
         ))}
       </div>
 
-      <motion.div
-        key={activeTab}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        {renderContent()}
-      </motion.div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {renderContent()}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };

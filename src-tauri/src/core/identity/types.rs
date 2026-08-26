@@ -10,5 +10,6 @@ pub struct Identity {
     pub fingerprint: String,
     pub recovery_key_hash: String,
     pub recovery_phrase_hash: String,
+    pub password_hash: String,
     pub created_at: i64,
 }

@@ -1,4 +1,7 @@
-use super::*;
+use super::types::{DataPaths, RetentionPolicy};
+use super::{
+    cache_manager::CacheManager, data_lifecycle::DataLifecycle, model_manager::ModelManager,
+};
 use tempfile::TempDir;
 
 #[test]

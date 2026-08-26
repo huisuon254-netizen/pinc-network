@@ -42,3 +42,4 @@ pub mod admin;
 pub mod commands;
 pub mod ecosystem;
 pub mod games;
+pub mod regions;

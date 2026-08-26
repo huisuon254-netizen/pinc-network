@@ -207,6 +207,7 @@ impl WhisperEngine {
         Ok(model_id)
     }
 
+    #[allow(clippy::ptr_arg)]
     pub async fn transcribe(&mut self, audio: &Vec<u8>) -> Result<String, AiError> {
         if audio.is_empty() {
             return Err(AiError::InvalidInput("Audio data is empty".to_string()));
@@ -279,7 +280,7 @@ impl WhisperEngine {
                 seg_windows += 1;
             }
             let total_windows = samples.len() / window_size;
-            if (!is_voice && in_voice) || (i + 1 >= total_windows && in_voice) {
+            if (i + 1 >= total_windows || !is_voice) && in_voice {
                 segments.push(VoiceSegment {
                     start_ms: seg_start,
                     end_ms: start_ms + (window_size as u64 * 1000 / sample_rate as u64),
@@ -639,7 +640,7 @@ impl TtsEngine {
     pub async fn create_voice_profile(
         &mut self,
         name: &str,
-        audio: &Vec<Vec<f32>>,
+        audio: &[Vec<f32>],
     ) -> Result<String, AiError> {
         if audio.is_empty() {
             return Err(AiError::InvalidInput(

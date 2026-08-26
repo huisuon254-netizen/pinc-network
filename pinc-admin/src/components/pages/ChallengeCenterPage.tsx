@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Target, Plus, Code, Shield, Palette, Briefcase, Trash2, Edit3 } from 'lucide-react';
+import { useAdminStore } from '../../store/adminStore';
 
 const CATEGORIES = [
   { id: 'coding', label: 'Coding', icon: <Code size={14} />, color: 'var(--neon-cyan)' },
@@ -8,20 +9,35 @@ const CATEGORIES = [
   { id: 'business', label: 'Business', icon: <Briefcase size={14} />, color: 'var(--accent-yellow)' },
 ];
 
-interface Challenge {
-  id: string; title: string; category: string; difficulty: string; reward: number; status: string;
-}
-
-const MOCK_CHALLENGES: Challenge[] = [
-  { id: '1', title: 'Build a REST API', category: 'coding', difficulty: 'medium', reward: 500, status: 'active' },
-  { id: '2', title: 'CTF: Reverse Engineering', category: 'security', difficulty: 'hard', reward: 1000, status: 'active' },
-  { id: '3', title: 'Logo Design Contest', category: 'design', difficulty: 'easy', reward: 200, status: 'active' },
-  { id: '4', title: 'AI Chatbot Competition', category: 'coding', difficulty: 'hard', reward: 2000, status: 'draft' },
-];
-
 export default function ChallengeCenterPage() {
+  const adminChallenges = useAdminStore(s => s.adminChallenges);
+  const loadAdminChallenges = useAdminStore(s => s.loadAdminChallenges);
+  const publishChallenge = useAdminStore(s => s.publishChallenge);
+  const deleteChallenge = useAdminStore(s => s.deleteChallenge);
+  const editChallenge = useAdminStore(s => s.editChallenge);
+
+  useEffect(() => { loadAdminChallenges(); }, [loadAdminChallenges]);
+
   const [showCreate, setShowCreate] = useState(false);
   const [newChallenge, setNewChallenge] = useState({ title: '', category: 'coding', difficulty: 'medium', reward: 100, description: '' });
+
+  const handlePublish = async () => {
+    if (!newChallenge.title) return;
+    await publishChallenge(newChallenge.title, newChallenge.category, newChallenge.difficulty, newChallenge.reward, newChallenge.description);
+    setNewChallenge({ title: '', category: 'coding', difficulty: 'medium', reward: 100, description: '' });
+    setShowCreate(false);
+  };
+
+  const handleEdit = (id: string, currentTitle: string) => {
+    const title = window.prompt('New title:', currentTitle);
+    if (title) editChallenge(id, { title });
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this challenge?')) {
+      deleteChallenge(id);
+    }
+  };
 
   return (
     <div style={{ padding: '1.25rem', maxWidth: 1100 }}>
@@ -50,7 +66,7 @@ export default function ChallengeCenterPage() {
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-primary)' }}>{cat.label}</div>
               <div style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>
-                {MOCK_CHALLENGES.filter(c => c.category === cat.id).length} active
+                {adminChallenges.filter(c => c.category === cat.id).length} active
               </div>
             </div>
           </div>
@@ -95,7 +111,7 @@ export default function ChallengeCenterPage() {
             fontSize: '0.7rem', height: 60, resize: 'vertical',
           }} />
           <div style={{ display: 'flex', gap: 6, marginTop: '0.5rem' }}>
-            <button style={{ padding: '0.4rem 1rem', background: 'rgba(245,158,11,0.15)', border: '1px solid var(--accent-yellow)', borderRadius: 6, color: 'var(--accent-yellow)', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 600 }}>Publish</button>
+            <button onClick={handlePublish} style={{ padding: '0.4rem 1rem', background: 'rgba(245,158,11,0.15)', border: '1px solid var(--accent-yellow)', borderRadius: 6, color: 'var(--accent-yellow)', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 600 }}>Publish</button>
             <button onClick={() => setShowCreate(false)} style={{ padding: '0.4rem 1rem', background: 'transparent', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.65rem' }}>Cancel</button>
           </div>
         </div>
@@ -115,7 +131,7 @@ export default function ChallengeCenterPage() {
             </tr>
           </thead>
           <tbody>
-            {MOCK_CHALLENGES.map(c => (
+            {adminChallenges.map(c => (
               <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-primary)', fontWeight: 600 }}>{c.title}</td>
                 <td style={{ padding: '0.5rem 0.75rem' }}>
@@ -138,8 +154,8 @@ export default function ChallengeCenterPage() {
                 </td>
                 <td style={{ padding: '0.5rem 0.75rem' }}>
                   <div style={{ display: 'flex', gap: 4 }}>
-                    <button style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-blue)', cursor: 'pointer', padding: 3 }}><Edit3 size={11} /></button>
-                    <button style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-red)', cursor: 'pointer', padding: 3 }}><Trash2 size={11} /></button>
+                    <button onClick={() => handleEdit(c.id, c.title)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-blue)', cursor: 'pointer', padding: 3 }}><Edit3 size={11} /></button>
+                    <button onClick={() => handleDelete(c.id)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--accent-red)', cursor: 'pointer', padding: 3 }}><Trash2 size={11} /></button>
                   </div>
                 </td>
               </tr>
