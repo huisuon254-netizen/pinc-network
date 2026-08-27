@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAppStore } from './store/appStore';
 import SaraiPage from './components/sarai/SaraiPage';
 import ThemeBackground from './components/theme/ThemeBackground';
@@ -7,15 +6,12 @@ import LanguageOnboardingScreen from './components/onboarding/LanguageOnboarding
 import AccountSetupScreen from './components/onboarding/AccountSetupScreen';
 import SettingsPage from './components/settings/SettingsPage';
 import LockScreen from './components/settings/LockScreen';
-import LicencePage from './pages/LicencePage';
-import AppsPage from './pages/AppsPage';
-import SecurityPage from './pages/SecurityPage';
-import DocsPage from './pages/DocsPage';
 
-function WalletApp() {
+export default function App() {
   const { initialize, screen, isLocked, activeTab } = useAppStore();
   useEffect(() => { initialize(); }, [initialize]);
 
+  // lock screen overlays everything except splash/language/setup
   if (isLocked && screen !== 'splash' && screen !== 'language' && screen !== 'setup') {
     return (
       <div style={{ position: 'relative', minHeight: '100vh' }}>
@@ -82,6 +78,7 @@ function WalletApp() {
     );
   }
 
+  // dashboard
   const showSettings = activeTab === 'settings';
   return (
     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
@@ -99,50 +96,5 @@ function WalletApp() {
         </span>
       </footer>
     </div>
-  );
-}
-
-function NavBar() {
-  const location = useLocation();
-  const navStyle: React.CSSProperties = {
-    position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
-    background: 'rgba(16,16,28,0.85)', backdropFilter: 'blur(12px)',
-    borderBottom: '1px solid var(--border)', padding: '0.5rem 1rem',
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-  };
-  const linkStyle = (active: boolean): React.CSSProperties => ({
-    color: active ? 'var(--theme-accent)' : 'var(--text-secondary)',
-    textDecoration: 'none', fontSize: '0.75rem', fontWeight: 600,
-    padding: '0.4rem 0.8rem', borderRadius: 999,
-    background: active ? 'rgba(212,175,55,0.1)' : 'transparent',
-    transition: 'all 0.2s ease'
-  });
-  return (
-    <nav style={navStyle}>
-      <Link to="/" style={{ ...linkStyle(location.pathname === '/'), fontFamily: 'monospace', letterSpacing: '0.1em', fontSize: '0.9rem' }}>PINC</Link>
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <Link to="/licence" style={linkStyle(location.pathname === '/licence')}>Licence</Link>
-        <Link to="/apps" style={linkStyle(location.pathname === '/apps')}>Apps</Link>
-        <Link to="/security" style={linkStyle(location.pathname === '/security')}>Security</Link>
-        <Link to="/docs" style={linkStyle(location.pathname === '/docs')}>Docs</Link>
-      </div>
-    </nav>
-  );
-}
-
-export default function App() {
-  return (
-    <BrowserRouter basename="/">
-      <NavBar />
-      <div style={{ paddingTop: '3.5rem' }}>
-        <Routes>
-          <Route path="/" element={<WalletApp />} />
-          <Route path="licence" element={<LicencePage />} />
-          <Route path="apps" element={<AppsPage />} />
-          <Route path="security" element={<SecurityPage />} />
-          <Route path="docs" element={<DocsPage />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
   );
 }
